@@ -1,0 +1,36 @@
+{
+  "name": "phase1-default",
+  "description": "Low-cost discovery first, selective route and service follow-up later.",
+  "scope": {
+    "name": "internal-segment",
+    "cidrs": [
+      "192.168.1.0/24"
+    ],
+    "targets": [
+      "192.168.1.10",
+      "192.168.1.20"
+    ],
+    "dns_names": [
+      "dc01.example.local"
+    ],
+    "allowed_networks": [
+      "192.168.1.0/24"
+    ],
+    "excluded_networks": [
+      "192.168.1.254/32"
+    ],
+    "template": "phase1-default",
+    "labels": {
+      "owner": "security",
+      "environment": "lab"
+    }
+  },
+  "profile": {
+    "name": "default",
+    "enable_layer2": true,
+    "use_large_range_strategy": false,
+    "enable_route_sampling": true,
+    "enable_service_scan": true,
+    "enable_os_detection": true
+  }
+}
