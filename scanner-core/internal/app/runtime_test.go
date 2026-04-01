@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -99,6 +100,123 @@ func TestRunPlanStoresEvidence(t *testing.T) {
 	}
 }
 
+func TestBuildFollowUpPlanFromOpenPorts(t *testing.T) {
+	template := templates.Template{
+		Name: "test",
+		Profile: ingest.RunProfile{
+			EnableRouteSampling: true,
+			EnableServiceScan:   true,
+			EnableOSDetection:   true,
+		},
+	}
+
+	records := []evidence.Record{
+		{
+			ID:       "open-1",
+			Source:   "naabu",
+			Kind:     "open_port",
+			Target:   "10.0.0.20",
+			Port:     443,
+			Protocol: "tcp",
+		},
+		{
+			ID:       "open-2",
+			Source:   "naabu",
+			Kind:     "open_port",
+			Target:   "10.0.0.20",
+			Port:     80,
+			Protocol: "tcp",
+		},
+		{
+			ID:       "open-3",
+			Source:   "naabu",
+			Kind:     "open_port",
+			Target:   "10.0.0.20",
+			Port:     443,
+			Protocol: "tcp",
+		},
+		{
+			ID:       "open-4",
+			Source:   "naabu",
+			Kind:     "open_port",
+			Target:   "10.0.0.30",
+			Port:     22,
+			Protocol: "tcp",
+		},
+		{
+			ID:       "open-5",
+			Source:   "naabu",
+			Kind:     "open_port",
+			Target:   "10.0.0.40",
+			Port:     53,
+			Protocol: "udp",
+		},
+	}
+
+	plan := BuildFollowUpPlan(template, records)
+	if len(plan) != 4 {
+		t.Fatalf("expected 4 follow-up jobs, got %d", len(plan))
+	}
+
+	if plan[0].Plugin != "scamper" || plan[1].Plugin != "nmap" {
+		t.Fatalf("unexpected first target plan order: %#v", plan[:2])
+	}
+
+	if !reflect.DeepEqual(plan[1].Ports, []int{80, 443}) {
+		t.Fatalf("expected deduplicated sorted ports, got %#v", plan[1].Ports)
+	}
+
+	if plan[1].ServiceClass != "web" {
+		t.Fatalf("expected web service class, got %q", plan[1].ServiceClass)
+	}
+
+	if plan[1].Metadata["os_detection"] != "true" {
+		t.Fatalf("expected os_detection metadata, got %#v", plan[1].Metadata)
+	}
+
+	if plan[3].ServiceClass != "remote_access" {
+		t.Fatalf("expected remote_access class, got %q", plan[3].ServiceClass)
+	}
+}
+
+func TestExecuteRunChainsSeedAndFollowUpPlans(t *testing.T) {
+	template := templates.Template{
+		Name: "test",
+		Scope: ingest.Scope{
+			Targets: []string{"10.0.0.10"},
+		},
+		Profile: ingest.RunProfile{
+			EnableServiceScan: true,
+			EnableOSDetection: true,
+		},
+	}
+
+	plan, records, err := ExecuteRun(context.Background(), []engine.Plugin{
+		anyPlugin{name: "internal"},
+		anyPlugin{name: "naabu"},
+		anyPlugin{name: "nmap"},
+	}, template)
+	if err != nil {
+		t.Fatalf("ExecuteRun returned error: %v", err)
+	}
+
+	if len(plan) != 3 {
+		t.Fatalf("expected 3 jobs total, got %d", len(plan))
+	}
+
+	if plan[2].Plugin != "nmap" {
+		t.Fatalf("expected nmap follow-up job, got %q", plan[2].Plugin)
+	}
+
+	if len(records) != 2 {
+		t.Fatalf("expected 2 records, got %d", len(records))
+	}
+
+	if records[1].Source != "nmap" {
+		t.Fatalf("expected nmap evidence second, got %q", records[1].Source)
+	}
+}
+
 type anyPlugin struct {
 	name string
 }
@@ -113,6 +231,8 @@ func (p anyPlugin) CanRun(job jobs.Job) bool {
 		return job.Kind == jobs.KindScopePrepare
 	case "naabu":
 		return job.Kind == jobs.KindPortDiscover
+	case "nmap":
+		return job.Kind == jobs.KindServiceProbe
 	default:
 		return false
 	}
@@ -121,6 +241,22 @@ func (p anyPlugin) CanRun(job jobs.Job) bool {
 func (p anyPlugin) Run(context.Context, jobs.Job) ([]evidence.Record, error) {
 	if p.name == "internal" {
 		return nil, nil
+	}
+
+	if p.name == "nmap" {
+		return []evidence.Record{
+			{
+				ID:         "service-record",
+				Source:     p.name,
+				Kind:       "service_fingerprint",
+				Target:     "10.0.0.10",
+				Port:       443,
+				Protocol:   "tcp",
+				Summary:    "https detected on tcp/443 at 10.0.0.10",
+				Confidence: evidence.ConfidenceConfirmed,
+				ObservedAt: time.Date(2026, 4, 1, 8, 5, 0, 0, time.UTC),
+			},
+		}, nil
 	}
 
 	return []evidence.Record{

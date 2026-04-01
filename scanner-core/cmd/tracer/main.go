@@ -35,10 +35,11 @@ func main() {
 	switch mode {
 	case "plan":
 	case "run":
-		records, err := app.RunPlan(context.Background(), app.DefaultPlugins(), plan)
+		executedPlan, records, err := app.ExecuteRun(context.Background(), app.DefaultPlugins(), loadedTemplate)
 		if err != nil {
 			fail(err)
 		}
+		output.Plan = executedPlan
 		output.Evidence = records
 	default:
 		fail(fmt.Errorf("unsupported mode %q", mode))
