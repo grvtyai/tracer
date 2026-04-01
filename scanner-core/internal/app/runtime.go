@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/grvtyai/tracer/scanner-core/internal/analysis"
 	"github.com/grvtyai/tracer/scanner-core/internal/classify"
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
@@ -26,10 +27,11 @@ import (
 )
 
 type Output struct {
-	Mode     string            `json:"mode"`
-	Template string            `json:"template"`
-	Plan     []jobs.Job        `json:"plan"`
-	Evidence []evidence.Record `json:"evidence,omitempty"`
+	Mode     string                        `json:"mode"`
+	Template string                        `json:"template"`
+	Plan     []jobs.Job                    `json:"plan"`
+	Evidence []evidence.Record             `json:"evidence,omitempty"`
+	Blocking []analysis.BlockingAssessment `json:"blocking,omitempty"`
 }
 
 type internalPlugin struct{}
@@ -185,6 +187,10 @@ func ExecuteRun(ctx context.Context, plugins []engine.Plugin, template templates
 	allEvidence = append(allEvidence, followUpEvidence...)
 	allEvidence = dedupeEvidence(allEvidence)
 	return fullPlan, allEvidence, nil
+}
+
+func AnalyzeEvidence(records []evidence.Record) []analysis.BlockingAssessment {
+	return analysis.BuildBlockingAssessments(records)
 }
 
 func sortedPorts(portSet map[int]struct{}) []int {

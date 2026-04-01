@@ -41,6 +41,7 @@ func main() {
 		}
 		output.Plan = executedPlan
 		output.Evidence = records
+		output.Blocking = app.AnalyzeEvidence(records)
 	default:
 		fail(fmt.Errorf("unsupported mode %q", mode))
 	}
