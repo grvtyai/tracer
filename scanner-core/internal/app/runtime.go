@@ -161,6 +161,7 @@ func ExecuteRun(ctx context.Context, plugins []engine.Plugin, template templates
 	if err != nil {
 		return nil, nil, err
 	}
+	seedEvidence = dedupeEvidence(seedEvidence)
 
 	fullPlan := append([]jobs.Job{}, seedPlan...)
 	allEvidence := append([]evidence.Record{}, seedEvidence...)
@@ -174,9 +175,11 @@ func ExecuteRun(ctx context.Context, plugins []engine.Plugin, template templates
 	if err != nil {
 		return nil, nil, err
 	}
+	followUpEvidence = dedupeEvidence(followUpEvidence)
 
 	fullPlan = append(fullPlan, followUpPlan...)
 	allEvidence = append(allEvidence, followUpEvidence...)
+	allEvidence = dedupeEvidence(allEvidence)
 	return fullPlan, allEvidence, nil
 }
 
@@ -194,40 +197,75 @@ func classifyServiceClass(ports []int) string {
 		return ""
 	}
 
-	webPorts := map[int]struct{}{
-		80: {}, 81: {}, 443: {}, 591: {}, 8000: {}, 8008: {}, 8080: {}, 8081: {}, 8443: {},
-	}
-	remotePorts := map[int]struct{}{
-		22: {}, 23: {}, 3389: {},
-	}
-	directoryPorts := map[int]struct{}{
-		53: {}, 88: {}, 389: {}, 445: {}, 464: {}, 636: {}, 3268: {}, 3269: {},
-	}
-	databasePorts := map[int]struct{}{
-		1433: {}, 1521: {}, 3306: {}, 5432: {}, 6379: {}, 9042: {}, 27017: {},
+	categoryPriority := []string{
+		"directory",
+		"database",
+		"remote_access",
+		"messaging",
+		"printing",
+		"web",
+		"general",
 	}
 
-	switch {
-	case containsAnyPort(ports, webPorts):
-		return "web"
-	case containsAnyPort(ports, directoryPorts):
-		return "directory"
-	case containsAnyPort(ports, remotePorts):
-		return "remote_access"
-	case containsAnyPort(ports, databasePorts):
-		return "database"
-	default:
-		return "general"
+	portCategories := map[int]string{
+		22:    "remote_access",
+		23:    "remote_access",
+		25:    "messaging",
+		53:    "directory",
+		80:    "web",
+		81:    "web",
+		88:    "directory",
+		110:   "messaging",
+		111:   "general",
+		135:   "directory",
+		139:   "directory",
+		143:   "messaging",
+		389:   "directory",
+		443:   "web",
+		445:   "directory",
+		464:   "directory",
+		465:   "messaging",
+		587:   "messaging",
+		591:   "web",
+		631:   "printing",
+		636:   "directory",
+		993:   "messaging",
+		995:   "messaging",
+		1433:  "database",
+		1521:  "database",
+		2049:  "general",
+		3268:  "directory",
+		3269:  "directory",
+		3306:  "database",
+		3389:  "remote_access",
+		5432:  "database",
+		5900:  "remote_access",
+		6379:  "database",
+		8000:  "web",
+		8008:  "web",
+		8080:  "web",
+		8081:  "web",
+		8443:  "web",
+		9042:  "database",
+		27017: "database",
 	}
-}
 
-func containsAnyPort(ports []int, allowed map[int]struct{}) bool {
+	seenCategories := make(map[string]struct{})
 	for _, port := range ports {
-		if _, ok := allowed[port]; ok {
-			return true
+		category, ok := portCategories[port]
+		if !ok {
+			continue
+		}
+		seenCategories[category] = struct{}{}
+	}
+
+	for _, category := range categoryPriority {
+		if _, ok := seenCategories[category]; ok {
+			return category
 		}
 	}
-	return false
+
+	return "general"
 }
 
 func boolString(value bool) string {
@@ -235,4 +273,31 @@ func boolString(value bool) string {
 		return "true"
 	}
 	return "false"
+}
+
+func dedupeEvidence(records []evidence.Record) []evidence.Record {
+	seen := make(map[string]struct{}, len(records))
+	deduped := make([]evidence.Record, 0, len(records))
+
+	for _, record := range records {
+		key := evidenceKey(record)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+
+		seen[key] = struct{}{}
+		deduped = append(deduped, record)
+	}
+
+	return deduped
+}
+
+func evidenceKey(record evidence.Record) string {
+	return strings.Join([]string{
+		record.Source,
+		record.Kind,
+		record.Target,
+		record.Protocol,
+		fmt.Sprintf("%d", record.Port),
+	}, "|")
 }

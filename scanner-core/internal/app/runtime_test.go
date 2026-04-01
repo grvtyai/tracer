@@ -217,6 +217,52 @@ func TestExecuteRunChainsSeedAndFollowUpPlans(t *testing.T) {
 	}
 }
 
+func TestExecuteRunDedupesEvidence(t *testing.T) {
+	template := templates.Template{
+		Name: "test",
+		Scope: ingest.Scope{
+			Targets: []string{"10.0.0.10"},
+		},
+		Profile: ingest.RunProfile{
+			EnableServiceScan: true,
+		},
+	}
+
+	plan, records, err := ExecuteRun(context.Background(), []engine.Plugin{
+		anyPlugin{name: "internal"},
+		duplicateNaabuPlugin{name: "naabu"},
+		anyPlugin{name: "nmap"},
+	}, template)
+	if err != nil {
+		t.Fatalf("ExecuteRun returned error: %v", err)
+	}
+
+	if len(plan) != 3 {
+		t.Fatalf("expected 3 jobs total, got %d", len(plan))
+	}
+
+	if len(records) != 2 {
+		t.Fatalf("expected deduped evidence count 2, got %d", len(records))
+	}
+}
+
+func TestClassifyServiceClassPrefersMoreSpecificBucket(t *testing.T) {
+	got := classifyServiceClass([]int{22, 25, 631})
+	if got != "remote_access" {
+		t.Fatalf("expected remote_access precedence, got %q", got)
+	}
+
+	got = classifyServiceClass([]int{25, 631})
+	if got != "messaging" {
+		t.Fatalf("expected messaging precedence, got %q", got)
+	}
+
+	got = classifyServiceClass([]int{631})
+	if got != "printing" {
+		t.Fatalf("expected printing classification, got %q", got)
+	}
+}
+
 type anyPlugin struct {
 	name string
 }
@@ -272,4 +318,32 @@ func (p anyPlugin) Run(context.Context, jobs.Job) ([]evidence.Record, error) {
 			ObservedAt: time.Date(2026, 4, 1, 8, 0, 0, 0, time.UTC),
 		},
 	}, nil
+}
+
+type duplicateNaabuPlugin struct {
+	name string
+}
+
+func (p duplicateNaabuPlugin) Name() string {
+	return p.name
+}
+
+func (p duplicateNaabuPlugin) CanRun(job jobs.Job) bool {
+	return job.Kind == jobs.KindPortDiscover
+}
+
+func (p duplicateNaabuPlugin) Run(context.Context, jobs.Job) ([]evidence.Record, error) {
+	record := evidence.Record{
+		ID:         "port-record",
+		Source:     p.name,
+		Kind:       "open_port",
+		Target:     "10.0.0.10",
+		Port:       443,
+		Protocol:   "tcp",
+		Summary:    "open tcp port 443 on 10.0.0.10",
+		Confidence: evidence.ConfidenceConfirmed,
+		ObservedAt: time.Date(2026, 4, 1, 8, 0, 0, 0, time.UTC),
+	}
+
+	return []evidence.Record{record, record}, nil
 }
