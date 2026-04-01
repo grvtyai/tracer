@@ -1,0 +1,18 @@
+{
+  "name": "smoke-lab",
+  "scope": {
+    "name": "lab",
+    "targets": [
+      "192.168.56.10",
+      "192.168.56.20"
+    ]
+  },
+  "profile": {
+    "name": "default",
+    "enable_layer2": false,
+    "use_large_range_strategy": false,
+    "enable_route_sampling": true,
+    "enable_service_scan": true,
+    "enable_os_detection": true
+  }
+}

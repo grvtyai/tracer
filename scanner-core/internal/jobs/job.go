@@ -9,6 +9,7 @@ const (
 	KindPortDiscover Kind = "port_discover"
 	KindRouteProbe   Kind = "route_probe"
 	KindServiceProbe Kind = "service_probe"
+	KindWebProbe     Kind = "web_probe"
 	KindAnalyze      Kind = "analyze"
 )
 

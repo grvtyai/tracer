@@ -55,7 +55,7 @@ func DefaultPlugins() []engine.Plugin {
 		naabu.New(),
 		nmap.New(),
 		scamper.New(),
-		httpx.Plugin{},
+		httpx.New(),
 		zgrab2.Plugin{},
 		zeek.Plugin{},
 		sharphound.Plugin{},
@@ -145,6 +145,35 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 				},
 			})
 		}
+
+		if template.Profile.EnableServiceScan {
+			webPorts := filterPortsByClass(ports, "web")
+			if len(webPorts) > 0 {
+				dependsOn := []string(nil)
+				if template.Profile.EnableServiceScan {
+					dependsOn = []string{fmt.Sprintf("service-%s", target)}
+				} else if template.Profile.EnableRouteSampling {
+					dependsOn = []string{fmt.Sprintf("route-%s", target)}
+				}
+
+				plan = append(plan, jobs.Job{
+					ID:             fmt.Sprintf("http-%s", target),
+					Kind:           jobs.KindWebProbe,
+					Plugin:         "httpx",
+					DependsOn:      dependsOn,
+					Targets:        []string{target},
+					Ports:          webPorts,
+					ServiceClass:   classify.FromPorts(webPorts),
+					ServiceClasses: classify.AllFromPorts(webPorts),
+					Metadata: map[string]string{
+						"tech_detect":      "true",
+						"follow_redirects": "true",
+						"timeout":          "10",
+						"retries":          "1",
+					},
+				})
+			}
+		}
 	}
 
 	return plan
@@ -200,6 +229,17 @@ func sortedPorts(portSet map[int]struct{}) []int {
 	}
 	sort.Ints(ports)
 	return ports
+}
+
+func filterPortsByClass(ports []int, class string) []int {
+	filtered := make([]int, 0)
+	for _, port := range ports {
+		if classify.FromPort(port) != class {
+			continue
+		}
+		filtered = append(filtered, port)
+	}
+	return filtered
 }
 
 func boolString(value bool) string {
