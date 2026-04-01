@@ -26,6 +26,10 @@ func (e *Engine) Run(ctx context.Context, plan []jobs.Job) error {
 		handled := false
 
 		for _, plugin := range e.plugins {
+			if job.Plugin != "" && plugin.Name() != job.Plugin {
+				continue
+			}
+
 			if !plugin.CanRun(job) {
 				continue
 			}
