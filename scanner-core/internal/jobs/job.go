@@ -10,6 +10,7 @@ const (
 	KindRouteProbe   Kind = "route_probe"
 	KindServiceProbe Kind = "service_probe"
 	KindWebProbe     Kind = "web_probe"
+	KindGrabProbe    Kind = "grab_probe"
 	KindAnalyze      Kind = "analyze"
 )
 

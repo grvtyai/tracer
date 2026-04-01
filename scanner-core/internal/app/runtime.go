@@ -56,7 +56,7 @@ func DefaultPlugins() []engine.Plugin {
 		nmap.New(),
 		scamper.New(),
 		httpx.New(),
-		zgrab2.Plugin{},
+		zgrab2.New(),
 		zeek.Plugin{},
 		sharphound.Plugin{},
 		ldapdomaindump.Plugin{},
@@ -172,6 +172,24 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 						"host_service_classes":       strings.Join(serviceClasses, ","),
 						"timeout":                    "10",
 						"retries":                    "1",
+					},
+				})
+
+				plan = append(plan, jobs.Job{
+					ID:             fmt.Sprintf("grab-%s", target),
+					Kind:           jobs.KindGrabProbe,
+					Plugin:         "zgrab2",
+					DependsOn:      []string{fmt.Sprintf("http-%s", target)},
+					Targets:        []string{target},
+					Ports:          webPorts,
+					ServiceClass:   classify.FromPorts(webPorts),
+					ServiceClasses: classify.AllFromPorts(webPorts),
+					Metadata: map[string]string{
+						"module":                     "http",
+						"max_redirects":              "1",
+						"host_primary_service_class": primaryServiceClass,
+						"host_service_classes":       strings.Join(serviceClasses, ","),
+						"timeout":                    "10",
 					},
 				})
 			}

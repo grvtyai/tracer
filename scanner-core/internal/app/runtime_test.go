@@ -154,8 +154,8 @@ func TestBuildFollowUpPlanFromOpenPorts(t *testing.T) {
 	}
 
 	plan := BuildFollowUpPlan(template, records)
-	if len(plan) != 5 {
-		t.Fatalf("expected 5 follow-up jobs, got %d", len(plan))
+	if len(plan) != 6 {
+		t.Fatalf("expected 6 follow-up jobs, got %d", len(plan))
 	}
 
 	if plan[0].Plugin != "scamper" || plan[1].Plugin != "nmap" {
@@ -164,12 +164,18 @@ func TestBuildFollowUpPlanFromOpenPorts(t *testing.T) {
 	if plan[2].Plugin != "httpx" {
 		t.Fatalf("expected httpx web follow-up, got %#v", plan[2])
 	}
+	if plan[3].Plugin != "zgrab2" {
+		t.Fatalf("expected zgrab2 web follow-up, got %#v", plan[3])
+	}
 
 	if !reflect.DeepEqual(plan[1].Ports, []int{80, 443}) {
 		t.Fatalf("expected deduplicated sorted ports, got %#v", plan[1].Ports)
 	}
 	if !reflect.DeepEqual(plan[2].Ports, []int{80, 443}) {
 		t.Fatalf("expected httpx to inherit web ports, got %#v", plan[2].Ports)
+	}
+	if !reflect.DeepEqual(plan[3].Ports, []int{80, 443}) {
+		t.Fatalf("expected zgrab2 to inherit web ports, got %#v", plan[3].Ports)
 	}
 	if plan[2].Metadata["host_primary_service_class"] != "web" {
 		t.Fatalf("expected host_primary_service_class in web job metadata, got %#v", plan[2].Metadata)
@@ -189,8 +195,8 @@ func TestBuildFollowUpPlanFromOpenPorts(t *testing.T) {
 		t.Fatalf("expected os_detection metadata, got %#v", plan[1].Metadata)
 	}
 
-	if plan[4].ServiceClass != "remote_access" {
-		t.Fatalf("expected remote_access class, got %q", plan[4].ServiceClass)
+	if plan[5].ServiceClass != "remote_access" {
+		t.Fatalf("expected remote_access class, got %q", plan[5].ServiceClass)
 	}
 }
 
@@ -211,25 +217,26 @@ func TestExecuteRunChainsSeedAndFollowUpPlans(t *testing.T) {
 		anyPlugin{name: "naabu"},
 		anyPlugin{name: "nmap"},
 		anyPlugin{name: "httpx"},
+		anyPlugin{name: "zgrab2"},
 	}, template)
 	if err != nil {
 		t.Fatalf("ExecuteRun returned error: %v", err)
 	}
 
-	if len(plan) != 4 {
-		t.Fatalf("expected 4 jobs total, got %d", len(plan))
+	if len(plan) != 5 {
+		t.Fatalf("expected 5 jobs total, got %d", len(plan))
 	}
 
-	if plan[2].Plugin != "nmap" || plan[3].Plugin != "httpx" {
-		t.Fatalf("expected nmap and httpx follow-up jobs, got %#v", plan[2:])
+	if plan[2].Plugin != "nmap" || plan[3].Plugin != "httpx" || plan[4].Plugin != "zgrab2" {
+		t.Fatalf("expected nmap, httpx and zgrab2 follow-up jobs, got %#v", plan[2:])
 	}
 
-	if len(records) != 3 {
-		t.Fatalf("expected 3 records, got %d", len(records))
+	if len(records) != 4 {
+		t.Fatalf("expected 4 records, got %d", len(records))
 	}
 
-	if records[1].Source != "nmap" || records[2].Source != "httpx" {
-		t.Fatalf("expected nmap then httpx evidence, got %q / %q", records[1].Source, records[2].Source)
+	if records[1].Source != "nmap" || records[2].Source != "httpx" || records[3].Source != "zgrab2" {
+		t.Fatalf("expected nmap, httpx, zgrab2 evidence, got %q / %q / %q", records[1].Source, records[2].Source, records[3].Source)
 	}
 }
 
@@ -249,17 +256,18 @@ func TestExecuteRunDedupesEvidence(t *testing.T) {
 		duplicateNaabuPlugin{name: "naabu"},
 		anyPlugin{name: "nmap"},
 		anyPlugin{name: "httpx"},
+		anyPlugin{name: "zgrab2"},
 	}, template)
 	if err != nil {
 		t.Fatalf("ExecuteRun returned error: %v", err)
 	}
 
-	if len(plan) != 4 {
-		t.Fatalf("expected 4 jobs total, got %d", len(plan))
+	if len(plan) != 5 {
+		t.Fatalf("expected 5 jobs total, got %d", len(plan))
 	}
 
-	if len(records) != 3 {
-		t.Fatalf("expected deduped evidence count 3, got %d", len(records))
+	if len(records) != 4 {
+		t.Fatalf("expected deduped evidence count 4, got %d", len(records))
 	}
 }
 
@@ -294,6 +302,8 @@ func (p anyPlugin) CanRun(job jobs.Job) bool {
 		return job.Kind == jobs.KindServiceProbe
 	case "httpx":
 		return job.Kind == jobs.KindWebProbe
+	case "zgrab2":
+		return job.Kind == jobs.KindGrabProbe
 	default:
 		return false
 	}
@@ -332,6 +342,22 @@ func (p anyPlugin) Run(context.Context, jobs.Job) ([]evidence.Record, error) {
 				Summary:    "https://10.0.0.10 returned HTTP 200",
 				Confidence: evidence.ConfidenceConfirmed,
 				ObservedAt: time.Date(2026, 4, 1, 8, 6, 0, 0, time.UTC),
+			},
+		}, nil
+	}
+
+	if p.name == "zgrab2" {
+		return []evidence.Record{
+			{
+				ID:         "grab-record",
+				Source:     p.name,
+				Kind:       "l7_grab",
+				Target:     "10.0.0.10",
+				Port:       443,
+				Protocol:   "tcp",
+				Summary:    "https://10.0.0.10:443 returned HTTP 200",
+				Confidence: evidence.ConfidenceConfirmed,
+				ObservedAt: time.Date(2026, 4, 1, 8, 7, 0, 0, time.UTC),
 			},
 		}, nil
 	}
