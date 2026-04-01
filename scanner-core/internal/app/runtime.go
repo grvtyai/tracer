@@ -52,7 +52,7 @@ func DefaultPlugins() []engine.Plugin {
 		arp_scan.Plugin{},
 		naabu.New(),
 		nmap.New(),
-		scamper.Plugin{},
+		scamper.New(),
 		httpx.Plugin{},
 		zgrab2.Plugin{},
 		zeek.Plugin{},
@@ -221,6 +221,10 @@ func dedupeEvidence(records []evidence.Record) []evidence.Record {
 }
 
 func evidenceKey(record evidence.Record) string {
+	if strings.TrimSpace(record.ID) != "" {
+		return record.ID
+	}
+
 	return strings.Join([]string{
 		record.Source,
 		record.Kind,

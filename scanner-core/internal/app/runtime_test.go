@@ -249,6 +249,19 @@ func TestExecuteRunDedupesEvidence(t *testing.T) {
 	}
 }
 
+func TestDedupeEvidenceKeepsDistinctIDs(t *testing.T) {
+	records := []evidence.Record{
+		{ID: "hop-1", Source: "scamper", Kind: "route_hop", Target: "10.0.0.10", Protocol: "ip"},
+		{ID: "hop-2", Source: "scamper", Kind: "route_hop", Target: "10.0.0.10", Protocol: "ip"},
+		{ID: "hop-1", Source: "scamper", Kind: "route_hop", Target: "10.0.0.10", Protocol: "ip"},
+	}
+
+	got := dedupeEvidence(records)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 deduped records, got %d", len(got))
+	}
+}
+
 type anyPlugin struct {
 	name string
 }
