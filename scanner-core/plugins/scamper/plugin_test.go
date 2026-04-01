@@ -104,6 +104,29 @@ func TestParseOutputBuildsRouteAndHopRecords(t *testing.T) {
 	}
 }
 
+func TestParseOutputSkipsCycleMetaRecords(t *testing.T) {
+	job := jobs.Job{
+		ID:      "route-10.0.0.10",
+		Kind:    jobs.KindRouteProbe,
+		Targets: []string{"10.0.0.10"},
+	}
+
+	output := []byte(strings.Join([]string{
+		`{"type":"cycle-start","list_name":"default"}`,
+		`{"type":"trace","version":"0.1","method":"icmp-paris","dst":"10.0.0.10","stop_reason":"COMPLETED","hop_count":1,"hops":[{"addr":"10.0.0.10","probe_ttl":1,"probe_id":0,"rtt":0.1}]}`,
+		`{"type":"cycle-stop","list_name":"default"}`,
+	}, "\n"))
+
+	records, err := ParseOutput(output, job, time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("ParseOutput returned error: %v", err)
+	}
+
+	if len(records) != 2 {
+		t.Fatalf("expected 2 records after skipping meta events, got %d", len(records))
+	}
+}
+
 func TestPluginRun(t *testing.T) {
 	runner := &fakeRunner{
 		output: []byte(`{"type":"trace","version":"0.1","method":"icmp-paris","dst":"10.0.0.20","stop_reason":"COMPLETED","hop_count":1,"hops":[{"addr":"10.0.0.20","probe_ttl":1,"probe_id":0,"rtt":0.12}]}`),

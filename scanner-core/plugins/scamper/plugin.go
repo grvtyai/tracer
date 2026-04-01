@@ -152,9 +152,12 @@ func ParseOutput(output []byte, job jobs.Job, observedAt time.Time) ([]evidence.
 			continue
 		}
 
-		trace, err := parseTraceLine(line)
+		trace, ok, err := parseTraceLine(line)
 		if err != nil {
 			return nil, fmt.Errorf("parse scamper json line %d: %w", lineNumber, err)
+		}
+		if !ok {
+			continue
 		}
 
 		traceObservedAt := observedAt
@@ -173,21 +176,38 @@ func ParseOutput(output []byte, job jobs.Job, observedAt time.Time) ([]evidence.
 	return records, nil
 }
 
-func parseTraceLine(line string) (traceResult, error) {
-	var trace traceResult
-	if err := json.Unmarshal([]byte(line), &trace); err != nil {
-		return traceResult{}, err
+func parseTraceLine(line string) (traceResult, bool, error) {
+	var header struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal([]byte(line), &header); err != nil {
+		return traceResult{}, false, err
+	}
+	if !shouldParseType(header.Type) {
+		return traceResult{}, false, nil
 	}
 
-	if trace.Type != "trace" {
-		return traceResult{}, fmt.Errorf("unsupported scamper record type %q", trace.Type)
+	var trace traceResult
+	if err := json.Unmarshal([]byte(line), &trace); err != nil {
+		return traceResult{}, false, err
 	}
 
 	if strings.TrimSpace(trace.Dst) == "" {
-		return traceResult{}, errors.New("missing destination")
+		return traceResult{}, false, errors.New("missing destination")
 	}
 
-	return trace, nil
+	return trace, true, nil
+}
+
+func shouldParseType(recordType string) bool {
+	switch strings.TrimSpace(recordType) {
+	case "trace":
+		return true
+	case "cycle-start", "cycle-stop", "list-start", "list-stop":
+		return false
+	default:
+		return false
+	}
 }
 
 func buildRouteRecord(trace traceResult, job jobs.Job, observedAt time.Time) evidence.Record {
