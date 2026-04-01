@@ -195,8 +195,8 @@ func buildRecord(result result, job jobs.Job, observedAt time.Time) evidence.Rec
 		"host":                       result.Host,
 		"scheme":                     result.Scheme,
 		"service_class":              serviceClass,
-		"host_primary_service_class": job.ServiceClass,
-		"host_service_classes":       strings.Join(job.ServiceClasses, ","),
+		"host_primary_service_class": firstNonEmpty(job.Metadata["host_primary_service_class"], job.ServiceClass),
+		"host_service_classes":       firstNonEmpty(job.Metadata["host_service_classes"], strings.Join(job.ServiceClasses, ",")),
 	}
 
 	if statusCode > 0 {
@@ -273,6 +273,15 @@ func truthy(value string) bool {
 	default:
 		return false
 	}
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 type result struct {

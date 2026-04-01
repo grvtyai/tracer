@@ -166,10 +166,12 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 					ServiceClass:   classify.FromPorts(webPorts),
 					ServiceClasses: classify.AllFromPorts(webPorts),
 					Metadata: map[string]string{
-						"tech_detect":      "true",
-						"follow_redirects": "true",
-						"timeout":          "10",
-						"retries":          "1",
+						"tech_detect":                "true",
+						"follow_redirects":           "true",
+						"host_primary_service_class": primaryServiceClass,
+						"host_service_classes":       strings.Join(serviceClasses, ","),
+						"timeout":                    "10",
+						"retries":                    "1",
 					},
 				})
 			}

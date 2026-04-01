@@ -171,6 +171,12 @@ func TestBuildFollowUpPlanFromOpenPorts(t *testing.T) {
 	if !reflect.DeepEqual(plan[2].Ports, []int{80, 443}) {
 		t.Fatalf("expected httpx to inherit web ports, got %#v", plan[2].Ports)
 	}
+	if plan[2].Metadata["host_primary_service_class"] != "web" {
+		t.Fatalf("expected host_primary_service_class in web job metadata, got %#v", plan[2].Metadata)
+	}
+	if plan[2].Metadata["host_service_classes"] != "web" {
+		t.Fatalf("expected host_service_classes in web job metadata, got %#v", plan[2].Metadata)
+	}
 
 	if plan[1].ServiceClass != "web" {
 		t.Fatalf("expected web service class, got %q", plan[1].ServiceClass)

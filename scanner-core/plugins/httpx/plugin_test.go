@@ -65,7 +65,9 @@ func TestParseOutputBuildsHTTPRecords(t *testing.T) {
 		ServiceClass:   "web",
 		ServiceClasses: []string{"web"},
 		Metadata: map[string]string{
-			"run_id": "run-1",
+			"run_id":                     "run-1",
+			"host_primary_service_class": "remote_access",
+			"host_service_classes":       "remote_access,messaging,printing,web",
 		},
 	}
 
@@ -89,6 +91,9 @@ func TestParseOutputBuildsHTTPRecords(t *testing.T) {
 	}
 	if record.Attributes["service_class"] != "web" {
 		t.Fatalf("expected web service class, got %q", record.Attributes["service_class"])
+	}
+	if record.Attributes["host_primary_service_class"] != "remote_access" {
+		t.Fatalf("expected inherited host primary class, got %q", record.Attributes["host_primary_service_class"])
 	}
 	if record.Attributes["status_code"] != "200" {
 		t.Fatalf("expected status_code 200, got %q", record.Attributes["status_code"])
