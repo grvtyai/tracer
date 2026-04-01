@@ -14,12 +14,13 @@ const (
 
 // Job is the scheduler unit used by the engine.
 type Job struct {
-	ID           string            `json:"id"`
-	Kind         Kind              `json:"kind"`
-	Plugin       string            `json:"plugin"`
-	DependsOn    []string          `json:"depends_on,omitempty"`
-	Targets      []string          `json:"targets,omitempty"`
-	Ports        []int             `json:"ports,omitempty"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
-	ServiceClass string            `json:"service_class,omitempty"`
+	ID             string            `json:"id"`
+	Kind           Kind              `json:"kind"`
+	Plugin         string            `json:"plugin"`
+	DependsOn      []string          `json:"depends_on,omitempty"`
+	Targets        []string          `json:"targets,omitempty"`
+	Ports          []int             `json:"ports,omitempty"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
+	ServiceClass   string            `json:"service_class,omitempty"`
+	ServiceClasses []string          `json:"service_classes,omitempty"`
 }

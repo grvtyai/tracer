@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grvtyai/tracer/scanner-core/internal/classify"
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
@@ -221,15 +222,23 @@ func buildOSRecord(target, hostname string, osInfo osBlock, job jobs.Job, observ
 }
 
 func buildServiceAttributes(hostname string, port port, job jobs.Job) map[string]string {
+	serviceClasses := job.ServiceClasses
+	if len(serviceClasses) == 0 && strings.TrimSpace(job.ServiceClass) != "" {
+		serviceClasses = []string{strings.TrimSpace(job.ServiceClass)}
+	}
+
 	attributes := map[string]string{
-		"job_id":         job.ID,
-		"plugin":         "nmap",
-		"job_kind":       string(job.Kind),
-		"state":          port.State.State,
-		"state_reason":   port.State.Reason,
-		"service_name":   port.Service.Name,
-		"service_method": port.Service.Method,
-		"service_conf":   port.Service.Conf,
+		"job_id":                     job.ID,
+		"plugin":                     "nmap",
+		"job_kind":                   string(job.Kind),
+		"state":                      port.State.State,
+		"state_reason":               port.State.Reason,
+		"service_name":               port.Service.Name,
+		"service_method":             port.Service.Method,
+		"service_conf":               port.Service.Conf,
+		"service_class":              classify.FromPort(port.PortID),
+		"host_primary_service_class": classify.FromPorts(job.Ports),
+		"host_service_classes":       strings.Join(classify.SortClasses(serviceClasses), ","),
 	}
 
 	if hostname != "" {
@@ -252,9 +261,6 @@ func buildServiceAttributes(hostname string, port port, job jobs.Job) map[string
 	}
 	if deviceType := strings.TrimSpace(port.Service.DeviceType); deviceType != "" {
 		attributes["device_type"] = deviceType
-	}
-	if serviceClass := strings.TrimSpace(job.ServiceClass); serviceClass != "" {
-		attributes["service_class"] = serviceClass
 	}
 
 	return attributes

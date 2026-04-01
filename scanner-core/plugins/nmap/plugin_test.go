@@ -115,6 +115,9 @@ func TestParseOutputBuildsServiceAndOSRecords(t *testing.T) {
 	if serviceRecord.Attributes["hostname"] != "web01.lab.local" {
 		t.Fatalf("expected hostname, got %q", serviceRecord.Attributes["hostname"])
 	}
+	if serviceRecord.Attributes["service_class"] != "web" {
+		t.Fatalf("expected per-service class web, got %q", serviceRecord.Attributes["service_class"])
+	}
 
 	osRecord := records[1]
 	if osRecord.Kind != "host_os_fingerprint" {
@@ -170,6 +173,9 @@ func TestPluginRun(t *testing.T) {
 	}
 	if len(records) != 1 {
 		t.Fatalf("expected 1 record, got %d", len(records))
+	}
+	if records[0].Attributes["service_class"] != "web" {
+		t.Fatalf("expected web classification for 8443, got %q", records[0].Attributes["service_class"])
 	}
 	if records[0].ObservedAt != now {
 		t.Fatalf("unexpected observed time: %v", records[0].ObservedAt)

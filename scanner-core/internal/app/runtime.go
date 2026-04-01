@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/grvtyai/tracer/scanner-core/internal/classify"
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
@@ -107,15 +108,17 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 	plan := make([]jobs.Job, 0)
 	for _, target := range targets {
 		ports := sortedPorts(targetPorts[target])
-		serviceClass := classifyServiceClass(ports)
+		serviceClasses := classify.AllFromPorts(ports)
+		primaryServiceClass := classify.FromPorts(ports)
 
 		if template.Profile.EnableRouteSampling {
 			plan = append(plan, jobs.Job{
-				ID:           fmt.Sprintf("route-%s", target),
-				Kind:         jobs.KindRouteProbe,
-				Plugin:       "scamper",
-				Targets:      []string{target},
-				ServiceClass: serviceClass,
+				ID:             fmt.Sprintf("route-%s", target),
+				Kind:           jobs.KindRouteProbe,
+				Plugin:         "scamper",
+				Targets:        []string{target},
+				ServiceClass:   primaryServiceClass,
+				ServiceClasses: serviceClasses,
 			})
 		}
 
@@ -126,13 +129,14 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 			}
 
 			plan = append(plan, jobs.Job{
-				ID:           fmt.Sprintf("service-%s", target),
-				Kind:         jobs.KindServiceProbe,
-				Plugin:       "nmap",
-				DependsOn:    dependsOn,
-				Targets:      []string{target},
-				Ports:        ports,
-				ServiceClass: serviceClass,
+				ID:             fmt.Sprintf("service-%s", target),
+				Kind:           jobs.KindServiceProbe,
+				Plugin:         "nmap",
+				DependsOn:      dependsOn,
+				Targets:        []string{target},
+				Ports:          ports,
+				ServiceClass:   primaryServiceClass,
+				ServiceClasses: serviceClasses,
 				Metadata: map[string]string{
 					"os_detection":    boolString(template.Profile.EnableOSDetection),
 					"timing_template": "4",
@@ -190,82 +194,6 @@ func sortedPorts(portSet map[int]struct{}) []int {
 	}
 	sort.Ints(ports)
 	return ports
-}
-
-func classifyServiceClass(ports []int) string {
-	if len(ports) == 0 {
-		return ""
-	}
-
-	categoryPriority := []string{
-		"directory",
-		"database",
-		"remote_access",
-		"messaging",
-		"printing",
-		"web",
-		"general",
-	}
-
-	portCategories := map[int]string{
-		22:    "remote_access",
-		23:    "remote_access",
-		25:    "messaging",
-		53:    "directory",
-		80:    "web",
-		81:    "web",
-		88:    "directory",
-		110:   "messaging",
-		111:   "general",
-		135:   "directory",
-		139:   "directory",
-		143:   "messaging",
-		389:   "directory",
-		443:   "web",
-		445:   "directory",
-		464:   "directory",
-		465:   "messaging",
-		587:   "messaging",
-		591:   "web",
-		631:   "printing",
-		636:   "directory",
-		993:   "messaging",
-		995:   "messaging",
-		1433:  "database",
-		1521:  "database",
-		2049:  "general",
-		3268:  "directory",
-		3269:  "directory",
-		3306:  "database",
-		3389:  "remote_access",
-		5432:  "database",
-		5900:  "remote_access",
-		6379:  "database",
-		8000:  "web",
-		8008:  "web",
-		8080:  "web",
-		8081:  "web",
-		8443:  "web",
-		9042:  "database",
-		27017: "database",
-	}
-
-	seenCategories := make(map[string]struct{})
-	for _, port := range ports {
-		category, ok := portCategories[port]
-		if !ok {
-			continue
-		}
-		seenCategories[category] = struct{}{}
-	}
-
-	for _, category := range categoryPriority {
-		if _, ok := seenCategories[category]; ok {
-			return category
-		}
-	}
-
-	return "general"
 }
 
 func boolString(value bool) string {

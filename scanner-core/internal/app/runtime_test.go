@@ -169,6 +169,9 @@ func TestBuildFollowUpPlanFromOpenPorts(t *testing.T) {
 	if plan[1].ServiceClass != "web" {
 		t.Fatalf("expected web service class, got %q", plan[1].ServiceClass)
 	}
+	if !reflect.DeepEqual(plan[1].ServiceClasses, []string{"web"}) {
+		t.Fatalf("expected service_classes [web], got %#v", plan[1].ServiceClasses)
+	}
 
 	if plan[1].Metadata["os_detection"] != "true" {
 		t.Fatalf("expected os_detection metadata, got %#v", plan[1].Metadata)
@@ -243,23 +246,6 @@ func TestExecuteRunDedupesEvidence(t *testing.T) {
 
 	if len(records) != 2 {
 		t.Fatalf("expected deduped evidence count 2, got %d", len(records))
-	}
-}
-
-func TestClassifyServiceClassPrefersMoreSpecificBucket(t *testing.T) {
-	got := classifyServiceClass([]int{22, 25, 631})
-	if got != "remote_access" {
-		t.Fatalf("expected remote_access precedence, got %q", got)
-	}
-
-	got = classifyServiceClass([]int{25, 631})
-	if got != "messaging" {
-		t.Fatalf("expected messaging precedence, got %q", got)
-	}
-
-	got = classifyServiceClass([]int{631})
-	if got != "printing" {
-		t.Fatalf("expected printing classification, got %q", got)
 	}
 }
 
