@@ -136,8 +136,21 @@ func BuildArgs(job jobs.Job, inputFile string) []string {
 		"--output-file", "-",
 	}
 
+	connectTimeout := strings.TrimSpace(job.Metadata["connect_timeout"])
+	targetTimeout := strings.TrimSpace(job.Metadata["target_timeout"])
 	if timeout := strings.TrimSpace(job.Metadata["timeout"]); timeout != "" {
-		args = append(args, "--timeout", timeout)
+		if connectTimeout == "" {
+			connectTimeout = timeout
+		}
+		if targetTimeout == "" {
+			targetTimeout = timeout
+		}
+	}
+	if connectTimeout != "" {
+		args = append(args, "--connect-timeout", connectTimeout)
+	}
+	if targetTimeout != "" {
+		args = append(args, "--target-timeout", targetTimeout)
 	}
 	if maxRedirects := strings.TrimSpace(job.Metadata["max_redirects"]); maxRedirects != "" {
 		args = append(args, "--max-redirects", maxRedirects)
