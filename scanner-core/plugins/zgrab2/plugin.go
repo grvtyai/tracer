@@ -19,6 +19,8 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 )
 
+var errSkipLine = errors.New("skip zgrab2 line")
+
 type Runner interface {
 	Run(ctx context.Context, name string, args []string, env []string) ([]byte, error)
 }
@@ -221,6 +223,9 @@ func ParseOutput(output []byte, job jobs.Job, observedAt time.Time) ([]evidence.
 
 		result, err := parseLine(line)
 		if err != nil {
+			if errors.Is(err, errSkipLine) {
+				continue
+			}
 			return nil, fmt.Errorf("parse zgrab2 json line %d: %w", lineNumber, err)
 		}
 
@@ -244,8 +249,8 @@ func parseLine(line string) (result, error) {
 	if err := json.Unmarshal([]byte(line), &payload); err != nil {
 		return result{}, err
 	}
-	if strings.TrimSpace(payload.IP) == "" && strings.TrimSpace(payload.Domain) == "" {
-		return result{}, errors.New("missing ip/domain")
+	if !payload.hasTarget() && !payload.hasMeaningfulData() {
+		return result{}, errSkipLine
 	}
 	return payload, nil
 }
@@ -273,7 +278,10 @@ func buildRecord(result result, job jobs.Job, observedAt time.Time) evidence.Rec
 		serviceClass = "web"
 	}
 
-	target := firstNonEmpty(result.IP, result.Domain)
+	target := firstNonEmpty(result.IP, result.Domain, result.inputHost())
+	if target == "" && len(job.Targets) == 1 {
+		target = job.Targets[0]
+	}
 	url := buildURL(result, port, module)
 
 	attributes := map[string]string{
@@ -286,6 +294,7 @@ func buildRecord(result result, job jobs.Job, observedAt time.Time) evidence.Rec
 		"host_service_classes":       firstNonEmpty(job.Metadata["host_service_classes"], strings.Join(job.ServiceClasses, ",")),
 		"ip":                         result.IP,
 		"domain":                     result.Domain,
+		"input":                      result.Input,
 		"url":                        url,
 	}
 
@@ -317,11 +326,11 @@ func buildRecord(result result, job jobs.Job, observedAt time.Time) evidence.Rec
 	}
 
 	return evidence.Record{
-		ID:         fmt.Sprintf("%s:%s:%s:grab", job.ID, target, module),
+		ID:         fmt.Sprintf("%s:%s:%s:grab", job.ID, firstNonEmpty(target, "unknown-target"), module),
 		RunID:      job.Metadata["run_id"],
 		Source:     "zgrab2",
 		Kind:       "l7_grab",
-		Target:     target,
+		Target:     firstNonEmpty(target, "unknown-target"),
 		Port:       port,
 		Protocol:   "tcp",
 		Summary:    summary,
@@ -338,7 +347,7 @@ func buildURL(result result, port int, module string) string {
 		scheme = "https"
 	}
 
-	host := firstNonEmpty(result.Domain, result.IP)
+	host := firstNonEmpty(result.Domain, result.IP, result.inputHost())
 	if host == "" {
 		return ""
 	}
@@ -399,9 +408,35 @@ func sanitize(value string) string {
 type result struct {
 	IP        string    `json:"ip"`
 	Domain    string    `json:"domain"`
+	Input     string    `json:"input,omitempty"`
 	Data      dataBlock `json:"data"`
 	Timestamp string    `json:"timestamp"`
 	Port      *int      `json:"port,omitempty"`
+}
+
+func (r result) hasTarget() bool {
+	return strings.TrimSpace(r.IP) != "" || strings.TrimSpace(r.Domain) != "" || strings.TrimSpace(r.inputHost()) != ""
+}
+
+func (r result) hasMeaningfulData() bool {
+	return strings.TrimSpace(r.Data.HTTP.Status) != "" ||
+		r.Data.HTTP.Port != 0 ||
+		r.Data.HTTP.Result.Response.StatusCode != 0 ||
+		strings.TrimSpace(r.Data.HTTP.Result.Response.StatusLine) != ""
+}
+
+func (r result) inputHost() string {
+	input := strings.TrimSpace(r.Input)
+	if input == "" {
+		return ""
+	}
+
+	host, _, found := strings.Cut(input, ":")
+	if found {
+		return strings.TrimSpace(host)
+	}
+
+	return input
 }
 
 func (r result) observedAt() (time.Time, bool) {

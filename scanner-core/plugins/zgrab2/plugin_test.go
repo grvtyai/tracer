@@ -101,6 +101,37 @@ func TestParseOutputBuildsGrabRecords(t *testing.T) {
 	}
 }
 
+func TestParseOutputSkipsMetadataLineAndUsesInputTarget(t *testing.T) {
+	job := jobs.Job{
+		ID:      "grab-127.0.0.1",
+		Kind:    jobs.KindGrabProbe,
+		Targets: []string{"127.0.0.1"},
+		Ports:   []int{80},
+		Metadata: map[string]string{
+			"module": "http",
+		},
+	}
+
+	output := []byte(strings.Join([]string{
+		`{"ip":"127.0.0.1","input":"127.0.0.1:80","data":{"http":{"status":"success","port":80,"result":{"response":{"status_code":200}}}}}`,
+		`{"metadata":{"cli_args":["http"]}}`,
+		`{"input":"127.0.0.1:80","data":{"http":{"status":"success","port":80,"result":{"response":{"status_code":404}}}}}`,
+	}, "\n"))
+
+	records, err := ParseOutput(output, job, time.Date(2026, 4, 1, 12, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatalf("ParseOutput returned error: %v", err)
+	}
+
+	if len(records) != 2 {
+		t.Fatalf("expected 2 records, got %d", len(records))
+	}
+
+	if records[1].Target != "127.0.0.1" {
+		t.Fatalf("expected target from input fallback, got %q", records[1].Target)
+	}
+}
+
 func TestWriteInputFile(t *testing.T) {
 	dir := t.TempDir()
 	plugin := &Plugin{
