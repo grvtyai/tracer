@@ -160,8 +160,9 @@ func TestPluginRun(t *testing.T) {
 	if runner.name != "zgrab2-bin" {
 		t.Fatalf("unexpected binary: %s", runner.name)
 	}
-	if len(runner.env) == 0 || !strings.Contains(strings.Join(runner.env, " "), "XDG_CONFIG_HOME=") {
-		t.Fatalf("expected XDG_CONFIG_HOME override, got %#v", runner.env)
+	envJoined := strings.Join(runner.env, " ")
+	if !strings.Contains(envJoined, "XDG_CONFIG_HOME=") || !strings.Contains(envJoined, "HOME=") {
+		t.Fatalf("expected HOME and XDG_CONFIG_HOME override, got %#v", runner.env)
 	}
 	if len(records) != 1 {
 		t.Fatalf("expected 1 record, got %d", len(records))
@@ -235,16 +236,25 @@ func TestPrepareConfigEnvCreatesBlocklist(t *testing.T) {
 	}
 	defer os.RemoveAll(configRoot)
 
-	if len(env) != 1 || !strings.HasPrefix(env[0], "XDG_CONFIG_HOME=") {
+	if len(env) != 2 {
 		t.Fatalf("unexpected env: %#v", env)
 	}
-
-	blocklistPath := filepath.Join(configRoot, "zgrab2", "blocklist.conf")
-	data, err := os.ReadFile(blocklistPath)
-	if err != nil {
-		t.Fatalf("ReadFile returned error: %v", err)
+	envJoined := strings.Join(env, " ")
+	if !strings.Contains(envJoined, "XDG_CONFIG_HOME=") || !strings.Contains(envJoined, "HOME=") {
+		t.Fatalf("unexpected env values: %#v", env)
 	}
-	if string(data) != "" {
-		t.Fatalf("expected empty blocklist file, got %q", string(data))
+
+	blocklistPaths := []string{
+		filepath.Join(configRoot, "zgrab2", "blocklist.conf"),
+		filepath.Join(configRoot, ".config", "zgrab2", "blocklist.conf"),
+	}
+	for _, blocklistPath := range blocklistPaths {
+		data, err := os.ReadFile(blocklistPath)
+		if err != nil {
+			t.Fatalf("ReadFile returned error for %s: %v", blocklistPath, err)
+		}
+		if string(data) != "" {
+			t.Fatalf("expected empty blocklist file at %s, got %q", blocklistPath, string(data))
+		}
 	}
 }

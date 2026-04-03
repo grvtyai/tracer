@@ -139,19 +139,28 @@ func (p *Plugin) prepareConfigEnv(job jobs.Job) (string, []string, error) {
 		return "", nil, fmt.Errorf("create zgrab2 config dir: %w", err)
 	}
 
-	configDir := filepath.Join(configRoot, "zgrab2")
-	if err := os.MkdirAll(configDir, 0o700); err != nil {
-		os.RemoveAll(configRoot)
-		return "", nil, fmt.Errorf("create zgrab2 config dir: %w", err)
+	configDirs := []string{
+		filepath.Join(configRoot, "zgrab2"),
+		filepath.Join(configRoot, ".config", "zgrab2"),
 	}
 
-	blocklistPath := filepath.Join(configDir, "blocklist.conf")
-	if err := os.WriteFile(blocklistPath, []byte(""), 0o600); err != nil {
-		os.RemoveAll(configRoot)
-		return "", nil, fmt.Errorf("write zgrab2 blocklist file: %w", err)
+	for _, configDir := range configDirs {
+		if err := os.MkdirAll(configDir, 0o700); err != nil {
+			os.RemoveAll(configRoot)
+			return "", nil, fmt.Errorf("create zgrab2 config dir: %w", err)
+		}
+
+		blocklistPath := filepath.Join(configDir, "blocklist.conf")
+		if err := os.WriteFile(blocklistPath, []byte(""), 0o600); err != nil {
+			os.RemoveAll(configRoot)
+			return "", nil, fmt.Errorf("write zgrab2 blocklist file: %w", err)
+		}
 	}
 
-	return configRoot, []string{fmt.Sprintf("XDG_CONFIG_HOME=%s", configRoot)}, nil
+	return configRoot, []string{
+		fmt.Sprintf("HOME=%s", configRoot),
+		fmt.Sprintf("XDG_CONFIG_HOME=%s", configRoot),
+	}, nil
 }
 
 func BuildArgs(job jobs.Job, inputFile string) []string {
