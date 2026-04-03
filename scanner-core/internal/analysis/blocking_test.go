@@ -119,3 +119,42 @@ func TestClassifyBlockingReturnsFirstSortedAssessment(t *testing.T) {
 		t.Fatalf("unexpected assessment\nwant: %#v\ngot:  %#v", want, got)
 	}
 }
+
+func TestBuildBlockingAssessmentsReachableFromPassiveEvidence(t *testing.T) {
+	records := []evidence.Record{
+		{
+			ID:       "conn-1",
+			Source:   "zeek",
+			Kind:     "passive_conn",
+			Target:   "10.0.0.50",
+			Port:     443,
+			Protocol: "tcp",
+			Attributes: map[string]string{
+				"conn_state": "SF",
+			},
+		},
+		{
+			ID:       "http-1",
+			Source:   "zeek",
+			Kind:     "passive_http",
+			Target:   "10.0.0.50",
+			Port:     443,
+			Protocol: "tcp",
+		},
+	}
+
+	got := BuildBlockingAssessments(records)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 assessments, got %d", len(got))
+	}
+
+	if got[0].Target != "10.0.0.50" || got[0].Port != 0 || got[0].Verdict != evidence.VerdictReachable {
+		t.Fatalf("unexpected target assessment: %#v", got[0])
+	}
+	if got[1].Port != 443 || got[1].Verdict != evidence.VerdictReachable {
+		t.Fatalf("unexpected port assessment: %#v", got[1])
+	}
+	if got[1].Reasons[0] != "passive telemetry observed a response on the port" {
+		t.Fatalf("unexpected port reason: %#v", got[1])
+	}
+}

@@ -200,6 +200,31 @@ func TestBuildFollowUpPlanFromOpenPorts(t *testing.T) {
 	}
 }
 
+func TestBuildFollowUpPlanIncludesZeekIngestWhenConfigured(t *testing.T) {
+	template := templates.Template{
+		Name: "test",
+		Scope: ingest.Scope{
+			Targets: []string{"10.0.0.10"},
+		},
+		Profile: ingest.RunProfile{
+			EnablePassiveIngest: true,
+			ZeekLogDir:          "/var/log/zeek/current",
+		},
+	}
+
+	plan := BuildFollowUpPlan(template, nil)
+	if len(plan) != 1 {
+		t.Fatalf("expected 1 follow-up job, got %d", len(plan))
+	}
+
+	if plan[0].Plugin != "zeek" || plan[0].Kind != jobs.KindPassiveIngest {
+		t.Fatalf("unexpected zeek follow-up job: %#v", plan[0])
+	}
+	if plan[0].Metadata["zeek_log_dir"] != "/var/log/zeek/current" {
+		t.Fatalf("expected zeek log dir metadata, got %#v", plan[0].Metadata)
+	}
+}
+
 func TestExecuteRunChainsSeedAndFollowUpPlans(t *testing.T) {
 	template := templates.Template{
 		Name: "test",
@@ -304,6 +329,8 @@ func (p anyPlugin) CanRun(job jobs.Job) bool {
 		return job.Kind == jobs.KindWebProbe
 	case "zgrab2":
 		return job.Kind == jobs.KindGrabProbe
+	case "zeek":
+		return job.Kind == jobs.KindPassiveIngest
 	default:
 		return false
 	}
@@ -358,6 +385,22 @@ func (p anyPlugin) Run(context.Context, jobs.Job) ([]evidence.Record, error) {
 				Summary:    "https://10.0.0.10:443 returned HTTP 200",
 				Confidence: evidence.ConfidenceConfirmed,
 				ObservedAt: time.Date(2026, 4, 1, 8, 7, 0, 0, time.UTC),
+			},
+		}, nil
+	}
+
+	if p.name == "zeek" {
+		return []evidence.Record{
+			{
+				ID:         "zeek-record",
+				Source:     p.name,
+				Kind:       "passive_http",
+				Target:     "10.0.0.10",
+				Port:       443,
+				Protocol:   "tcp",
+				Summary:    "zeek observed HTTP traffic to 10.0.0.10",
+				Confidence: evidence.ConfidenceConfirmed,
+				ObservedAt: time.Date(2026, 4, 1, 8, 8, 0, 0, time.UTC),
 			},
 		}, nil
 	}

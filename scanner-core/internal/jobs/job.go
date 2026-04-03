@@ -4,14 +4,15 @@ package jobs
 type Kind string
 
 const (
-	KindScopePrepare Kind = "scope_prepare"
-	KindL2Discover   Kind = "l2_discover"
-	KindPortDiscover Kind = "port_discover"
-	KindRouteProbe   Kind = "route_probe"
-	KindServiceProbe Kind = "service_probe"
-	KindWebProbe     Kind = "web_probe"
-	KindGrabProbe    Kind = "grab_probe"
-	KindAnalyze      Kind = "analyze"
+	KindScopePrepare  Kind = "scope_prepare"
+	KindL2Discover    Kind = "l2_discover"
+	KindPortDiscover  Kind = "port_discover"
+	KindRouteProbe    Kind = "route_probe"
+	KindServiceProbe  Kind = "service_probe"
+	KindWebProbe      Kind = "web_probe"
+	KindGrabProbe     Kind = "grab_probe"
+	KindPassiveIngest Kind = "passive_ingest"
+	KindAnalyze       Kind = "analyze"
 )
 
 // Job is the scheduler unit used by the engine.

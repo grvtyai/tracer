@@ -20,4 +20,6 @@ type RunProfile struct {
 	EnableRouteSampling   bool   `json:"enable_route_sampling"`
 	EnableServiceScan     bool   `json:"enable_service_scan"`
 	EnableOSDetection     bool   `json:"enable_os_detection"`
+	EnablePassiveIngest   bool   `json:"enable_passive_ingest,omitempty"`
+	ZeekLogDir            string `json:"zeek_log_dir,omitempty"`
 }

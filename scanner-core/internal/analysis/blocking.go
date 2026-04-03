@@ -37,7 +37,7 @@ func BuildBlockingAssessments(records []evidence.Record) []BlockingAssessment {
 		targetKeys[assessmentKey{target: record.Target}] = struct{}{}
 
 		switch record.Kind {
-		case "open_port", "service_fingerprint", "timeout":
+		case "open_port", "service_fingerprint", "timeout", "passive_conn", "passive_http":
 			if record.Port != 0 {
 				portKeys[assessmentKey{target: record.Target, port: record.Port}] = struct{}{}
 			}
@@ -113,6 +113,14 @@ func classifyTarget(target string, records []evidence.Record) (BlockingAssessmen
 		return result, true
 	}
 
+	if record, ok := findPassiveReachable(records); ok {
+		result.Verdict = evidence.VerdictReachable
+		result.Confidence = evidence.ConfidenceConfirmed
+		result.Reasons = []string{"passive telemetry observed successful traffic to target"}
+		result.EvidenceRefs = []string{record.ID}
+		return result, true
+	}
+
 	if record, ok := findRouteFailure(records); ok {
 		result.Verdict = evidence.VerdictProbableBlocked
 		result.Confidence = evidence.ConfidenceProbable
@@ -143,7 +151,7 @@ func classifyPort(target string, port int, records []evidence.Record) (BlockingA
 	if record, ok := findReachablePort(records); ok {
 		result.Verdict = evidence.VerdictReachable
 		result.Confidence = evidence.ConfidenceConfirmed
-		result.Reasons = []string{"port responded to active probing"}
+		result.Reasons = []string{reachableReason(record)}
 		result.EvidenceRefs = []string{record.ID}
 		return result, true
 	}
@@ -245,6 +253,27 @@ func findReachablePort(records []evidence.Record) (evidence.Record, bool) {
 		switch record.Kind {
 		case "service_fingerprint", "open_port":
 			return record, true
+		case "passive_http":
+			return record, true
+		case "passive_conn":
+			if passiveConnReachable(record) {
+				return record, true
+			}
+		}
+	}
+
+	return evidence.Record{}, false
+}
+
+func findPassiveReachable(records []evidence.Record) (evidence.Record, bool) {
+	for _, record := range records {
+		switch record.Kind {
+		case "passive_http":
+			return record, true
+		case "passive_conn":
+			if passiveConnReachable(record) {
+				return record, true
+			}
 		}
 	}
 
@@ -276,6 +305,31 @@ func evidenceIDs(records []evidence.Record) []string {
 		ids = append(ids, record.ID)
 	}
 	return ids
+}
+
+func passiveConnReachable(record evidence.Record) bool {
+	state := strings.ToUpper(strings.TrimSpace(record.Attributes["conn_state"]))
+	if state == "" {
+		return false
+	}
+
+	switch state {
+	case "S0":
+		return false
+	default:
+		return true
+	}
+}
+
+func reachableReason(record evidence.Record) string {
+	switch record.Kind {
+	case "passive_http":
+		return "passive telemetry observed HTTP traffic on the port"
+	case "passive_conn":
+		return "passive telemetry observed a response on the port"
+	default:
+		return "port responded to active probing"
+	}
 }
 
 func parseInt(value string) (int, bool) {

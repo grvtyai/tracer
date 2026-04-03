@@ -82,8 +82,22 @@ func BuildSeedPlan(template templates.Template) []jobs.Job {
 }
 
 func BuildFollowUpPlan(template templates.Template, records []evidence.Record) []jobs.Job {
+	plan := make([]jobs.Job, 0)
+
+	if template.Profile.EnablePassiveIngest && strings.TrimSpace(template.Profile.ZeekLogDir) != "" {
+		plan = append(plan, jobs.Job{
+			ID:      "zeek-ingest",
+			Kind:    jobs.KindPassiveIngest,
+			Plugin:  "zeek",
+			Targets: append([]string{}, template.Scope.Targets...),
+			Metadata: map[string]string{
+				"zeek_log_dir": template.Profile.ZeekLogDir,
+			},
+		})
+	}
+
 	if !template.Profile.EnableServiceScan && !template.Profile.EnableRouteSampling {
-		return nil
+		return plan
 	}
 
 	targetPorts := make(map[string]map[int]struct{})
@@ -107,7 +121,6 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 	}
 	sort.Strings(targets)
 
-	plan := make([]jobs.Job, 0)
 	for _, target := range targets {
 		ports := sortedPorts(targetPorts[target])
 		serviceClasses := classify.AllFromPorts(ports)
