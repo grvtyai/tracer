@@ -1,5 +1,7 @@
 package jobs
 
+import "time"
+
 // Kind identifies a pipeline stage.
 type Kind string
 
@@ -26,4 +28,28 @@ type Job struct {
 	Metadata       map[string]string `json:"metadata,omitempty"`
 	ServiceClass   string            `json:"service_class,omitempty"`
 	ServiceClasses []string          `json:"service_classes,omitempty"`
+}
+
+type ExecutionStatus string
+
+const (
+	StatusSucceeded ExecutionStatus = "succeeded"
+	StatusFailed    ExecutionStatus = "failed"
+	StatusSkipped   ExecutionStatus = "skipped"
+)
+
+type ExecutionResult struct {
+	JobID              string          `json:"job_id"`
+	Kind               Kind            `json:"kind"`
+	Plugin             string          `json:"plugin"`
+	Targets            []string        `json:"targets,omitempty"`
+	Ports              []int           `json:"ports,omitempty"`
+	Status             ExecutionStatus `json:"status"`
+	Error              string          `json:"error,omitempty"`
+	RecordsWritten     int             `json:"records_written,omitempty"`
+	StartedAt          time.Time       `json:"started_at"`
+	FinishedAt         time.Time       `json:"finished_at"`
+	NeedsReevaluation  bool            `json:"needs_reevaluation,omitempty"`
+	ReevaluationAfter  string          `json:"reevaluation_after,omitempty"`
+	ReevaluationReason string          `json:"reevaluation_reason,omitempty"`
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/tracer/scanner-core/internal/options"
 	"github.com/grvtyai/tracer/scanner-core/internal/templates"
 )
 
@@ -78,9 +79,16 @@ func TestRunPlanStoresEvidence(t *testing.T) {
 		},
 	}
 
-	records, err := RunPlan(context.Background(), []engine.Plugin{anyPlugin{name: "naabu"}}, plan)
-	if err == nil {
-		t.Fatal("expected missing internal plugin error")
+	records, results, err := RunPlanWithOptions(context.Background(), []engine.Plugin{anyPlugin{name: "naabu"}}, plan, options.DefaultEffectiveOptions())
+	if err != nil {
+		t.Fatalf("RunPlanWithOptions returned error: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 job results, got %d", len(results))
+	}
+	if results[0].Status != jobs.StatusFailed || results[1].Status != jobs.StatusSucceeded {
+		t.Fatalf("expected failed then succeeded job results, got %#v", results)
 	}
 
 	records, err = RunPlan(context.Background(), []engine.Plugin{
@@ -222,6 +230,32 @@ func TestBuildFollowUpPlanIncludesZeekIngestWhenConfigured(t *testing.T) {
 	}
 	if plan[0].Metadata["zeek_log_dir"] != "/var/log/zeek/current" {
 		t.Fatalf("expected zeek log dir metadata, got %#v", plan[0].Metadata)
+	}
+}
+
+func TestBuildSeedPlanWithOptionsAddsInterfaceMetadata(t *testing.T) {
+	template := templates.Template{
+		Name: "test",
+		Scope: ingest.Scope{
+			Targets: []string{"10.0.0.10"},
+		},
+		Profile: ingest.RunProfile{},
+	}
+
+	plan := BuildSeedPlanWithOptions(template, options.EffectiveOptions{
+		ContinueOnError:      true,
+		RetainPartialResults: true,
+		ReevaluateAmbiguous:  true,
+		ReevaluateAfter:      "30m",
+		ActiveInterface:      "eth0",
+		PortTemplate:         "all-default-ports",
+	})
+
+	if plan[1].Metadata["active_interface"] != "eth0" {
+		t.Fatalf("expected active interface metadata, got %#v", plan[1].Metadata)
+	}
+	if plan[1].Metadata["port_template"] != "all-default-ports" {
+		t.Fatalf("expected port template metadata, got %#v", plan[1].Metadata)
 	}
 }
 

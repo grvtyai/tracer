@@ -5,12 +5,14 @@ import (
 	"sync"
 
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
+	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 )
 
 // MemoryStore is a small bootstrap implementation for early development and tests.
 type MemoryStore struct {
 	mu      sync.Mutex
 	records []evidence.Record
+	results []jobs.ExecutionResult
 }
 
 func NewMemoryStore() *MemoryStore {
@@ -31,5 +33,22 @@ func (s *MemoryStore) Records() []evidence.Record {
 
 	cloned := make([]evidence.Record, len(s.records))
 	copy(cloned, s.records)
+	return cloned
+}
+
+func (s *MemoryStore) WriteJobResults(_ context.Context, results []jobs.ExecutionResult) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.results = append(s.results, results...)
+	return nil
+}
+
+func (s *MemoryStore) JobResults() []jobs.ExecutionResult {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	cloned := make([]jobs.ExecutionResult, len(s.results))
+	copy(cloned, s.results)
 	return cloned
 }

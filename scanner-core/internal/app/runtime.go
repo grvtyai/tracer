@@ -13,6 +13,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/tracer/scanner-core/internal/options"
 	"github.com/grvtyai/tracer/scanner-core/internal/storage"
 	"github.com/grvtyai/tracer/scanner-core/internal/templates"
 	"github.com/grvtyai/tracer/scanner-core/plugins/arp_scan"
@@ -27,11 +28,23 @@ import (
 )
 
 type Output struct {
-	Mode     string                        `json:"mode"`
-	Template string                        `json:"template"`
-	Plan     []jobs.Job                    `json:"plan"`
-	Evidence []evidence.Record             `json:"evidence,omitempty"`
-	Blocking []analysis.BlockingAssessment `json:"blocking,omitempty"`
+	Mode         string                        `json:"mode"`
+	Template     string                        `json:"template"`
+	Options      options.EffectiveOptions      `json:"options"`
+	Plan         []jobs.Job                    `json:"plan"`
+	JobResults   []jobs.ExecutionResult        `json:"job_results,omitempty"`
+	Evidence     []evidence.Record             `json:"evidence,omitempty"`
+	Blocking     []analysis.BlockingAssessment `json:"blocking,omitempty"`
+	Reevaluation []analysis.ReevaluationHint   `json:"reevaluation,omitempty"`
+	Persistence  *PersistenceInfo              `json:"persistence,omitempty"`
+}
+
+type PersistenceInfo struct {
+	Backend     string `json:"backend"`
+	DBPath      string `json:"db_path"`
+	ProjectID   string `json:"project_id,omitempty"`
+	ProjectName string `json:"project_name,omitempty"`
+	RunID       string `json:"run_id,omitempty"`
 }
 
 type internalPlugin struct{}
@@ -63,6 +76,10 @@ func DefaultPlugins() []engine.Plugin {
 	}
 }
 
+func ResolveOptions(template templates.Template, overrides options.TemplateOptions) options.EffectiveOptions {
+	return options.Resolve(template.Options, overrides)
+}
+
 func LoadTemplate(path string) (templates.Template, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -78,10 +95,24 @@ func LoadTemplate(path string) (templates.Template, error) {
 }
 
 func BuildSeedPlan(template templates.Template) []jobs.Job {
-	return jobs.BuildSeedPlan(template.Scope, template.Profile)
+	return BuildSeedPlanWithOptions(template, ResolveOptions(template, options.TemplateOptions{}))
+}
+
+func BuildSeedPlanWithOptions(template templates.Template, resolved options.EffectiveOptions) []jobs.Job {
+	plan := jobs.BuildSeedPlan(template.Scope, template.Profile)
+
+	for i := range plan {
+		plan[i].Metadata = mergeMetadata(plan[i].Metadata, metadataForJob(plan[i], resolved))
+	}
+
+	return plan
 }
 
 func BuildFollowUpPlan(template templates.Template, records []evidence.Record) []jobs.Job {
+	return BuildFollowUpPlanWithOptions(template, records, ResolveOptions(template, options.TemplateOptions{}))
+}
+
+func BuildFollowUpPlanWithOptions(template templates.Template, records []evidence.Record, resolved options.EffectiveOptions) []jobs.Job {
 	plan := make([]jobs.Job, 0)
 
 	if template.Profile.EnablePassiveIngest && strings.TrimSpace(template.Profile.ZeekLogDir) != "" {
@@ -97,6 +128,9 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 	}
 
 	if !template.Profile.EnableServiceScan && !template.Profile.EnableRouteSampling {
+		for i := range plan {
+			plan[i].Metadata = mergeMetadata(plan[i].Metadata, metadataForJob(plan[i], resolved))
+		}
 		return plan
 	}
 
@@ -209,50 +243,88 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 		}
 	}
 
+	for i := range plan {
+		plan[i].Metadata = mergeMetadata(plan[i].Metadata, metadataForJob(plan[i], resolved))
+	}
+
 	return plan
 }
 
 func RunPlan(ctx context.Context, plugins []engine.Plugin, plan []jobs.Job) ([]evidence.Record, error) {
+	records, _, err := RunPlanWithOptions(ctx, plugins, plan, options.DefaultEffectiveOptions())
+	return records, err
+}
+
+func RunPlanWithOptions(ctx context.Context, plugins []engine.Plugin, plan []jobs.Job, resolved options.EffectiveOptions) ([]evidence.Record, []jobs.ExecutionResult, error) {
+	return RunPlanWithPersistence(ctx, plugins, plan, resolved, nil)
+}
+
+func RunPlanWithPersistence(ctx context.Context, plugins []engine.Plugin, plan []jobs.Job, resolved options.EffectiveOptions, persistentStore storage.EvidenceStore) ([]evidence.Record, []jobs.ExecutionResult, error) {
 	store := storage.NewMemoryStore()
-	runtime := engine.New(plugins, store)
-
-	if err := runtime.Run(ctx, plan); err != nil {
-		return nil, err
+	compositeStore := storage.EvidenceStore(store)
+	if persistentStore != nil {
+		compositeStore = storage.NewMultiStore(store, persistentStore)
 	}
+	runtime := engine.New(plugins, compositeStore)
 
-	return store.Records(), nil
+	runOptions := engine.DefaultRunOptions()
+	runOptions.ContinueOnError = resolved.ContinueOnError
+	runOptions.RetainPartialResult = resolved.RetainPartialResults
+	runOptions.ReevaluateFailures = resolved.ReevaluateAmbiguous
+	runOptions.ReevaluateAfter = resolved.ReevaluateAfter
+
+	jobResults := runtime.Run(ctx, plan, runOptions)
+	return store.Records(), jobResults, nil
 }
 
 func ExecuteRun(ctx context.Context, plugins []engine.Plugin, template templates.Template) ([]jobs.Job, []evidence.Record, error) {
-	seedPlan := BuildSeedPlan(template)
-	seedEvidence, err := RunPlan(ctx, plugins, seedPlan)
+	plan, _, records, err := ExecuteRunWithOptions(ctx, plugins, template, ResolveOptions(template, options.TemplateOptions{}))
+	return plan, records, err
+}
+
+func ExecuteRunWithOptions(ctx context.Context, plugins []engine.Plugin, template templates.Template, resolved options.EffectiveOptions) ([]jobs.Job, []jobs.ExecutionResult, []evidence.Record, error) {
+	return ExecuteRunWithPersistence(ctx, plugins, template, resolved, nil)
+}
+
+func ExecuteRunWithPersistence(ctx context.Context, plugins []engine.Plugin, template templates.Template, resolved options.EffectiveOptions, persistentStore storage.EvidenceStore) ([]jobs.Job, []jobs.ExecutionResult, []evidence.Record, error) {
+	seedPlan := BuildSeedPlanWithOptions(template, resolved)
+	seedEvidence, seedResults, err := RunPlanWithPersistence(ctx, plugins, seedPlan, resolved, persistentStore)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	seedEvidence = dedupeEvidence(seedEvidence)
+	seedResults = dedupeJobResults(seedResults)
 
 	fullPlan := append([]jobs.Job{}, seedPlan...)
+	allResults := append([]jobs.ExecutionResult{}, seedResults...)
 	allEvidence := append([]evidence.Record{}, seedEvidence...)
 
-	followUpPlan := BuildFollowUpPlan(template, seedEvidence)
+	followUpPlan := BuildFollowUpPlanWithOptions(template, seedEvidence, resolved)
 	if len(followUpPlan) == 0 {
-		return fullPlan, allEvidence, nil
+		return fullPlan, allResults, allEvidence, nil
 	}
 
-	followUpEvidence, err := RunPlan(ctx, plugins, followUpPlan)
+	followUpEvidence, followUpResults, err := RunPlanWithPersistence(ctx, plugins, followUpPlan, resolved, persistentStore)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	followUpEvidence = dedupeEvidence(followUpEvidence)
+	followUpResults = dedupeJobResults(followUpResults)
 
 	fullPlan = append(fullPlan, followUpPlan...)
+	allResults = append(allResults, followUpResults...)
+	allResults = dedupeJobResults(allResults)
 	allEvidence = append(allEvidence, followUpEvidence...)
 	allEvidence = dedupeEvidence(allEvidence)
-	return fullPlan, allEvidence, nil
+	return fullPlan, allResults, allEvidence, nil
 }
 
 func AnalyzeEvidence(records []evidence.Record) []analysis.BlockingAssessment {
 	return analysis.BuildBlockingAssessments(records)
+}
+
+func BuildReevaluation(records []evidence.Record, results []jobs.ExecutionResult, resolved options.EffectiveOptions) []analysis.ReevaluationHint {
+	return analysis.BuildReevaluationHints(results, AnalyzeEvidence(records), resolved.ReevaluateAfter)
 }
 
 func sortedPorts(portSet map[int]struct{}) []int {
@@ -311,4 +383,62 @@ func evidenceKey(record evidence.Record) string {
 		record.Protocol,
 		fmt.Sprintf("%d", record.Port),
 	}, "|")
+}
+
+func dedupeJobResults(results []jobs.ExecutionResult) []jobs.ExecutionResult {
+	seen := make(map[string]struct{}, len(results))
+	deduped := make([]jobs.ExecutionResult, 0, len(results))
+
+	for _, result := range results {
+		key := result.JobID + "|" + string(result.Status)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+
+		seen[key] = struct{}{}
+		deduped = append(deduped, result)
+	}
+
+	return deduped
+}
+
+func metadataForJob(job jobs.Job, resolved options.EffectiveOptions) map[string]string {
+	metadata := map[string]string{}
+
+	switch job.Kind {
+	case jobs.KindPassiveIngest:
+		if resolved.PassiveInterface != "" {
+			metadata["passive_interface"] = resolved.PassiveInterface
+		}
+	default:
+		if resolved.ActiveInterface != "" {
+			metadata["active_interface"] = resolved.ActiveInterface
+		}
+	}
+
+	if resolved.PortTemplate != "" {
+		metadata["port_template"] = resolved.PortTemplate
+	}
+
+	if len(metadata) == 0 {
+		return nil
+	}
+
+	return metadata
+}
+
+func mergeMetadata(base map[string]string, extra map[string]string) map[string]string {
+	if len(extra) == 0 {
+		return base
+	}
+
+	merged := make(map[string]string, len(base)+len(extra))
+	for key, value := range base {
+		merged[key] = value
+	}
+	for key, value := range extra {
+		merged[key] = value
+	}
+
+	return merged
 }

@@ -15,5 +15,23 @@
     "enable_os_detection": true,
     "enable_passive_ingest": true,
     "zeek_log_dir": "/opt/zeek/logs/current"
+  },
+  "options": {
+    "execution": {
+      "continue_on_error": true,
+      "retain_partial_results": true,
+      "reevaluate_ambiguous": true,
+      "reevaluate_after": "30m"
+    },
+    "network": {
+      "active_interface": "eth1",
+      "passive_interface": "eth1"
+    },
+    "scan": {
+      "port_template": "all-default-ports"
+    },
+    "storage": {
+      "project": "Standort A"
+    }
   }
 }
