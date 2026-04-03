@@ -3,7 +3,7 @@
   "scope": {
     "name": "zeek-lab-target",
     "targets": [
-      "172.19.116.146"
+      "192.168.77.2"
     ]
   },
   "profile": {
