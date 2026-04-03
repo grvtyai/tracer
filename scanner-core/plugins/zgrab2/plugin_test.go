@@ -18,11 +18,13 @@ type fakeRunner struct {
 	err    error
 	name   string
 	args   []string
+	env    []string
 }
 
-func (f *fakeRunner) Run(_ context.Context, name string, args []string) ([]byte, error) {
+func (f *fakeRunner) Run(_ context.Context, name string, args []string, env []string) ([]byte, error) {
 	f.name = name
 	f.args = append([]string{}, args...)
+	f.env = append([]string{}, env...)
 	return f.output, f.err
 }
 
@@ -158,6 +160,9 @@ func TestPluginRun(t *testing.T) {
 	if runner.name != "zgrab2-bin" {
 		t.Fatalf("unexpected binary: %s", runner.name)
 	}
+	if len(runner.env) == 0 || !strings.Contains(strings.Join(runner.env, " "), "XDG_CONFIG_HOME=") {
+		t.Fatalf("expected XDG_CONFIG_HOME override, got %#v", runner.env)
+	}
 	if len(records) != 1 {
 		t.Fatalf("expected 1 record, got %d", len(records))
 	}
@@ -215,5 +220,31 @@ func TestSanitize(t *testing.T) {
 
 	if filepath.Base(got) != got {
 		t.Fatalf("sanitize should not create path components: %q", got)
+	}
+}
+
+func TestPrepareConfigEnvCreatesBlocklist(t *testing.T) {
+	dir := t.TempDir()
+	plugin := &Plugin{
+		tempDir: func() string { return dir },
+	}
+
+	configRoot, env, err := plugin.prepareConfigEnv(jobs.Job{ID: "grab-10.0.0.10"})
+	if err != nil {
+		t.Fatalf("prepareConfigEnv returned error: %v", err)
+	}
+	defer os.RemoveAll(configRoot)
+
+	if len(env) != 1 || !strings.HasPrefix(env[0], "XDG_CONFIG_HOME=") {
+		t.Fatalf("unexpected env: %#v", env)
+	}
+
+	blocklistPath := filepath.Join(configRoot, "zgrab2", "blocklist.conf")
+	data, err := os.ReadFile(blocklistPath)
+	if err != nil {
+		t.Fatalf("ReadFile returned error: %v", err)
+	}
+	if string(data) != "" {
+		t.Fatalf("expected empty blocklist file, got %q", string(data))
 	}
 }

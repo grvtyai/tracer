@@ -20,13 +20,16 @@ import (
 )
 
 type Runner interface {
-	Run(ctx context.Context, name string, args []string) ([]byte, error)
+	Run(ctx context.Context, name string, args []string, env []string) ([]byte, error)
 }
 
 type ExecRunner struct{}
 
-func (ExecRunner) Run(ctx context.Context, name string, args []string) ([]byte, error) {
+func (ExecRunner) Run(ctx context.Context, name string, args []string, env []string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
+	if len(env) > 0 {
+		cmd.Env = append(os.Environ(), env...)
+	}
 	return cmd.CombinedOutput()
 }
 
@@ -80,7 +83,13 @@ func (p *Plugin) Run(ctx context.Context, job jobs.Job) ([]evidence.Record, erro
 	}
 	defer os.Remove(inputFile)
 
-	output, err := runner.Run(ctx, binary, BuildArgs(job, inputFile))
+	configRoot, env, err := p.prepareConfigEnv(job)
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(configRoot)
+
+	output, err := runner.Run(ctx, binary, BuildArgs(job, inputFile), env)
 	if err != nil {
 		if len(output) == 0 {
 			return nil, fmt.Errorf("run zgrab2: %w", err)
@@ -122,6 +131,27 @@ func (p *Plugin) writeInputFile(job jobs.Job) (string, error) {
 	}
 
 	return path, nil
+}
+
+func (p *Plugin) prepareConfigEnv(job jobs.Job) (string, []string, error) {
+	configRoot, err := os.MkdirTemp(p.tempBase(), fmt.Sprintf("tracer-zgrab2-config-%s-", sanitize(job.ID)))
+	if err != nil {
+		return "", nil, fmt.Errorf("create zgrab2 config dir: %w", err)
+	}
+
+	configDir := filepath.Join(configRoot, "zgrab2")
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		os.RemoveAll(configRoot)
+		return "", nil, fmt.Errorf("create zgrab2 config dir: %w", err)
+	}
+
+	blocklistPath := filepath.Join(configDir, "blocklist.conf")
+	if err := os.WriteFile(blocklistPath, []byte(""), 0o600); err != nil {
+		os.RemoveAll(configRoot)
+		return "", nil, fmt.Errorf("write zgrab2 blocklist file: %w", err)
+	}
+
+	return configRoot, []string{fmt.Sprintf("XDG_CONFIG_HOME=%s", configRoot)}, nil
 }
 
 func BuildArgs(job jobs.Job, inputFile string) []string {
