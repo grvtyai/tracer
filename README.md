@@ -1,123 +1,187 @@
 # tracer
 
-`tracer` wird als orchestrierendes Netzwerk-Scan- und Analyse-System aufgebaut.
-Im Kern soll daraus kein loser Wrapper-Stapel werden, sondern eine gemeinsame Laufzeit mit normalisiertem Evidence-Modell, persistenter Historie und spaeter einer GUI fuer Projekte, Dashboards und wiederholbare Scans.
+`tracer` is a browser-first network scanning and inventory platform for Ubuntu.
 
-## Vision
+It combines an orchestrated Go scanning core with a local web UI for projects, runs, assets, analytics and operator workflows. The long-term goal is a tool that can be installed on Ubuntu, scan private or lab networks repeatedly, build persistent host inventory and make changes between runs easy to review.
 
-Die Zielversion soll sich per Einzeiler auf Ubuntu installieren lassen und danach in zwei Betriebsarten funktionieren:
+## What tracer is today
 
-- als GUI-gestuetztes System fuer Projekte wie `Standort A`, `Heimnetz` oder spaeter reale Kundenstandorte
-- als CLI-Variante fuer headless Systeme, die in dasselbe Datenmodell schreibt oder exportierbare Runs fuer die GUI erzeugt
+The current repository already contains two working layers:
 
-Ein Projekt soll spaeter:
+- `scanner-core`: the Go runtime that plans, executes and persists scans
+- `startrace` web UI inside the same repo: a browser interface for projects, runs, assets, analytics, settings and help
 
-- Scopes, Netze und Profile verwalten
-- wiederholbare Scans ausfuehren
-- Host- und Service-Inventar aufbauen
-- Erreichbarkeit, Blockierung und wahrscheinliche Firewall-Effekte bewerten
-- Unterschiede zwischen Runs sichtbar machen
-- spaetere Reevals und Dashboards ermoeglichen
+The product direction is now clearly browser-first. A desktop wrapper is not the target. The main deployment target is Ubuntu/Linux.
 
-## Was Heute Schon Da Ist
+## Current feature set
 
-Die aktuelle Ausbaustufe lebt vor allem unter `scanner-core/` und bringt bereits einen belastbaren Kern mit:
+### Scan orchestration
 
-- modulare Scan-Orchestrierung mit klaren Job-Typen
-- aktive Discovery und Verifikation ueber `naabu`, `scamper`, `nmap`, `httpx` und `zgrab2`
-- passiver Ingest ueber `Zeek`
-- normalisierte JSON-/Evidence-Ausgabe statt tool-spezifischer Rohdaten
-- `fail-soft`-Verhalten, damit Teilfehler einzelner Hosts oder Plugins den restlichen Run nicht abbrechen
-- Reeval-Hinweise fuer unklare oder spaeter erneut zu pruefende Ergebnisse
-- lokale Persistenz ueber `SQLite`
-- CLI-Abfragen fuer Projekte, Runs, einzelne Runs und evidence-basierte Diffs
+- scope preparation for targets and CIDR ranges
+- active discovery with `naabu`
+- route probing with `scamper`
+- service and OS fingerprinting with `nmap`
+- web verification with `httpx`
+- layer-7 grabbing with `zgrab2`
+- optional local-segment discovery via layer-2 / neighbor-style scanning
 
-## Aktuelle Features
+### Passive enrichment
 
-### Scan-Pipeline
+- passive ingest through `Zeek`
+- shared sensor modes: `off`, `auto`, `always`
+- optional Zeek auto-start
+- passive ingest constrained to the current run and scope so old logs do not leak into new runs
 
-- Scope-Vorbereitung fuer Targets und CIDRs
-- optionale L2-Erweiterung mit `arp-scan`, wenn lokal sinnvoll
-- Port-Discovery mit `naabu`
-- Pfadmessung mit `scamper`
-- Service- und OS-Fingerprinting mit `nmap`
-- Web-Pruefung mit `httpx`
-- Layer-7-Grabs mit `zgrab2`
+### Persistence
 
-### Passive Sensorik
+- local `SQLite` storage
+- persisted projects
+- persisted runs
+- persisted job results
+- normalized evidence
+- blocking assessments
+- reevaluation hints
+- persistent asset inventory with manual overrides
+- scheduled time-based reevaluation entries
 
-- `Zeek` laeuft nicht mehr blind immer mit, sondern ueber `passive_mode`
-- `off`, `auto` und `always` sind als gemeinsame Operator-Optionen modelliert
-- optionales `auto_start_zeek`
-- Zeek-Ingest ist jetzt auf den aktuellen Run-Zeitpunkt und den aktuellen Scope begrenzt
-- alte, fachfremde oder ausserhalb des Scopes liegende Logeintraege sollen nicht mehr einfach in aktuelle Runs hineinlaufen
+### Browser UI
 
-### Resilienz
+- project-first workflow
+- project creation with metadata, storage path and target DB suggestion
+- dashboard
+- runs view
+- run detail view
+- asset inventory
+- asset detail view
+- analytics
+- settings
+- built-in help page
 
-- Job-Ergebnisse werden pro Schritt gespeichert
-- bereits gefundene Evidence bleibt auch bei spaeteren Teilfehlern erhalten
-- zweifelhafte Ergebnisse werden als Reeval-Hinweise markiert statt den gesamten Run zu invalidieren
-- Blocking-Korrelation beruecksichtigt jetzt bestaetigte aktive Evidence, damit ein Host nicht gleichzeitig praktisch erreichbar und trotzdem pauschal als geblockt gewertet wird
+### Operator workflows
 
-### Persistenz Und Abfragen
+- launch scans from the browser
+- compact preflight indicator in the top bar
+- auto-detected active interface when possible
+- safer scan defaults such as reevaluation being off by default
+- host-level manual editing via `Edit Host`
+- reevaluate a whole run or a single host
+- acknowledge acceptable warnings and mark a run as completed
 
-- `SQLite` ist das aktuelle Standard-Backend fuer lokale Installationen
-- gespeichert werden bereits:
-  - Projekte
-  - Runs
-  - Job-Ergebnisse
-  - normalisierte Evidence
-  - Blocking-Bewertungen
-  - Reeval-Hinweise
-- die CLI kann denselben Store lesen:
+## Run states
+
+The UI currently uses these run states:
+
+- `Completed`: everything finished cleanly, or warnings were explicitly accepted
+- `Needs attention`: one or more jobs failed or reevaluation is recommended
+- `Running`: the run is still active
+- `Failed`: the run could not complete
+
+`Needs attention` is intentionally not a dead end anymore. The run detail page now shows:
+
+- why the run needs attention
+- which plugin failed
+- on which host
+- the stored error text
+- a direct link to the built-in help page
+- an operator action to accept warnings when the remaining results are good enough
+
+## Why this matters for private networks
+
+`tracer` is being shaped with private networks in mind, not only larger environments.
+
+That means it should work well for mixed home or lab networks where the same subnet may contain:
+
+- routers
+- servers
+- workstations
+- smartphones
+- tablets
+- printers
+- IoT devices
+
+The asset model is designed so scanner observations stay intact while operator-confirmed information can be layered on top:
+
+- display name
+- device type
+- connection type
+- tags
+- notes
+- host-level reevaluation preference
+
+This makes later dashboards much more useful than raw scan output alone.
+
+## Ubuntu quick start
+
+Install the tool dependencies:
 
 ```bash
+bash scripts/install-ubuntu-tools.sh
+```
+
+Build the binaries:
+
+```bash
+cd scanner-core
+go build -o ./bin/tracer ./cmd/tracer
+go build -o ./bin/startrace ./cmd/startrace
+```
+
+Start the browser UI:
+
+```bash
+env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080
+```
+
+Then open the UI in your browser:
+
+```text
+http://<ubuntu-ip>:8080
+```
+
+The normal workflow is now:
+
+1. Open the browser UI
+2. Create a project
+3. Start a scan from the GUI
+4. Review runs, assets and analytics
+5. Reevaluate or acknowledge warnings where needed
+
+## CLI modes that already exist
+
+The CLI is still useful and writes into the same persistence model.
+
+Examples:
+
+```bash
+./bin/tracer -mode run -template examples/tracer-home-lab.json
 ./bin/tracer -mode projects
 ./bin/tracer -mode runs --project "Heimnetz"
 ./bin/tracer -mode show-run --run-id <run-id>
 ./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
 ```
 
-Der Default-Store versucht unter `sudo` bewusst den Datenpfad des eigentlichen Operators zu verwenden, statt still nach `/root/.local/share/...` zu schreiben.
+## Repository layout
 
-## Optionen Als Gemeinsame Grundlage Fuer CLI Und GUI
-
-Ein zentrales Ziel ist, dass spaetere GUI-Optionen nicht separat neu erfunden werden muessen.
-Darum laufen typische Operator-Einstellungen bereits heute ueber ein gemeinsames `options`-Modell, das sowohl Templates als auch CLI-Overrides tragen kann.
-
-Beispiele:
-
-- `active_interface`
-- `passive_interface`
-- `port_template`
-- `passive_mode`
-- `auto_start_zeek`
-- `zeek_log_dir`
-- `project`
-- `data_dir`
-- `db_path`
-- `continue_on_error`
-- `retain_partial_results`
-- `reevaluate_ambiguous`
-- `reevaluate_after`
+- `scanner-core/cmd/tracer`: CLI entrypoint
+- `scanner-core/cmd/startrace`: local web server entrypoint
+- `scanner-core/internal/web`: browser UI, routes, templates and static assets
+- `scanner-core/internal/storage`: SQLite persistence, projects, runs, assets and schedules
+- `scanner-core/plugins`: tool integrations
+- `docs`: installation and supporting documentation
+- `BackUps`: manual repository snapshots with changelogs
 
 ## Roadmap
 
-Die naechsten groesseren Ausbaustufen sind:
+The next major steps are:
 
-1. Dashboard- und GUI-Schicht fuer Projekte, Runs, Filter, Ansichten und spaeter Operator-Workflows
-2. weitere Persistenzfunktionen fuer Verlauf, Vergleich und spaeteres Re-Scheduling
-3. mehr passive Ingests und Protokolle, z. B. `ssl.log` und weitere Zeek-Quellen
-4. bessere Import-/Export-Pfade zwischen CLI, GUI und spaeteren Deployments
-5. mehr Scan-Profile, Templates und Operator-Voreinstellungen fuer unterschiedliche Netztypen
-6. Installations- und Setup-Pfade fuer eine moeglichst einfache Ubuntu-Vollinstallation
+1. automatic execution for time-based reevaluations
+2. richer dashboards for private-network asset groups
+3. better plugin-specific remediation guidance
+4. improved run scheduling and repeatable scan plans
+5. more protocol coverage and passive sources
+6. cleaner Ubuntu installation and service setup
 
-## Ubuntu Tooling
+## More documentation
 
-Fuer die Linux-Test-VM gibt es bereits einen Einzeiler-Installer fuer benoetigte Werkzeuge:
-
-```bash
-bash scripts/install-ubuntu-tools.sh
-```
-
-Mehr dazu steht in [docs/INSTALL-UBUNTU.md](docs/INSTALL-UBUNTU.md).
+- [scanner-core README](scanner-core/README.md)
+- [Ubuntu install notes](docs/INSTALL-UBUNTU.md)
