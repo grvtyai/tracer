@@ -25,6 +25,8 @@ func main() {
 		activeInterface     string
 		passiveInterface    string
 		portTemplate        string
+		passiveMode         string
+		zeekLogDir          string
 		projectName         string
 		dataDir             string
 		dbPath              string
@@ -32,6 +34,7 @@ func main() {
 		continueOnErrorFlag optionalBool
 		retainPartialFlag   optionalBool
 		reevaluateFlag      optionalBool
+		autoStartZeekFlag   optionalBool
 	)
 
 	flag.StringVar(&mode, "mode", "plan", "execution mode: plan, run, projects, runs, show-run, or diff")
@@ -42,6 +45,8 @@ func main() {
 	flag.StringVar(&activeInterface, "active-interface", "", "preferred active scan interface")
 	flag.StringVar(&passiveInterface, "passive-interface", "", "preferred passive capture interface")
 	flag.StringVar(&portTemplate, "port-template", "", "named port selection/profile template")
+	flag.StringVar(&passiveMode, "passive-mode", "", "passive sensor mode: off, auto, or always")
+	flag.StringVar(&zeekLogDir, "zeek-log-dir", "", "Zeek log directory override")
 	flag.StringVar(&projectName, "project", "", "logical project name for persisted scan data")
 	flag.StringVar(&dataDir, "data-dir", "", "directory for tracer persistent data")
 	flag.StringVar(&dbPath, "db-path", "", "path to the SQLite database file")
@@ -49,6 +54,7 @@ func main() {
 	flag.Var(&continueOnErrorFlag, "continue-on-error", "continue when a host or plugin slice fails (true/false)")
 	flag.Var(&retainPartialFlag, "retain-partial-results", "retain partial evidence even if later steps fail (true/false)")
 	flag.Var(&reevaluateFlag, "reevaluate-ambiguous", "emit reevaluation hints for ambiguous or partial results (true/false)")
+	flag.Var(&autoStartZeekFlag, "auto-start-zeek", "allow tracer to start or deploy Zeek when passive ingest is requested (true/false)")
 	flag.Parse()
 
 	queryDBPath := storage.ResolveDBPath(dataDir, dbPath)
@@ -136,12 +142,12 @@ func main() {
 		})
 		return
 	case "plan":
-		loadedTemplate, _, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag)
+		loadedTemplate, _, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag)
 		_ = loadedTemplate
 		emitJSON(output)
 		return
 	case "run":
-		loadedTemplate, effectiveOptions, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag)
+		loadedTemplate, effectiveOptions, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag)
 		repository, err := storage.OpenSQLite(effectiveOptions.DBPath)
 		if err != nil {
 			fail(err)
@@ -224,7 +230,7 @@ func (o *optionalBool) Set(value string) error {
 	return nil
 }
 
-func buildOptionOverrides(activeInterface string, passiveInterface string, portTemplate string, project string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool) options.TemplateOptions {
+func buildOptionOverrides(activeInterface string, passiveInterface string, portTemplate string, passiveMode string, zeekLogDir string, project string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool, autoStartZeek optionalBool) options.TemplateOptions {
 	overrides := options.TemplateOptions{}
 
 	if activeInterface != "" {
@@ -235,6 +241,12 @@ func buildOptionOverrides(activeInterface string, passiveInterface string, portT
 	}
 	if portTemplate != "" {
 		overrides.Scan.PortTemplate = portTemplate
+	}
+	if passiveMode != "" {
+		overrides.Sensors.PassiveMode = passiveMode
+	}
+	if zeekLogDir != "" {
+		overrides.Sensors.ZeekLogDir = zeekLogDir
 	}
 	if project != "" {
 		overrides.Storage.Project = project
@@ -260,6 +272,10 @@ func buildOptionOverrides(activeInterface string, passiveInterface string, portT
 		value := reevaluate.value
 		overrides.Execution.ReevaluateAmbiguous = &value
 	}
+	if autoStartZeek.set {
+		value := autoStartZeek.value
+		overrides.Sensors.AutoStartZeek = &value
+	}
 
 	return overrides
 }
@@ -274,13 +290,13 @@ type queryOutput struct {
 	Diff          *storage.RunDiff         `json:"diff,omitempty"`
 }
 
-func buildScanOutput(mode string, template string, activeInterface string, passiveInterface string, portTemplate string, projectName string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool) (templates.Template, options.EffectiveOptions, app.Output) {
+func buildScanOutput(mode string, template string, activeInterface string, passiveInterface string, portTemplate string, passiveMode string, zeekLogDir string, projectName string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool, autoStartZeek optionalBool) (templates.Template, options.EffectiveOptions, app.Output) {
 	loadedTemplate, err := app.LoadTemplate(template)
 	if err != nil {
 		fail(err)
 	}
 
-	overrides := buildOptionOverrides(activeInterface, passiveInterface, portTemplate, projectName, dataDir, dbPath, reevaluateAfter, continueOnError, retainPartial, reevaluate)
+	overrides := buildOptionOverrides(activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnError, retainPartial, reevaluate, autoStartZeek)
 	effectiveOptions := app.ResolveOptions(loadedTemplate, overrides)
 	if effectiveOptions.Project == "" {
 		effectiveOptions.Project = loadedTemplate.Name

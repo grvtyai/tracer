@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 )
@@ -72,6 +73,9 @@ func TestPluginRunRequiresZeekLogDir(t *testing.T) {
 		ID:     "zeek-ingest",
 		Kind:   jobs.KindPassiveIngest,
 		Plugin: "zeek",
+		Metadata: map[string]string{
+			"zeek_mode": "always",
+		},
 	})
 	if err == nil {
 		t.Fatal("expected error for missing zeek_log_dir")
@@ -87,9 +91,86 @@ func TestPluginRunErrorsWhenNoLogsExist(t *testing.T) {
 		Plugin: "zeek",
 		Metadata: map[string]string{
 			"zeek_log_dir": t.TempDir(),
+			"zeek_mode":    "always",
 		},
 	})
 	if err == nil {
 		t.Fatal("expected error when no zeek logs exist")
 	}
+}
+
+func TestPluginRunAutoModeSkipsWhenNoLogsExist(t *testing.T) {
+	plugin := New()
+
+	records, err := plugin.Run(context.Background(), jobs.Job{
+		ID:     "zeek-ingest",
+		Kind:   jobs.KindPassiveIngest,
+		Plugin: "zeek",
+		Metadata: map[string]string{
+			"zeek_log_dir": t.TempDir(),
+			"zeek_mode":    "auto",
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected no error in auto mode, got %v", err)
+	}
+	if len(records) != 0 {
+		t.Fatalf("expected 0 records in auto mode with no logs, got %d", len(records))
+	}
+}
+
+func TestPluginRunAutoStartsZeekDeployWhenRequested(t *testing.T) {
+	dir := t.TempDir()
+	connLogPath := filepath.Join(dir, "conn.log")
+
+	plugin := New()
+	plugin.runner = fakeRunner{run: func(_ context.Context, name string, args []string) ([]byte, error) {
+		if name != "zeekctl" {
+			t.Fatalf("unexpected binary %q", name)
+		}
+		if len(args) != 1 || args[0] != "deploy" {
+			t.Fatalf("unexpected args %#v", args)
+		}
+		connLog := `#separator \x09
+#set_separator	,
+#empty_field	(empty)
+#unset_field	-
+#path	conn
+#fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	proto	service	duration	orig_bytes	resp_bytes	conn_state
+1712218800.123456	C1	10.0.0.5	51514	10.0.0.10	80	tcp	http	0.123	123	456	SF
+`
+		if err := os.WriteFile(connLogPath, []byte(connLog), 0o600); err != nil {
+			t.Fatalf("WriteFile conn.log returned error: %v", err)
+		}
+		return []byte("deployed"), nil
+	}}
+	plugin.now = func() time.Time {
+		return time.Date(2026, 4, 4, 12, 0, 0, 0, time.UTC)
+	}
+
+	records, err := plugin.Run(context.Background(), jobs.Job{
+		ID:      "zeek-ingest",
+		Kind:    jobs.KindPassiveIngest,
+		Plugin:  "zeek",
+		Targets: []string{"10.0.0.10"},
+		Metadata: map[string]string{
+			"zeek_log_dir":    dir,
+			"zeek_mode":       "auto",
+			"zeek_auto_start": "true",
+		},
+	})
+	if err != nil {
+		t.Fatalf("expected auto-start deploy to succeed, got %v", err)
+	}
+	if len(records) != 1 {
+		t.Fatalf("expected 1 conn record after deploy, got %d", len(records))
+	}
+}
+
+type fakeRunner struct {
+	run func(ctx context.Context, name string, args []string) ([]byte, error)
+}
+
+func (f fakeRunner) Run(ctx context.Context, name string, args []string) ([]byte, error) {
+	return f.run(ctx, name, args)
 }

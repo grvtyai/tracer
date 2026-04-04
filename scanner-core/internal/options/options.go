@@ -6,6 +6,7 @@ type TemplateOptions struct {
 	Execution ExecutionOptions `json:"execution,omitempty"`
 	Network   NetworkOptions   `json:"network,omitempty"`
 	Scan      ScanOptions      `json:"scan,omitempty"`
+	Sensors   SensorOptions    `json:"sensors,omitempty"`
 	Storage   StorageOptions   `json:"storage,omitempty"`
 }
 
@@ -25,6 +26,12 @@ type ScanOptions struct {
 	PortTemplate string `json:"port_template,omitempty"`
 }
 
+type SensorOptions struct {
+	PassiveMode   string `json:"passive_mode,omitempty"`
+	AutoStartZeek *bool  `json:"auto_start_zeek,omitempty"`
+	ZeekLogDir    string `json:"zeek_log_dir,omitempty"`
+}
+
 type StorageOptions struct {
 	Project string `json:"project,omitempty"`
 	DataDir string `json:"data_dir,omitempty"`
@@ -40,6 +47,9 @@ type EffectiveOptions struct {
 	ActiveInterface      string `json:"active_interface,omitempty"`
 	PassiveInterface     string `json:"passive_interface,omitempty"`
 	PortTemplate         string `json:"port_template,omitempty"`
+	PassiveMode          string `json:"passive_mode,omitempty"`
+	AutoStartZeek        bool   `json:"auto_start_zeek"`
+	ZeekLogDir           string `json:"zeek_log_dir,omitempty"`
 	Project              string `json:"project,omitempty"`
 	DataDir              string `json:"data_dir,omitempty"`
 	DBPath               string `json:"db_path,omitempty"`
@@ -51,6 +61,8 @@ func DefaultEffectiveOptions() EffectiveOptions {
 		RetainPartialResults: true,
 		ReevaluateAmbiguous:  true,
 		ReevaluateAfter:      "30m",
+		PassiveMode:          "auto",
+		AutoStartZeek:        true,
 	}
 }
 
@@ -86,6 +98,16 @@ func mergeTemplateOptions(dst *EffectiveOptions, src TemplateOptions) {
 
 	if src.Scan.PortTemplate != "" {
 		dst.PortTemplate = src.Scan.PortTemplate
+	}
+
+	if src.Sensors.PassiveMode != "" {
+		dst.PassiveMode = src.Sensors.PassiveMode
+	}
+	if src.Sensors.AutoStartZeek != nil {
+		dst.AutoStartZeek = *src.Sensors.AutoStartZeek
+	}
+	if src.Sensors.ZeekLogDir != "" {
+		dst.ZeekLogDir = src.Sensors.ZeekLogDir
 	}
 
 	if src.Storage.Project != "" {

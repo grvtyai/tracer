@@ -35,6 +35,9 @@ Die Standardpersistenz dafuer ist zunaechst `SQLite`.
   - `--active-interface`
   - `--passive-interface`
   - `--port-template`
+  - `--passive-mode`
+  - `--auto-start-zeek`
+  - `--zeek-log-dir`
   - `--project`
   - `--data-dir`
   - `--db-path`
@@ -42,6 +45,16 @@ Die Standardpersistenz dafuer ist zunaechst `SQLite`.
   - `--retain-partial-results`
   - `--reevaluate-ambiguous`
   - `--reevaluate-after`
+
+## Zeek-Verhalten
+
+`Zeek` wird jetzt als Bedarfssensor behandelt:
+
+- `off`: kein passiver Pfad
+- `auto`: nur einplanen/nutzen, wenn passive Nutzung sinnvoll konfiguriert ist; fehlende Logs stoppen den Run nicht
+- `always`: Zeek explizit erwarten und Fehler offen melden
+
+Wenn `auto_start_zeek=true` gesetzt ist, darf der Zeek-Pfad bei Bedarf `zeekctl deploy` versuchen, bevor er auf vorhandene Logs faellt.
 
 ## Persistenz
 

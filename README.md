@@ -45,6 +45,7 @@ Die erste Ausbaustufe lebt unter `scanner-core/` und deckt das Grundgeruest fuer
 - Bereits gefundene Evidence bleibt erhalten, auch wenn spaetere Jobs fuer einzelne Hosts fehlschlagen.
 - Fehlgeschlagene oder zweifelhafte Ergebnisse koennen als Reeval-Hinweise fuer spaetere Wiederholungen markiert werden.
 - Typische Operator-Einstellungen wie `active_interface`, `passive_interface`, `port_template`, `continue_on_error` oder `reevaluate_after` sind als eigene Optionen modelliert.
+- Passive Sensorik wird jetzt bewusst als eigener Optionsraum modelliert, damit spaeter dieselben Einstellungen in GUI und CLI als Dropdowns/Schalter erscheinen koennen.
 
 ## Persistenzmodell
 
@@ -79,6 +80,28 @@ Der Diff ist bewusst semantisch und evidence-basiert:
 - `new_evidence`: im neueren Run neu aufgetaucht
 - `missing_evidence`: im neueren Run nicht mehr vorhanden
 - `changed_evidence`: semantisch dasselbe Artefakt, aber mit geaenderten Details wie Versionen oder HTTP-Merkmalen
+
+## Zeek Als Bedarfssensor
+
+`Zeek` soll nicht blind immer laufen, aber auch nicht pauschal ausgeschaltet werden.
+Deshalb gibt es jetzt einen sensororientierten Modus:
+
+- `passive_mode=off`: kein passiver Zeek-Pfad
+- `passive_mode=auto`: Zeek wird nur genutzt, wenn passive Ingests sinnvoll oder konfiguriert sind; fehlende Logs brechen den Run nicht
+- `passive_mode=always`: Zeek wird strikt erwartet und Fehler werden sichtbar
+
+Zusatzoptionen:
+
+- `auto_start_zeek=true|false`
+- `zeek_log_dir=/pfad/zu/logs`
+
+CLI-Beispiele:
+
+```bash
+./bin/tracer -mode run -template examples/tracer-smoke-zeek-lab.json --passive-mode auto --auto-start-zeek true
+./bin/tracer -mode run -template examples/tracer-smoke-zeek-lab.json --passive-mode off
+./bin/tracer -mode run -template examples/tracer-smoke-zeek-lab.json --passive-mode always --zeek-log-dir /opt/zeek/logs/current
+```
 
 ## Wohin Es Geht
 

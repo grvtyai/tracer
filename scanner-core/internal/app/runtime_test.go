@@ -231,6 +231,37 @@ func TestBuildFollowUpPlanIncludesZeekIngestWhenConfigured(t *testing.T) {
 	if plan[0].Metadata["zeek_log_dir"] != "/var/log/zeek/current" {
 		t.Fatalf("expected zeek log dir metadata, got %#v", plan[0].Metadata)
 	}
+	if plan[0].Metadata["zeek_mode"] != "auto" {
+		t.Fatalf("expected zeek auto mode metadata, got %#v", plan[0].Metadata)
+	}
+	if plan[0].Metadata["zeek_auto_start"] != "true" {
+		t.Fatalf("expected zeek auto start metadata, got %#v", plan[0].Metadata)
+	}
+}
+
+func TestBuildFollowUpPlanSkipsZeekWhenPassiveModeOff(t *testing.T) {
+	template := templates.Template{
+		Name: "test",
+		Scope: ingest.Scope{
+			Targets: []string{"10.0.0.10"},
+		},
+		Profile: ingest.RunProfile{
+			EnablePassiveIngest: true,
+			ZeekLogDir:          "/var/log/zeek/current",
+		},
+	}
+
+	plan := BuildFollowUpPlanWithOptions(template, nil, options.EffectiveOptions{
+		ContinueOnError:      true,
+		RetainPartialResults: true,
+		ReevaluateAmbiguous:  true,
+		ReevaluateAfter:      "30m",
+		PassiveMode:          "off",
+		AutoStartZeek:        true,
+	})
+	if len(plan) != 0 {
+		t.Fatalf("expected zeek follow-up to be disabled, got %#v", plan)
+	}
 }
 
 func TestBuildSeedPlanWithOptionsAddsInterfaceMetadata(t *testing.T) {

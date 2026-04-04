@@ -5,6 +5,7 @@ import "testing"
 func TestResolveDefaultsAndOverrides(t *testing.T) {
 	baseContinue := false
 	overrideReevaluate := false
+	baseAutoStartZeek := false
 
 	base := TemplateOptions{
 		Execution: ExecutionOptions{
@@ -13,6 +14,11 @@ func TestResolveDefaultsAndOverrides(t *testing.T) {
 		},
 		Network: NetworkOptions{
 			ActiveInterface: "eth0",
+		},
+		Sensors: SensorOptions{
+			PassiveMode:   "always",
+			AutoStartZeek: &baseAutoStartZeek,
+			ZeekLogDir:    "/var/log/zeek/current",
 		},
 	}
 
@@ -47,6 +53,9 @@ func TestResolveDefaultsAndOverrides(t *testing.T) {
 	}
 	if got.PortTemplate != "all-default-ports" {
 		t.Fatalf("expected port template override, got %#v", got)
+	}
+	if got.PassiveMode != "always" || got.AutoStartZeek || got.ZeekLogDir != "/var/log/zeek/current" {
+		t.Fatalf("expected sensor settings from base, got %#v", got)
 	}
 	if got.Project != "Standort A" || got.DBPath != "/tmp/tracer.db" {
 		t.Fatalf("expected storage overrides, got %#v", got)

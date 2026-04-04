@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,12 +17,29 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 )
 
-type Plugin struct{}
+type Runner interface {
+	Run(ctx context.Context, name string, args []string) ([]byte, error)
+}
+
+type ExecRunner struct{}
+
+func (ExecRunner) Run(ctx context.Context, name string, args []string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, name, args...)
+	return cmd.CombinedOutput()
+}
+
+type Plugin struct {
+	runner Runner
+	now    func() time.Time
+}
 
 var _ engine.Plugin = (*Plugin)(nil)
 
 func New() *Plugin {
-	return &Plugin{}
+	return &Plugin{
+		runner: ExecRunner{},
+		now:    time.Now,
+	}
 }
 
 func (Plugin) Name() string {
@@ -32,10 +50,21 @@ func (Plugin) CanRun(job jobs.Job) bool {
 	return job.Kind == jobs.KindPassiveIngest
 }
 
-func (Plugin) Run(_ context.Context, job jobs.Job) ([]evidence.Record, error) {
+func (p Plugin) Run(ctx context.Context, job jobs.Job) ([]evidence.Record, error) {
+	mode := normalizeMode(job.Metadata["zeek_mode"])
+	autoStart := isTrue(job.Metadata["zeek_auto_start"])
 	logDir := strings.TrimSpace(job.Metadata["zeek_log_dir"])
 	if logDir == "" {
+		if mode == "auto" {
+			return nil, nil
+		}
 		return nil, errors.New("zeek requires zeek_log_dir metadata")
+	}
+
+	if autoStart {
+		if err := p.ensureLogDir(ctx, logDir, firstNonEmpty(job.Metadata["zeekctl_binary"], "zeekctl")); err != nil && mode == "always" {
+			return nil, err
+		}
 	}
 
 	targets := makeTargetSet(job.Targets)
@@ -66,10 +95,58 @@ func (Plugin) Run(_ context.Context, job jobs.Job) ([]evidence.Record, error) {
 	}
 
 	if parsedFiles == 0 {
+		if mode == "auto" {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("no zeek logs found in %s", logDir)
 	}
 
 	return records, nil
+}
+
+func (p Plugin) ensureLogDir(ctx context.Context, logDir string, zeekctlBinary string) error {
+	if hasAnyZeekLogs(logDir) {
+		return nil
+	}
+
+	runner := p.runner
+	if runner == nil {
+		runner = ExecRunner{}
+	}
+
+	output, err := runner.Run(ctx, zeekctlBinary, []string{"deploy"})
+	if err != nil {
+		if len(output) == 0 {
+			return fmt.Errorf("start zeek via %s deploy: %w", zeekctlBinary, err)
+		}
+		return fmt.Errorf("start zeek via %s deploy: %w: %s", zeekctlBinary, err, strings.TrimSpace(string(output)))
+	}
+
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		if hasAnyZeekLogs(logDir) {
+			return nil
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	return nil
+}
+
+func (p Plugin) timeNow() time.Time {
+	if p.now != nil {
+		return p.now().UTC()
+	}
+	return time.Now().UTC()
+}
+
+func hasAnyZeekLogs(logDir string) bool {
+	for _, name := range []string{"conn.log", "http.log"} {
+		if _, err := os.Stat(filepath.Join(logDir, name)); err == nil {
+			return true
+		}
+	}
+	return false
 }
 
 type zeekFormat struct {
@@ -383,4 +460,24 @@ func firstNonEmpty(values ...string) string {
 func mathModf(value float64) (float64, float64) {
 	whole := float64(int64(value))
 	return whole, value - whole
+}
+
+func normalizeMode(mode string) string {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "", "auto":
+		return "auto"
+	case "always", "force", "on":
+		return "always"
+	default:
+		return "off"
+	}
+}
+
+func isTrue(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }

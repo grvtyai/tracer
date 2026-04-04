@@ -115,15 +115,13 @@ func BuildFollowUpPlan(template templates.Template, records []evidence.Record) [
 func BuildFollowUpPlanWithOptions(template templates.Template, records []evidence.Record, resolved options.EffectiveOptions) []jobs.Job {
 	plan := make([]jobs.Job, 0)
 
-	if template.Profile.EnablePassiveIngest && strings.TrimSpace(template.Profile.ZeekLogDir) != "" {
+	if metadata, ok := zeekPassiveMetadata(template, resolved); ok {
 		plan = append(plan, jobs.Job{
-			ID:      "zeek-ingest",
-			Kind:    jobs.KindPassiveIngest,
-			Plugin:  "zeek",
-			Targets: append([]string{}, template.Scope.Targets...),
-			Metadata: map[string]string{
-				"zeek_log_dir": template.Profile.ZeekLogDir,
-			},
+			ID:       "zeek-ingest",
+			Kind:     jobs.KindPassiveIngest,
+			Plugin:   "zeek",
+			Targets:  append([]string{}, template.Scope.Targets...),
+			Metadata: metadata,
 		})
 	}
 
@@ -441,4 +439,49 @@ func mergeMetadata(base map[string]string, extra map[string]string) map[string]s
 	}
 
 	return merged
+}
+
+func zeekPassiveMetadata(template templates.Template, resolved options.EffectiveOptions) (map[string]string, bool) {
+	mode := normalizePassiveMode(resolved.PassiveMode)
+	if mode == "off" {
+		return nil, false
+	}
+
+	logDir := strings.TrimSpace(resolved.ZeekLogDir)
+	if logDir == "" {
+		logDir = strings.TrimSpace(template.Profile.ZeekLogDir)
+	}
+
+	passiveRequested := template.Profile.EnablePassiveIngest || resolved.PassiveInterface != "" || logDir != "" || mode == "always"
+	if !passiveRequested {
+		return nil, false
+	}
+
+	if mode == "auto" && logDir == "" && resolved.PassiveInterface == "" {
+		return nil, false
+	}
+
+	metadata := map[string]string{
+		"zeek_mode":       mode,
+		"zeek_auto_start": boolString(resolved.AutoStartZeek),
+	}
+
+	if logDir != "" {
+		metadata["zeek_log_dir"] = logDir
+	}
+
+	return metadata, true
+}
+
+func normalizePassiveMode(mode string) string {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case "", "auto":
+		return "auto"
+	case "always", "force", "on":
+		return "always"
+	case "off", "disabled", "false":
+		return "off"
+	default:
+		return "auto"
+	}
 }

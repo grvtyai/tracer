@@ -30,6 +30,11 @@
     "scan": {
       "port_template": "all-default-ports"
     },
+    "sensors": {
+      "passive_mode": "auto",
+      "auto_start_zeek": true,
+      "zeek_log_dir": "/opt/zeek/logs/current"
+    },
     "storage": {
       "project": "Standort A"
     }
