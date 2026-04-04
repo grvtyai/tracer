@@ -24,11 +24,16 @@ import (
 )
 
 type Project struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID            string    `json:"id"`
+	PublicID      string    `json:"public_id,omitempty"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description,omitempty"`
+	Notes         string    `json:"notes,omitempty"`
+	StoragePath   string    `json:"storage_path,omitempty"`
+	TargetDBPath  string    `json:"target_db_path,omitempty"`
+	OwnerUsername string    `json:"owner_username,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type RunRecord struct {
@@ -69,13 +74,18 @@ type SQLiteRunStore struct {
 }
 
 type ProjectSummary struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	RunCount    int       `json:"run_count"`
-	LastRunAt   time.Time `json:"last_run_at,omitempty"`
+	ID            string    `json:"id"`
+	PublicID      string    `json:"public_id,omitempty"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description,omitempty"`
+	Notes         string    `json:"notes,omitempty"`
+	StoragePath   string    `json:"storage_path,omitempty"`
+	TargetDBPath  string    `json:"target_db_path,omitempty"`
+	OwnerUsername string    `json:"owner_username,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	RunCount      int       `json:"run_count"`
+	LastRunAt     time.Time `json:"last_run_at,omitempty"`
 }
 
 type RunSummary struct {
@@ -192,13 +202,34 @@ func (r *SQLiteRepository) EnsureProject(ctx context.Context, name string, descr
 	}
 
 	var project Project
-	row := r.db.QueryRowContext(ctx, `SELECT id, name, description, created_at, updated_at FROM projects WHERE name = ?`, name)
+	row := r.db.QueryRowContext(ctx, `
+		SELECT
+			p.id,
+			COALESCE(pm.public_id, ''),
+			p.name,
+			p.description,
+			COALESCE(pm.notes, ''),
+			COALESCE(pm.storage_path, ''),
+			COALESCE(pm.target_db_path, ''),
+			COALESCE(pm.owner_username, ''),
+			p.created_at,
+			p.updated_at
+		FROM projects p
+		LEFT JOIN project_metadata pm ON pm.project_id = p.id
+		WHERE p.name = ?
+	`, name)
 	var createdAt string
 	var updatedAt string
-	switch err := row.Scan(&project.ID, &project.Name, &project.Description, &createdAt, &updatedAt); err {
+	switch err := row.Scan(&project.ID, &project.PublicID, &project.Name, &project.Description, &project.Notes, &project.StoragePath, &project.TargetDBPath, &project.OwnerUsername, &createdAt, &updatedAt); err {
 	case nil:
 		project.CreatedAt = mustParseTime(createdAt)
 		project.UpdatedAt = mustParseTime(updatedAt)
+		if err := r.ensureProjectMetadata(ctx, project.ID, project.Name, firstNonEmptyProject(project.Notes, project.Description)); err != nil {
+			return Project{}, err
+		}
+		if project.PublicID == "" || project.StoragePath == "" || project.TargetDBPath == "" || project.OwnerUsername == "" {
+			return r.EnsureProject(ctx, name, description)
+		}
 		return project, nil
 	case sql.ErrNoRows:
 	default:
@@ -206,19 +237,45 @@ func (r *SQLiteRepository) EnsureProject(ctx context.Context, name string, descr
 	}
 
 	project = Project{
-		ID:          uuid.NewString(),
-		Name:        name,
-		Description: description,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:            uuid.NewString(),
+		PublicID:      generateProjectPublicID(),
+		Name:          name,
+		Description:   description,
+		Notes:         description,
+		StoragePath:   r.defaultProjectStoragePath(name, ""),
+		TargetDBPath:  filepath.Join(r.defaultProjectStoragePath(name, ""), "project.sqlite"),
+		OwnerUsername: currentOperatorName(),
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
-	_, err := r.db.ExecContext(ctx, `
+	if err := os.MkdirAll(project.StoragePath, 0o775); err != nil {
+		return Project{}, fmt.Errorf("create project storage path: %w", err)
+	}
+	if err := adoptProjectPathOwnership(project.StoragePath); err != nil {
+		return Project{}, err
+	}
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Project{}, fmt.Errorf("begin project transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO projects (id, name, description, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?)
 	`, project.ID, project.Name, project.Description, now.Format(time.RFC3339Nano), now.Format(time.RFC3339Nano))
 	if err != nil {
 		return Project{}, fmt.Errorf("insert project: %w", err)
+	}
+
+	if err := upsertProjectMetadataTx(ctx, tx, project); err != nil {
+		return Project{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return Project{}, fmt.Errorf("commit project transaction: %w", err)
 	}
 
 	return project, nil
@@ -347,15 +404,21 @@ func (r *SQLiteRepository) ListProjects(ctx context.Context) ([]ProjectSummary, 
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT
 			p.id,
+			COALESCE(pm.public_id, ''),
 			p.name,
 			p.description,
+			COALESCE(pm.notes, ''),
+			COALESCE(pm.storage_path, ''),
+			COALESCE(pm.target_db_path, ''),
+			COALESCE(pm.owner_username, ''),
 			p.created_at,
 			p.updated_at,
 			COUNT(run.id) AS run_count,
 			COALESCE(MAX(run.started_at), '')
 		FROM projects p
+		LEFT JOIN project_metadata pm ON pm.project_id = p.id
 		LEFT JOIN runs run ON run.project_id = p.id
-		GROUP BY p.id, p.name, p.description, p.created_at, p.updated_at
+		GROUP BY p.id, pm.public_id, p.name, p.description, pm.notes, pm.storage_path, pm.target_db_path, pm.owner_username, p.created_at, p.updated_at
 		ORDER BY p.name ASC
 	`)
 	if err != nil {
@@ -369,13 +432,31 @@ func (r *SQLiteRepository) ListProjects(ctx context.Context) ([]ProjectSummary, 
 		var createdAt string
 		var updatedAt string
 		var lastRunAt string
-		if err := rows.Scan(&project.ID, &project.Name, &project.Description, &createdAt, &updatedAt, &project.RunCount, &lastRunAt); err != nil {
+		if err := rows.Scan(&project.ID, &project.PublicID, &project.Name, &project.Description, &project.Notes, &project.StoragePath, &project.TargetDBPath, &project.OwnerUsername, &createdAt, &updatedAt, &project.RunCount, &lastRunAt); err != nil {
 			return nil, fmt.Errorf("scan project summary: %w", err)
 		}
 
 		project.CreatedAt = mustParseTime(createdAt)
 		project.UpdatedAt = mustParseTime(updatedAt)
 		project.LastRunAt = mustParseTime(lastRunAt)
+		if err := r.ensureProjectMetadata(ctx, project.ID, project.Name, firstNonEmptyProject(project.Notes, project.Description)); err != nil {
+			return nil, err
+		}
+		if project.PublicID == "" {
+			project.PublicID = generateProjectPublicID()
+		}
+		if project.Notes == "" {
+			project.Notes = project.Description
+		}
+		if project.StoragePath == "" {
+			project.StoragePath = r.defaultProjectStoragePath(project.Name, project.PublicID)
+		}
+		if project.TargetDBPath == "" {
+			project.TargetDBPath = filepath.Join(project.StoragePath, "project.sqlite")
+		}
+		if project.OwnerUsername == "" {
+			project.OwnerUsername = currentOperatorName()
+		}
 		projects = append(projects, project)
 	}
 
@@ -759,6 +840,22 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 			raw_json TEXT NOT NULL DEFAULT '{}',
 			FOREIGN KEY(run_id) REFERENCES runs(id)
 		);`,
+		`CREATE TABLE IF NOT EXISTS project_metadata (
+			project_id TEXT PRIMARY KEY,
+			public_id TEXT NOT NULL UNIQUE,
+			notes TEXT NOT NULL DEFAULT '',
+			storage_path TEXT NOT NULL DEFAULT '',
+			target_db_path TEXT NOT NULL DEFAULT '',
+			owner_username TEXT NOT NULL DEFAULT '',
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			FOREIGN KEY(project_id) REFERENCES projects(id)
+		);`,
+		`CREATE TABLE IF NOT EXISTS app_settings (
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL DEFAULT '',
+			updated_at TEXT NOT NULL
+		);`,
 		`CREATE TABLE IF NOT EXISTS assets (
 			id TEXT PRIMARY KEY,
 			project_id TEXT NOT NULL,
@@ -811,6 +908,7 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 		`CREATE INDEX IF NOT EXISTS idx_job_results_run_id ON job_results(run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_evidence_run_id ON evidence(run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_evidence_target_port ON evidence(target, port);`,
+		`CREATE INDEX IF NOT EXISTS idx_project_metadata_public_id ON project_metadata(public_id);`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_assets_project_identity ON assets(project_id, identity_key);`,
 		`CREATE INDEX IF NOT EXISTS idx_assets_project_last_seen ON assets(project_id, last_seen_at);`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_asset_observations_asset_run ON asset_observations(asset_id, run_id);`,

@@ -1,13 +1,9 @@
 {{define "assets.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-{{if .Notice}}
-<section class="notice success">Asset successfully updated.</section>
-{{end}}
-
 <section class="panel">
     <div class="panel-head">
-        <h2>Asset Inventory</h2>
+        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Asset Inventory</h2>
         <span class="pill">{{len .Assets}} assets</span>
     </div>
     <p class="empty-note">

@@ -1,0 +1,59 @@
+{{define "project_new.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Create Project</h2>
+        </div>
+        <p class="empty-note">
+            Every project gets a name, an automatically assigned open ID, a fixed storage path, a suggested target database path and optional notes.
+        </p>
+        <form method="post" action="/projects/new" class="asset-form">
+            <label class="form-row">
+                <span class="form-label">Project name</span>
+                <input class="input" type="text" name="name" value="{{.ProjectForm.Name}}" required />
+            </label>
+            <label class="form-row">
+                <span class="form-label">Open ID</span>
+                <input class="input" type="text" value="{{.ProjectForm.PublicIDPreview}}" disabled />
+            </label>
+            <label class="form-row">
+                <span class="form-label">Owner user</span>
+                <input class="input" type="text" name="owner_username" value="{{.ProjectForm.OwnerUsername}}" />
+            </label>
+            <label class="form-row">
+                <span class="form-label">Storage path</span>
+                <input class="input" type="text" name="storage_path" value="{{.ProjectForm.StoragePath}}" placeholder="Leave empty to use the default project path" />
+            </label>
+            <label class="form-row">
+                <span class="form-label">Target database</span>
+                <input class="input" type="text" name="target_db_path" value="{{.ProjectForm.TargetDBPath}}" placeholder="Leave empty to use the default project database path" />
+            </label>
+            {{if .ProjectForm.TargetDBExists}}
+            <div class="notice">The suggested target database path already exists and can be reused.</div>
+            {{end}}
+            <label class="form-row">
+                <span class="form-label">Notes</span>
+                <textarea class="input textarea" name="notes">{{.ProjectForm.Notes}}</textarea>
+            </label>
+            <div class="hero-actions">
+                <button class="button button-primary" type="submit">Create project</button>
+            </div>
+        </form>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Project Rules</h2>
+        </div>
+        <ul class="bullet-list">
+            <li>The name is mandatory.</li>
+            <li>The public ID is assigned automatically.</li>
+            <li>The storage path is created for the operator user.</li>
+            <li>The target database path is suggested and can be overridden.</li>
+            <li>Later user-login can attach ownership and access control to this same model.</li>
+        </ul>
+    </article>
+</section>
+{{end}}

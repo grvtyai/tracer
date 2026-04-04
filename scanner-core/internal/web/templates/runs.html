@@ -1,0 +1,41 @@
+{{define "runs.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel">
+    <div class="panel-head">
+        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Run History</h2>
+        <div class="hero-actions">
+            <a class="button button-primary" href="/scans/new?project={{.CurrentProject.ID}}">Start Scan</a>
+            <span class="pill">{{len .Runs}} runs</span>
+        </div>
+    </div>
+    {{if .Runs}}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Started</th>
+                <th>Status</th>
+                <th>Template</th>
+                <th>Jobs</th>
+                <th>Evidence</th>
+                <th>Open</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Runs}}
+            <tr>
+                <td><a class="table-link" href="/runs/{{.ID}}">{{.StartedAt.Format "2006-01-02 15:04"}}</a></td>
+                <td>{{.Status}}</td>
+                <td>{{.TemplateName}}</td>
+                <td>{{.JobCount}}</td>
+                <td>{{.EvidenceCount}}</td>
+                <td class="mono">{{.ID}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="empty-note">No runs stored for this project yet.</p>
+    {{end}}
+</section>
+{{end}}

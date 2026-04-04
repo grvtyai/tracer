@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -32,34 +33,44 @@ type Server struct {
 }
 
 type pageData struct {
-	Title       string
-	AppName     string
-	ActiveNav   string
-	BasePath    string
-	Generated   time.Time
-	DBPath      string
-	DataDir     string
-	BodyClass   string
-	HeroNote    string
-	Project     *storage.ProjectSummary
-	Projects    []storage.ProjectSummary
-	RecentRuns  []storage.RunSummary
-	Runs        []storage.RunSummary
-	Run         *storage.RunDetails
-	Assets      []storage.AssetSummary
-	Asset       *storage.AssetDetails
-	AssetGroups []assetGroup
-	Hosts       []hostSummary
-	DiffAPI     string
-	Stats       dashboardStats
-	Notice      string
+	Title             string
+	AppName           string
+	ActiveNav         string
+	BasePath          string
+	DBPath            string
+	DataDir           string
+	BodyClass         string
+	HeroNote          string
+	Notice            string
+	Project           *storage.ProjectSummary
+	Projects          []storage.ProjectSummary
+	CurrentProject    *storage.ProjectSummary
+	ProjectSwitchPath string
+	ProjectForm       projectFormData
+	Settings          storage.AppSettings
+	PreflightChecks   []preflightCheck
+	PreflightHealthy  bool
+	ScanForm          scanFormData
+	RecentRuns        []storage.RunSummary
+	Runs              []storage.RunSummary
+	Run               *storage.RunDetails
+	Assets            []storage.AssetSummary
+	Asset             *storage.AssetDetails
+	AssetGroups       []assetGroup
+	Hosts             []hostSummary
+	Stats             dashboardStats
+	DeviceTypeStats   []labelCount
+	ConnectionStats   []labelCount
+	StatusStats       []labelCount
+	DiffAPI           string
 }
 
 type dashboardStats struct {
-	ProjectCount  int
 	RunCount      int
+	AssetCount    int
 	HostCount     int
 	EvidenceCount int
+	ReevalCount   int
 }
 
 type hostSummary struct {
@@ -75,6 +86,21 @@ type hostSummary struct {
 type assetGroup struct {
 	Name   string
 	Assets []storage.AssetSummary
+}
+
+type labelCount struct {
+	Label string
+	Count int
+}
+
+type projectFormData struct {
+	Name            string
+	Notes           string
+	StoragePath     string
+	TargetDBPath    string
+	OwnerUsername   string
+	PublicIDPreview string
+	TargetDBExists  bool
 }
 
 type optionsResponse struct {
@@ -110,16 +136,22 @@ func (s *Server) routes() {
 	fileServer := http.FileServer(http.FS(assets))
 	s.mux.Handle("/static/", http.StripPrefix("/", fileServer))
 
-	s.mux.HandleFunc("/", s.handleLanding)
-	s.mux.HandleFunc("/projects", s.handleProjects)
+	s.mux.HandleFunc("/", s.handleDashboard)
+	s.mux.HandleFunc("/projects", s.handleProjectsIndex)
+	s.mux.HandleFunc("/projects/new", s.handleProjectNew)
 	s.mux.HandleFunc("/projects/", s.handleProject)
+	s.mux.HandleFunc("/runs", s.handleRuns)
+	s.mux.HandleFunc("/runs/", s.handleRun)
+	s.mux.HandleFunc("/scans/new", s.handleScanNew)
 	s.mux.HandleFunc("/assets", s.handleAssets)
 	s.mux.HandleFunc("/assets/", s.handleAsset)
-	s.mux.HandleFunc("/runs/", s.handleRun)
+	s.mux.HandleFunc("/analytics", s.handleAnalytics)
 	s.mux.HandleFunc("/settings", s.handleSettings)
 
 	s.mux.HandleFunc("/api/health", s.handleHealthAPI)
 	s.mux.HandleFunc("/api/options", s.handleOptionsAPI)
+	s.mux.HandleFunc("/api/preflight", s.handlePreflightAPI)
+	s.mux.HandleFunc("/api/settings", s.handleSettingsAPI)
 	s.mux.HandleFunc("/api/projects", s.handleProjectsAPI)
 	s.mux.HandleFunc("/api/projects/", s.handleProjectRunsAPI)
 	s.mux.HandleFunc("/api/assets", s.handleAssetsAPI)
@@ -128,80 +160,157 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/api/diff", s.handleDiffAPI)
 }
 
-func (s *Server) handleLanding(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
 
 	ctx := r.Context()
-	projects, err := s.repo.ListProjects(ctx)
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	runs, err := s.repo.ListRuns(ctx, "")
-	if err != nil {
-		s.writeError(w, http.StatusInternalServerError, err)
+	if len(projects) == 0 {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
 		return
 	}
 
-	stats := dashboardStats{
-		ProjectCount:  len(projects),
-		RunCount:      len(runs),
-		EvidenceCount: countEvidence(runs),
+	runs, err := s.repo.ListRuns(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
 	}
-	if len(runs) > 0 {
-		stats.HostCount = countTargetsAcrossRuns(ctx, s.repo, runs[:min(5, len(runs))])
+	preflightChecks := collectPreflightChecks(s.options.DBPath)
+	projectAssets, err := s.repo.ListAssets(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
 	}
 
 	data := pageData{
-		Title:      "Startrace Overview",
-		AppName:    s.options.AppName,
-		ActiveNav:  "landing",
-		BasePath:   s.options.BasePath,
-		Generated:  time.Now().UTC(),
-		DBPath:     s.options.DBPath,
-		DataDir:    s.options.DataDir,
-		BodyClass:  "landing-page",
-		HeroNote:   "Go-hosted Startrace foundation on top of tracer scanner-core",
-		Projects:   takeProjects(projects, 6),
-		RecentRuns: takeRuns(runs, 6),
-		Stats:      stats,
+		Title:             "Dashboard",
+		AppName:           s.options.AppName,
+		ActiveNav:         "dashboard",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Project-first network inventory and scan history",
+		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/",
+		Project:           currentProject,
+		RecentRuns:        takeRuns(runs, 8),
+		Assets:            takeAssets(projectAssets, 8),
+		PreflightChecks:   preflightChecks,
+		PreflightHealthy:  preflightHealthy(preflightChecks),
+		Stats: dashboardStats{
+			RunCount:      len(runs),
+			AssetCount:    len(projectAssets),
+			HostCount:     len(projectAssets),
+			EvidenceCount: countEvidence(runs),
+			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
+		},
+		Settings: appSettings,
 	}
-	s.render(w, "landing.html", data)
+	s.render(w, "dashboard.html", data)
 }
 
-func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleProjectsIndex(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/projects" {
 		http.NotFound(w, r)
 		return
 	}
 
 	ctx := r.Context()
-	projects, err := s.repo.ListProjects(ctx)
+	projects, currentProject, _, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	runs, err := s.repo.ListRuns(ctx, "")
+	if currentProject != nil {
+		http.Redirect(w, r, "/?project="+currentProject.ID, http.StatusSeeOther)
+		return
+	}
+	if len(projects) == 0 {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/?project="+projects[0].ID, http.StatusSeeOther)
+}
+
+func (s *Server) handleProjectNew(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		s.renderProjectNew(w, r)
+	case http.MethodPost:
+		s.handleProjectCreate(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) renderProjectNew(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, "")
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	data := pageData{
-		Title:      "Projects",
-		AppName:    s.options.AppName,
-		ActiveNav:  "projects",
-		BasePath:   s.options.BasePath,
-		Generated:  time.Now().UTC(),
-		DBPath:     s.options.DBPath,
-		DataDir:    s.options.DataDir,
-		Projects:   projects,
-		RecentRuns: takeRuns(runs, 8),
+	form := projectFormData{
+		Name:            strings.TrimSpace(r.URL.Query().Get("name")),
+		Notes:           strings.TrimSpace(r.URL.Query().Get("notes")),
+		OwnerUsername:   currentOperatorFromEnv(),
+		PublicIDPreview: previewPublicID(),
 	}
-	s.render(w, "projects.html", data)
+	if form.Name != "" {
+		form.StoragePath = storagePathSuggestion(s.optionsDataDir(), form.Name)
+		form.TargetDBPath = targetDBPathSuggestion(form.StoragePath)
+		form.TargetDBExists = pathExists(form.TargetDBPath)
+	}
+
+	data := pageData{
+		Title:             "Create Project",
+		AppName:           s.options.AppName,
+		ActiveNav:         "dashboard",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Every operator flow starts inside a project",
+		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/",
+		ProjectForm:       form,
+		Settings:          appSettings,
+		PreflightChecks:   collectPreflightChecks(s.options.DBPath),
+		PreflightHealthy:  preflightHealthy(collectPreflightChecks(s.options.DBPath)),
+	}
+	s.render(w, "project_new.html", data)
+}
+
+func (s *Server) handleProjectCreate(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		s.writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	project, err := s.repo.CreateProject(r.Context(), storage.ProjectCreateInput{
+		Name:          r.FormValue("name"),
+		Notes:         r.FormValue("notes"),
+		StoragePath:   r.FormValue("storage_path"),
+		TargetDBPath:  r.FormValue("target_db_path"),
+		OwnerUsername: r.FormValue("owner_username"),
+	})
+	if err != nil {
+		http.Redirect(w, r, "/projects/new?notice=project-create-failed", http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/?project="+project.ID+"&notice=project-created", http.StatusSeeOther)
 }
 
 func (s *Server) handleProject(w http.ResponseWriter, r *http.Request) {
@@ -210,32 +319,91 @@ func (s *Server) handleProject(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	http.Redirect(w, r, "/?project="+projectID, http.StatusSeeOther)
+}
 
-	ctx := r.Context()
-	project, err := s.findProject(ctx, projectID)
-	if err != nil {
-		s.writeError(w, http.StatusNotFound, err)
+func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/runs" {
+		http.NotFound(w, r)
 		return
 	}
-	runs, err := s.repo.ListRuns(ctx, projectID)
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	runs, err := s.repo.ListRuns(ctx, currentProject.ID)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	data := pageData{
-		Title:     "Project " + project.Name,
-		AppName:   s.options.AppName,
-		ActiveNav: "projects",
-		BasePath:  s.options.BasePath,
-		Generated: time.Now().UTC(),
-		DBPath:    s.options.DBPath,
-		DataDir:   s.options.DataDir,
-		Project:   &project,
-		Runs:      runs,
-		DiffAPI:   "/api/diff",
+		Title:             "Runs",
+		AppName:           s.options.AppName,
+		ActiveNav:         "runs",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Chronological scan history for the active project",
+		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/runs",
+		Project:           currentProject,
+		Runs:              runs,
+		DiffAPI:           "/api/diff",
+		Settings:          appSettings,
 	}
-	s.render(w, "project.html", data)
+	s.render(w, "runs.html", data)
+}
+
+func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
+	runID := strings.Trim(strings.TrimPrefix(r.URL.Path, "/runs/"), "/")
+	if runID == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	run, err := s.repo.GetRun(r.Context(), runID)
+	if err != nil {
+		s.writeError(w, http.StatusNotFound, err)
+		return
+	}
+	project, err := s.repo.GetProject(r.Context(), run.Run.ProjectID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	projects, _, appSettings, err := s.loadShellContext(r.Context(), project.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	data := pageData{
+		Title:             "Run " + run.Run.ID,
+		AppName:           s.options.AppName,
+		ActiveNav:         "runs",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		Projects:          projects,
+		CurrentProject:    &project,
+		ProjectSwitchPath: "/runs",
+		Project:           &project,
+		Run:               &run,
+		Hosts:             buildHostSummaries(run),
+		Settings:          appSettings,
+	}
+	s.render(w, "run.html", data)
 }
 
 func (s *Server) handleAssets(w http.ResponseWriter, r *http.Request) {
@@ -244,24 +412,39 @@ func (s *Server) handleAssets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectRef := strings.TrimSpace(r.URL.Query().Get("project"))
-	assets, err := s.repo.ListAssets(r.Context(), projectRef)
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	projectAssets, err := s.repo.ListAssets(ctx, currentProject.ID)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	data := pageData{
-		Title:       "Assets",
-		AppName:     s.options.AppName,
-		ActiveNav:   "assets",
-		BasePath:    s.options.BasePath,
-		Generated:   time.Now().UTC(),
-		DBPath:      s.options.DBPath,
-		DataDir:     s.options.DataDir,
-		Assets:      assets,
-		AssetGroups: groupAssets(assets),
-		Notice:      strings.TrimSpace(r.URL.Query().Get("notice")),
+		Title:             "Assets",
+		AppName:           s.options.AppName,
+		ActiveNav:         "assets",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Persistent inventory with safe manual overrides",
+		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/assets",
+		Project:           currentProject,
+		Assets:            projectAssets,
+		AssetGroups:       groupAssets(projectAssets),
+		Settings:          appSettings,
 	}
 	s.render(w, "assets.html", data)
 }
@@ -289,17 +472,31 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusNotFound, err)
 		return
 	}
+	project, err := s.repo.GetProject(r.Context(), asset.Asset.ProjectID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	projects, _, appSettings, err := s.loadShellContext(r.Context(), project.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	data := pageData{
-		Title:     "Asset " + asset.Asset.DisplayName,
-		AppName:   s.options.AppName,
-		ActiveNav: "assets",
-		BasePath:  s.options.BasePath,
-		Generated: time.Now().UTC(),
-		DBPath:    s.options.DBPath,
-		DataDir:   s.options.DataDir,
-		Asset:     &asset,
-		Notice:    strings.TrimSpace(r.URL.Query().Get("notice")),
+		Title:             "Asset " + asset.Asset.DisplayName,
+		AppName:           s.options.AppName,
+		ActiveNav:         "assets",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		Projects:          projects,
+		CurrentProject:    &project,
+		ProjectSwitchPath: "/assets",
+		Project:           &project,
+		Asset:             &asset,
+		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Settings:          appSettings,
 	}
 	s.render(w, "asset.html", data)
 }
@@ -310,12 +507,11 @@ func (s *Server) handleAssetEdit(w http.ResponseWriter, r *http.Request, assetID
 		return
 	}
 
-	tags := splitTags(r.FormValue("tags"))
-	_, err := s.repo.UpdateAsset(r.Context(), assetID, storage.AssetUpdateInput{
+	asset, err := s.repo.UpdateAsset(r.Context(), assetID, storage.AssetUpdateInput{
 		DisplayName:    r.FormValue("display_name"),
 		DeviceType:     r.FormValue("manual_device_type"),
 		ConnectionType: r.FormValue("manual_connection_type"),
-		Tags:           tags,
+		Tags:           splitTags(r.FormValue("tags")),
 		Notes:          r.FormValue("manual_notes"),
 	})
 	if err != nil {
@@ -323,52 +519,111 @@ func (s *Server) handleAssetEdit(w http.ResponseWriter, r *http.Request, assetID
 		return
 	}
 
-	http.Redirect(w, r, "/assets/"+assetID+"?notice=asset-updated", http.StatusSeeOther)
+	http.Redirect(w, r, "/assets/"+asset.Asset.ID+"?notice=asset-updated", http.StatusSeeOther)
 }
 
-func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
-	runID := strings.Trim(strings.TrimPrefix(r.URL.Path, "/runs/"), "/")
-	if runID == "" {
+func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/analytics" {
 		http.NotFound(w, r)
 		return
 	}
 
-	run, err := s.repo.GetRun(r.Context(), runID)
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
 	if err != nil {
-		s.writeError(w, http.StatusNotFound, err)
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	runs, err := s.repo.ListRuns(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	projectAssets, err := s.repo.ListAssets(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	data := pageData{
-		Title:     "Run " + run.Run.ID,
-		AppName:   s.options.AppName,
-		ActiveNav: "runs",
-		BasePath:  s.options.BasePath,
-		Generated: time.Now().UTC(),
-		DBPath:    s.options.DBPath,
-		DataDir:   s.options.DataDir,
-		Run:       &run,
-		Hosts:     buildHostSummaries(run),
+		Title:             "Analytics",
+		AppName:           s.options.AppName,
+		ActiveNav:         "analytics",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Grouped views that become the basis for later dashboards",
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/analytics",
+		Project:           currentProject,
+		Stats: dashboardStats{
+			RunCount:      len(runs),
+			AssetCount:    len(projectAssets),
+			HostCount:     len(projectAssets),
+			EvidenceCount: countEvidence(runs),
+			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
+		},
+		DeviceTypeStats: countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveDeviceType }),
+		ConnectionStats: countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveConnectionType }),
+		StatusStats:     countRunStatuses(runs),
+		Settings:        appSettings,
 	}
-	s.render(w, "run.html", data)
+	s.render(w, "analytics.html", data)
 }
 
 func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/settings" {
-		http.NotFound(w, r)
+	switch r.Method {
+	case http.MethodGet:
+		s.renderSettings(w, r)
+	case http.MethodPost:
+		s.handleSettingsSave(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	data := pageData{
-		Title:     "Settings",
-		AppName:   s.options.AppName,
-		ActiveNav: "settings",
-		BasePath:  s.options.BasePath,
-		Generated: time.Now().UTC(),
-		DBPath:    s.options.DBPath,
-		DataDir:   s.options.DataDir,
+		Title:             "Settings",
+		AppName:           s.options.AppName,
+		ActiveNav:         "settings",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Global defaults and project-centric startup behavior",
+		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/settings",
+		Project:           currentProject,
+		Settings:          appSettings,
 	}
 	s.render(w, "settings.html", data)
+}
+
+func (s *Server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		s.writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if err := s.repo.SetDefaultProject(r.Context(), r.FormValue("default_project_id")); err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	http.Redirect(w, r, "/settings?notice=settings-saved", http.StatusSeeOther)
 }
 
 func (s *Server) handleHealthAPI(w http.ResponseWriter, r *http.Request) {
@@ -389,20 +644,64 @@ func (s *Server) handleOptionsAPI(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handleProjectsAPI(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/api/projects" {
-		http.NotFound(w, r)
-		return
+func (s *Server) handleSettingsAPI(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		settings, err := s.repo.GetAppSettings(r.Context())
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		s.writeJSON(w, http.StatusOK, settings)
+	case http.MethodPost:
+		if err := r.ParseForm(); err != nil {
+			s.writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		if err := s.repo.SetDefaultProject(r.Context(), r.FormValue("default_project_id")); err != nil {
+			s.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		settings, err := s.repo.GetAppSettings(r.Context())
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		s.writeJSON(w, http.StatusOK, settings)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
+}
 
-	projects, err := s.repo.ListProjects(r.Context())
-	if err != nil {
-		s.writeError(w, http.StatusInternalServerError, err)
-		return
+func (s *Server) handleProjectsAPI(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		projects, err := s.repo.ListProjects(r.Context())
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		s.writeJSON(w, http.StatusOK, map[string]any{"projects": projects})
+	case http.MethodPost:
+		if err := r.ParseForm(); err != nil {
+			s.writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		project, err := s.repo.CreateProject(r.Context(), storage.ProjectCreateInput{
+			Name:          r.FormValue("name"),
+			Notes:         r.FormValue("notes"),
+			StoragePath:   r.FormValue("storage_path"),
+			TargetDBPath:  r.FormValue("target_db_path"),
+			OwnerUsername: r.FormValue("owner_username"),
+		})
+		if err != nil {
+			s.writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		s.writeJSON(w, http.StatusCreated, project)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-	s.writeJSON(w, http.StatusOK, map[string]any{
-		"projects": projects,
-	})
 }
 
 func (s *Server) handleAssetsAPI(w http.ResponseWriter, r *http.Request) {
@@ -412,14 +711,25 @@ func (s *Server) handleAssetsAPI(w http.ResponseWriter, r *http.Request) {
 	}
 
 	projectRef := strings.TrimSpace(r.URL.Query().Get("project"))
-	assets, err := s.repo.ListAssets(r.Context(), projectRef)
+	if projectRef == "" {
+		_, currentProject, _, err := s.loadShellContext(r.Context(), "")
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if currentProject != nil {
+			projectRef = currentProject.ID
+		}
+	}
+
+	projectAssets, err := s.repo.ListAssets(r.Context(), projectRef)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 	s.writeJSON(w, http.StatusOK, map[string]any{
 		"project": projectRef,
-		"assets":  assets,
+		"assets":  projectAssets,
 	})
 }
 
@@ -554,17 +864,45 @@ func (s *Server) writeError(w http.ResponseWriter, status int, err error) {
 	s.writeJSON(w, status, map[string]any{"error": err.Error()})
 }
 
-func (s *Server) findProject(ctx context.Context, ref string) (storage.ProjectSummary, error) {
+func (s *Server) loadShellContext(ctx context.Context, requestedProject string) ([]storage.ProjectSummary, *storage.ProjectSummary, storage.AppSettings, error) {
 	projects, err := s.repo.ListProjects(ctx)
 	if err != nil {
-		return storage.ProjectSummary{}, err
+		return nil, nil, storage.AppSettings{}, err
 	}
-	for _, project := range projects {
-		if project.ID == ref || strings.EqualFold(project.Name, ref) {
-			return project, nil
+	settings, err := s.repo.GetAppSettings(ctx)
+	if err != nil {
+		return nil, nil, storage.AppSettings{}, err
+	}
+	if len(projects) == 0 {
+		return projects, nil, settings, nil
+	}
+
+	current := selectProject(projects, requestedProject, settings.DefaultProjectID)
+	return projects, current, settings, nil
+}
+
+func selectProject(projects []storage.ProjectSummary, requested string, defaultProjectID string) *storage.ProjectSummary {
+	if selected := findProjectInList(projects, requested); selected != nil {
+		return selected
+	}
+	if selected := findProjectInList(projects, defaultProjectID); selected != nil {
+		return selected
+	}
+	return &projects[0]
+}
+
+func findProjectInList(projects []storage.ProjectSummary, ref string) *storage.ProjectSummary {
+	ref = strings.TrimSpace(ref)
+	if ref == "" {
+		return nil
+	}
+	for i := range projects {
+		project := &projects[i]
+		if project.ID == ref || strings.EqualFold(project.Name, ref) || strings.EqualFold(project.PublicID, ref) {
+			return project
 		}
 	}
-	return storage.ProjectSummary{}, fmt.Errorf("project %q not found", ref)
+	return nil
 }
 
 func buildHostSummaries(run storage.RunDetails) []hostSummary {
@@ -645,25 +983,16 @@ func countEvidence(runs []storage.RunSummary) int {
 	return total
 }
 
-func countTargetsAcrossRuns(ctx context.Context, repo *storage.SQLiteRepository, runs []storage.RunSummary) int {
-	seen := make(map[string]struct{})
+func countReevaluationAcrossRuns(ctx context.Context, repo *storage.SQLiteRepository, runs []storage.RunSummary) int {
+	total := 0
 	for _, run := range runs {
 		details, err := repo.GetRun(ctx, run.ID)
 		if err != nil {
 			continue
 		}
-		for _, host := range buildHostSummaries(details) {
-			seen[host.Target] = struct{}{}
-		}
+		total += len(details.Reevaluation)
 	}
-	return len(seen)
-}
-
-func takeProjects(projects []storage.ProjectSummary, n int) []storage.ProjectSummary {
-	if len(projects) <= n {
-		return projects
-	}
-	return projects[:n]
+	return total
 }
 
 func takeRuns(runs []storage.RunSummary, n int) []storage.RunSummary {
@@ -673,9 +1002,16 @@ func takeRuns(runs []storage.RunSummary, n int) []storage.RunSummary {
 	return runs[:n]
 }
 
-func groupAssets(assets []storage.AssetSummary) []assetGroup {
+func takeAssets(projectAssets []storage.AssetSummary, n int) []storage.AssetSummary {
+	if len(projectAssets) <= n {
+		return projectAssets
+	}
+	return projectAssets[:n]
+}
+
+func groupAssets(projectAssets []storage.AssetSummary) []assetGroup {
 	grouped := make(map[string][]storage.AssetSummary)
-	for _, asset := range assets {
+	for _, asset := range projectAssets {
 		key := asset.EffectiveDeviceType
 		if strings.TrimSpace(key) == "" {
 			key = "unknown"
@@ -691,16 +1027,50 @@ func groupAssets(assets []storage.AssetSummary) []assetGroup {
 
 	groups := make([]assetGroup, 0, len(keys))
 	for _, key := range keys {
-		group := assetGroup{
-			Name:   key,
-			Assets: grouped[key],
-		}
+		group := assetGroup{Name: key, Assets: grouped[key]}
 		sort.Slice(group.Assets, func(i, j int) bool {
 			return group.Assets[i].DisplayName < group.Assets[j].DisplayName
 		})
 		groups = append(groups, group)
 	}
 	return groups
+}
+
+func countAssetProperty(projectAssets []storage.AssetSummary, selector func(storage.AssetSummary) string) []labelCount {
+	counts := make(map[string]int)
+	for _, asset := range projectAssets {
+		label := strings.TrimSpace(selector(asset))
+		if label == "" {
+			label = "unknown"
+		}
+		counts[label]++
+	}
+	return mapToLabelCounts(counts)
+}
+
+func countRunStatuses(runs []storage.RunSummary) []labelCount {
+	counts := make(map[string]int)
+	for _, run := range runs {
+		label := strings.TrimSpace(run.Status)
+		if label == "" {
+			label = "unknown"
+		}
+		counts[label]++
+	}
+	return mapToLabelCounts(counts)
+}
+
+func mapToLabelCounts(values map[string]int) []labelCount {
+	labels := make([]string, 0, len(values))
+	for label := range values {
+		labels = append(labels, label)
+	}
+	sort.Strings(labels)
+	out := make([]labelCount, 0, len(labels))
+	for _, label := range labels {
+		out = append(out, labelCount{Label: label, Count: values[label]})
+	}
+	return out
 }
 
 func splitTags(raw string) []string {
@@ -716,9 +1086,75 @@ func splitTags(raw string) []string {
 	return tags
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
+func previewPublicID() string {
+	return "PRJ-XXXXXXX"
+}
+
+func storagePathSuggestion(dataDir string, name string) string {
+	slug := strings.ToLower(strings.TrimSpace(name))
+	slug = strings.ReplaceAll(slug, " ", "-")
+	slug = strings.Trim(slug, "-")
+	if slug == "" {
+		slug = "project"
 	}
-	return b
+	return filepathJoin(dataDir, "projects", slug)
+}
+
+func targetDBPathSuggestion(storagePath string) string {
+	if strings.TrimSpace(storagePath) == "" {
+		return ""
+	}
+	return filepathJoin(storagePath, "project.sqlite")
+}
+
+func pathExists(path string) bool {
+	if strings.TrimSpace(path) == "" {
+		return false
+	}
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func currentOperatorFromEnv() string {
+	if sudoUser := strings.TrimSpace(os.Getenv("SUDO_USER")); sudoUser != "" {
+		return sudoUser
+	}
+	if userValue := strings.TrimSpace(os.Getenv("USER")); userValue != "" {
+		return userValue
+	}
+	return ""
+}
+
+func noticeMessage(code string) string {
+	switch code {
+	case "create-first-project":
+		return "Create a project before using the rest of the interface."
+	case "project-created":
+		return "Project created successfully."
+	case "project-create-failed":
+		return "Project creation failed. Check the submitted paths and name."
+	case "asset-updated":
+		return "Asset successfully updated."
+	case "settings-saved":
+		return "Settings updated successfully."
+	default:
+		return ""
+	}
+}
+
+func filepathJoin(parts ...string) string {
+	filtered := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			filtered = append(filtered, trimmed)
+		}
+	}
+	return strings.Join(filtered, string(os.PathSeparator))
+}
+
+func (s *Server) optionsDataDir() string {
+	if strings.TrimSpace(s.options.DataDir) != "" {
+		return s.options.DataDir
+	}
+	return storage.DefaultDataDir()
 }

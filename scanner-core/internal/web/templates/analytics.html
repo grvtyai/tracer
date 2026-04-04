@@ -1,0 +1,83 @@
+{{define "analytics.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="hero-grid">
+    <article class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Runs</div>
+            <div class="stat-value">{{.Stats.RunCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Assets</div>
+            <div class="stat-value">{{.Stats.AssetCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Evidence</div>
+            <div class="stat-value">{{.Stats.EvidenceCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Reevaluation</div>
+            <div class="stat-value">{{.Stats.ReevalCount}}</div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>What This Page Means</h2>
+        </div>
+        <p class="empty-note">
+            These grouped counts are the first browser-native analytics layer. They are intentionally simple now, but they already prepare the data shape for richer dashboards.
+        </p>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Device Types</h2>
+        </div>
+        <div class="list">
+            {{range .DeviceTypeStats}}
+            <div class="list-item static">
+                <div class="list-title">{{.Label}}</div>
+                <span class="pill">{{.Count}}</span>
+            </div>
+            {{else}}
+            <p class="empty-note">No device analytics available yet.</p>
+            {{end}}
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Connection Types</h2>
+        </div>
+        <div class="list">
+            {{range .ConnectionStats}}
+            <div class="list-item static">
+                <div class="list-title">{{.Label}}</div>
+                <span class="pill">{{.Count}}</span>
+            </div>
+            {{else}}
+            <p class="empty-note">No connection analytics available yet.</p>
+            {{end}}
+        </div>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Run Statuses</h2>
+    </div>
+    <div class="list">
+        {{range .StatusStats}}
+        <div class="list-item static">
+            <div class="list-title">{{.Label}}</div>
+            <span class="pill">{{.Count}}</span>
+        </div>
+        {{else}}
+        <p class="empty-note">No run status analytics available yet.</p>
+        {{end}}
+    </div>
+</section>
+{{end}}

@@ -172,6 +172,63 @@ func TestServerAssetsAPIAndPageSupportManualOverrides(t *testing.T) {
 	}
 }
 
+func TestServerCanCreateProjectAndPersistDefaultProject(t *testing.T) {
+	repo := openTestRepo(t)
+	defer repo.Close()
+
+	server, err := NewServer(repo, Options{
+		DBPath:  repo.Path(),
+		DataDir: filepath.Dir(repo.Path()),
+		AppName: "Startrace",
+	})
+	if err != nil {
+		t.Fatalf("NewServer returned error: %v", err)
+	}
+
+	createForm := url.Values{
+		"name":           {"Standort A"},
+		"notes":          {"Primary home network"},
+		"owner_username": {"grvty"},
+	}
+	createReq := httptest.NewRequest(http.MethodPost, "/api/projects", strings.NewReader(createForm.Encode()))
+	createReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	createRecorder := httptest.NewRecorder()
+	server.Handler().ServeHTTP(createRecorder, createReq)
+	if createRecorder.Code != http.StatusCreated {
+		t.Fatalf("expected project create 201, got %d", createRecorder.Code)
+	}
+
+	var project storage.Project
+	if err := json.Unmarshal(createRecorder.Body.Bytes(), &project); err != nil {
+		t.Fatalf("Unmarshal project returned error: %v", err)
+	}
+	if project.PublicID == "" {
+		t.Fatalf("expected auto-generated public id")
+	}
+	if project.StoragePath == "" {
+		t.Fatalf("expected auto-generated storage path")
+	}
+
+	settingsForm := url.Values{
+		"default_project_id": {project.ID},
+	}
+	settingsReq := httptest.NewRequest(http.MethodPost, "/api/settings", strings.NewReader(settingsForm.Encode()))
+	settingsReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	settingsRecorder := httptest.NewRecorder()
+	server.Handler().ServeHTTP(settingsRecorder, settingsReq)
+	if settingsRecorder.Code != http.StatusOK {
+		t.Fatalf("expected settings save 200, got %d", settingsRecorder.Code)
+	}
+
+	var appSettings storage.AppSettings
+	if err := json.Unmarshal(settingsRecorder.Body.Bytes(), &appSettings); err != nil {
+		t.Fatalf("Unmarshal app settings returned error: %v", err)
+	}
+	if appSettings.DefaultProjectID != project.ID {
+		t.Fatalf("unexpected default project id: want %q, got %q", project.ID, appSettings.DefaultProjectID)
+	}
+}
+
 func openTestRepo(t *testing.T) *storage.SQLiteRepository {
 	t.Helper()
 	repo, err := storage.OpenSQLite(filepath.Join(t.TempDir(), "tracer.db"))

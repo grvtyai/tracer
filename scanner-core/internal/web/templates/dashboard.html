@@ -1,0 +1,128 @@
+{{define "dashboard.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="hero-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{else}}No Project{{end}}</h2>
+            {{if .CurrentProject}}<span class="pill">{{.CurrentProject.PublicID}}</span>{{end}}
+        </div>
+        {{if .CurrentProject}}
+        <div class="kv-grid">
+            <div class="kv-key">Owner</div>
+            <div class="kv-value">{{.CurrentProject.OwnerUsername}}</div>
+            <div class="kv-key">Storage path</div>
+            <div class="kv-value mono">{{.CurrentProject.StoragePath}}</div>
+            <div class="kv-key">Target database</div>
+            <div class="kv-value mono">{{.CurrentProject.TargetDBPath}}</div>
+            <div class="kv-key">Notes</div>
+            <div class="kv-value">{{if .CurrentProject.Notes}}{{.CurrentProject.Notes}}{{else}}-{{end}}</div>
+        </div>
+        {{else}}
+        <p class="empty-note">Create your first project to start organizing runs, assets and analytics.</p>
+        {{end}}
+    </article>
+
+    <article class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Runs</div>
+            <div class="stat-value">{{.Stats.RunCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Assets</div>
+            <div class="stat-value">{{.Stats.AssetCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Evidence</div>
+            <div class="stat-value">{{.Stats.EvidenceCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Reevaluation</div>
+            <div class="stat-value">{{.Stats.ReevalCount}}</div>
+        </div>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Preflight</h2>
+            <span class="pill {{if .PreflightHealthy}}subtle{{end}}">{{if .PreflightHealthy}}ready{{else}}attention{{end}}</span>
+        </div>
+        <div class="list">
+            {{range .PreflightChecks}}
+            <div class="list-item static">
+                <div>
+                    <div class="list-title">{{.Name}}</div>
+                    <div class="list-meta">{{.Detail}}</div>
+                </div>
+                <span class="pill subtle">{{.Status}}</span>
+            </div>
+            {{end}}
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Next Step</h2>
+        </div>
+        {{if .RecentRuns}}
+        <p class="empty-note">
+            This project already has run history. You can open past runs or launch another scan from the browser.
+        </p>
+        {{else}}
+        <p class="empty-note">
+            No scan has been started for this project yet. Start your first scan from the GUI to populate runs, assets and analytics.
+        </p>
+        {{end}}
+        <div class="hero-actions">
+            <a class="button button-primary" href="/scans/new?project={{.CurrentProject.ID}}">Start Scan</a>
+            <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Open Runs</a>
+        </div>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Latest Runs</h2>
+        </div>
+        {{if .RecentRuns}}
+        <div class="list">
+            {{range .RecentRuns}}
+            <a class="list-item" href="/runs/{{.ID}}">
+                <div>
+                    <div class="list-title">{{.TemplateName}}</div>
+                    <div class="list-meta">{{.Status}} | {{.StartedAt.Format "2006-01-02 15:04"}}</div>
+                </div>
+                <span class="pill">{{.EvidenceCount}} ev</span>
+            </a>
+            {{end}}
+        </div>
+        {{else}}
+        <p class="empty-note">No runs stored for this project yet.</p>
+        {{end}}
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Asset Snapshot</h2>
+        </div>
+        {{if .Assets}}
+        <div class="list">
+            {{range .Assets}}
+            <a class="list-item" href="/assets/{{.ID}}">
+                <div>
+                    <div class="list-title">{{.DisplayName}}</div>
+                    <div class="list-meta">{{.PrimaryTarget}} | {{.EffectiveDeviceType}} | {{.EffectiveConnectionType}}</div>
+                </div>
+                <span class="pill subtle">{{len .CurrentOpenPorts}} ports</span>
+            </a>
+            {{end}}
+        </div>
+        {{else}}
+        <p class="empty-note">No assets available for this project yet.</p>
+        {{end}}
+    </article>
+</section>
+{{end}}

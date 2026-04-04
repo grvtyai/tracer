@@ -1,0 +1,128 @@
+{{define "scan_new.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Preflight Before Launch</h2>
+            <span class="pill {{if .PreflightHealthy}}subtle{{end}}">{{if .PreflightHealthy}}ready{{else}}attention{{end}}</span>
+        </div>
+        <div class="list">
+            {{range .PreflightChecks}}
+            <div class="list-item static">
+                <div>
+                    <div class="list-title">{{.Name}}</div>
+                    <div class="list-meta">{{.Detail}}</div>
+                </div>
+                <span class="pill subtle">{{.Status}}</span>
+            </div>
+            {{end}}
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Launch Notes</h2>
+        </div>
+        <ul class="bullet-list">
+            <li>The start time is displayed for clarity, but scans begin immediately after you submit the form.</li>
+            <li>Port templates stay operator-friendly so the same choices can later be reused from CLI and GUI.</li>
+            <li>Passive ingest can stay in auto mode, which keeps Zeek available without forcing it into every situation.</li>
+        </ul>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Scan Configuration</h2>
+        <span class="pill">{{.CurrentProject.Name}}</span>
+    </div>
+    <form method="post" action="/scans/new" class="asset-form">
+        <input type="hidden" name="project_id" value="{{.ScanForm.ProjectID}}" />
+
+        <label class="form-row">
+            <span class="form-label">Scan name</span>
+            <input class="input" type="text" name="scan_name" value="{{.ScanForm.ScanName}}" />
+        </label>
+
+        <label class="form-row">
+            <span class="form-label">Scope / IP ranges</span>
+            <textarea class="input textarea" name="scope_input" placeholder="192.168.178.0/24 or one target per line">{{.ScanForm.ScopeInput}}</textarea>
+        </label>
+
+        <div class="form-grid">
+            <label class="form-row">
+                <span class="form-label">Port template</span>
+                <select class="input" name="port_template">
+                    <option value="all-default-ports" {{if eq .ScanForm.PortTemplate "all-default-ports"}}selected{{end}}>All Default Ports</option>
+                    <option value="top-1000-ports" {{if eq .ScanForm.PortTemplate "top-1000-ports"}}selected{{end}}>Top 1000 Ports</option>
+                    <option value="web-only" {{if eq .ScanForm.PortTemplate "web-only"}}selected{{end}}>Web Only</option>
+                    <option value="entra-id" {{if eq .ScanForm.PortTemplate "entra-id"}}selected{{end}}>Entra ID</option>
+                </select>
+            </label>
+
+            <label class="form-row">
+                <span class="form-label">Start time</span>
+                <input class="input" type="text" value="{{.ScanForm.StartTimeDisplay}}" disabled />
+            </label>
+
+            <label class="form-row">
+                <span class="form-label">Scan tag</span>
+                <select class="input" name="scan_tag">
+                    <option value="internal" {{if eq .ScanForm.ScanTag "internal"}}selected{{end}}>internal</option>
+                    <option value="external" {{if eq .ScanForm.ScanTag "external"}}selected{{end}}>external</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="form-grid">
+            <label class="form-row">
+                <span class="form-label">Active interface</span>
+                <input class="input" type="text" name="active_interface" value="{{.ScanForm.ActiveInterface}}" />
+            </label>
+            <label class="form-row">
+                <span class="form-label">Passive interface</span>
+                <input class="input" type="text" name="passive_interface" value="{{.ScanForm.PassiveInterface}}" />
+            </label>
+        </div>
+
+        <div class="form-grid">
+            <label class="form-row">
+                <span class="form-label">Passive mode</span>
+                <select class="input" name="passive_mode">
+                    <option value="off" {{if eq .ScanForm.PassiveMode "off"}}selected{{end}}>off</option>
+                    <option value="auto" {{if eq .ScanForm.PassiveMode "auto"}}selected{{end}}>auto</option>
+                    <option value="always" {{if eq .ScanForm.PassiveMode "always"}}selected{{end}}>always</option>
+                </select>
+            </label>
+            <label class="form-row">
+                <span class="form-label">Zeek log dir</span>
+                <input class="input" type="text" name="zeek_log_dir" value="{{.ScanForm.ZeekLogDir}}" />
+            </label>
+        </div>
+
+        <div class="checkbox-grid">
+            <label class="check-row"><input type="checkbox" name="enable_route_sampling" {{if .ScanForm.EnableRouteSampling}}checked{{end}} /> Route sampling</label>
+            <label class="check-row"><input type="checkbox" name="enable_service_scan" {{if .ScanForm.EnableServiceScan}}checked{{end}} /> Service scan</label>
+            <label class="check-row"><input type="checkbox" name="enable_passive_ingest" {{if .ScanForm.EnablePassiveIngest}}checked{{end}} /> Passive ingest</label>
+            <label class="check-row"><input type="checkbox" name="enable_os_detection" {{if .ScanForm.EnableOSDetection}}checked{{end}} /> OS detection</label>
+            <label class="check-row"><input type="checkbox" name="enable_layer2" {{if .ScanForm.EnableLayer2}}checked{{end}} /> Layer 2</label>
+            <label class="check-row"><input type="checkbox" name="use_large_range_strategy" {{if .ScanForm.UseLargeRangeStrategy}}checked{{end}} /> Large range strategy</label>
+            <label class="check-row"><input type="checkbox" name="zeek_auto_start" {{if .ScanForm.ZeekAutoStart}}checked{{end}} /> Zeek auto start</label>
+            <label class="check-row"><input type="checkbox" name="continue_on_error" {{if .ScanForm.ContinueOnError}}checked{{end}} /> Continue on error</label>
+            <label class="check-row"><input type="checkbox" name="retain_partial_results" {{if .ScanForm.RetainPartialResults}}checked{{end}} /> Retain partial results</label>
+            <label class="check-row"><input type="checkbox" name="reevaluate_ambiguous" {{if .ScanForm.ReevaluateAmbiguous}}checked{{end}} /> Reevaluate ambiguous</label>
+        </div>
+
+        <label class="form-row">
+            <span class="form-label">Reevaluate after</span>
+            <input class="input" type="text" name="reevaluate_after" value="{{.ScanForm.ReevaluateAfter}}" />
+        </label>
+
+        <div class="hero-actions">
+            <button class="button button-primary" type="submit">Start scan now</button>
+            <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Back to runs</a>
+        </div>
+    </form>
+</section>
+{{end}}

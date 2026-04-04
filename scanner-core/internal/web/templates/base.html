@@ -19,11 +19,11 @@
             </div>
 
             <nav class="nav">
-                <a class="nav-link {{if eq .ActiveNav "landing"}}active{{end}}" href="/">Overview</a>
-                <a class="nav-link {{if eq .ActiveNav "projects"}}active{{end}}" href="/projects">Projects</a>
-                <a class="nav-link {{if eq .ActiveNav "assets"}}active{{end}}" href="/assets">Assets</a>
-                <a class="nav-link {{if eq .ActiveNav "runs"}}active{{end}}" href="/projects">Runs</a>
-                <a class="nav-link {{if eq .ActiveNav "settings"}}active{{end}}" href="/settings">Settings</a>
+                <a class="nav-link {{if eq .ActiveNav "dashboard"}}active{{end}}" href="{{if .CurrentProject}}/?project={{.CurrentProject.ID}}{{else}}/{{end}}">Dashboard</a>
+                <a class="nav-link {{if eq .ActiveNav "runs"}}active{{end}}" href="{{if .CurrentProject}}/runs?project={{.CurrentProject.ID}}{{else}}/runs{{end}}">Runs</a>
+                <a class="nav-link {{if eq .ActiveNav "assets"}}active{{end}}" href="{{if .CurrentProject}}/assets?project={{.CurrentProject.ID}}{{else}}/assets{{end}}">Assets</a>
+                <a class="nav-link {{if eq .ActiveNav "analytics"}}active{{end}}" href="{{if .CurrentProject}}/analytics?project={{.CurrentProject.ID}}{{else}}/analytics{{end}}">Analytics</a>
+                <a class="nav-link {{if eq .ActiveNav "settings"}}active{{end}}" href="{{if .CurrentProject}}/settings?project={{.CurrentProject.ID}}{{else}}/settings{{end}}">Settings</a>
             </nav>
 
             <div class="sidebar-foot">
@@ -39,13 +39,43 @@
                     <h1>{{.Title}}</h1>
                 </div>
                 <div class="topbar-meta">
-                    <span class="pill">Generated {{.Generated.Format "2006-01-02 15:04:05 UTC"}}</span>
+                    <label class="switcher-label" for="project-switcher">Project</label>
+                    <select id="project-switcher" class="input project-switcher" data-switch-path="{{.ProjectSwitchPath}}">
+                        {{if .Projects}}
+                            {{range .Projects}}
+                            <option value="{{.ID}}" {{if $.CurrentProject}}{{if eq $.CurrentProject.ID .ID}}selected{{end}}{{end}}>{{.Name}} {{if .PublicID}}({{.PublicID}}){{end}}</option>
+                            {{end}}
+                        {{else}}
+                            <option value="">No projects yet</option>
+                        {{end}}
+                        <option value="__new__">Neues Projekt +</option>
+                    </select>
                 </div>
             </header>
+
+            {{if .Notice}}
+            <section class="notice success">{{.Notice}}</section>
+            {{end}}
 
             {{template "page" .}}
         </main>
     </div>
+
+    <script>
+        (function () {
+            var switcher = document.getElementById("project-switcher");
+            if (!switcher) return;
+            switcher.addEventListener("change", function () {
+                if (switcher.value === "__new__") {
+                    window.location.href = "/projects/new";
+                    return;
+                }
+                if (!switcher.value) return;
+                var target = switcher.getAttribute("data-switch-path") || "/";
+                window.location.href = target + "?project=" + encodeURIComponent(switcher.value);
+            });
+        }());
+    </script>
 </body>
 </html>
 {{end}}
