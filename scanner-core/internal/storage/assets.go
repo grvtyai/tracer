@@ -97,10 +97,22 @@ type observedAsset struct {
 }
 
 func (r *SQLiteRepository) ListAssets(ctx context.Context, projectRef string) ([]AssetSummary, error) {
+	assets, err := r.queryAssets(ctx, projectRef)
+	if err != nil {
+		return nil, err
+	}
+	if len(assets) > 0 {
+		return assets, nil
+	}
+
 	if err := r.ensureAssetsForProject(ctx, projectRef); err != nil {
 		return nil, err
 	}
 
+	return r.queryAssets(ctx, projectRef)
+}
+
+func (r *SQLiteRepository) queryAssets(ctx context.Context, projectRef string) ([]AssetSummary, error) {
 	query := `
 		SELECT
 			a.id,

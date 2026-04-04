@@ -133,6 +133,26 @@ func TestDefaultDataDirPrefersInvokingUserUnderSudo(t *testing.T) {
 	}
 }
 
+func TestInvokingUserIDsPrefersSudoUserOwnership(t *testing.T) {
+	uid, gid, ok := invokingUserIDs(func(key string) string {
+		switch key {
+		case "SUDO_UID":
+			return "1000"
+		case "SUDO_GID":
+			return "1000"
+		default:
+			return ""
+		}
+	})
+
+	if !ok {
+		t.Fatalf("expected sudo uid/gid to be detected")
+	}
+	if uid != 1000 || gid != 1000 {
+		t.Fatalf("unexpected sudo ownership ids: got uid=%d gid=%d", uid, gid)
+	}
+}
+
 func TestSQLiteRepositoryListsRunsAndBuildsDiff(t *testing.T) {
 	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "tracer.db"))
 	if err != nil {

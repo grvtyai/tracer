@@ -144,8 +144,11 @@ func OpenSQLite(path string) (*SQLiteRepository, error) {
 		path = DefaultDBPath()
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o775); err != nil {
 		return nil, fmt.Errorf("create sqlite directory: %w", err)
+	}
+	if err := adoptSQLiteOwnership(path); err != nil {
+		return nil, err
 	}
 
 	db, err := sql.Open("sqlite", path)
@@ -159,6 +162,10 @@ func OpenSQLite(path string) (*SQLiteRepository, error) {
 	}
 
 	if err := repo.migrate(context.Background()); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err := adoptSQLiteOwnership(path); err != nil {
 		db.Close()
 		return nil, err
 	}
@@ -858,6 +865,73 @@ func lookupUserHomeDir(username string) (string, error) {
 		return "", err
 	}
 	return lookup.HomeDir, nil
+}
+
+func adoptSQLiteOwnership(path string) error {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
+
+	uid, gid, ok := invokingUserIDs(os.Getenv)
+	if !ok {
+		return nil
+	}
+
+	for _, candidate := range []string{
+		filepath.Dir(path),
+		path,
+		path + "-wal",
+		path + "-shm",
+	} {
+		if err := chownIfExists(candidate, uid, gid); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func invokingUserIDs(getenv func(string) string) (int, int, bool) {
+	uidValue := strings.TrimSpace(getenv("SUDO_UID"))
+	gidValue := strings.TrimSpace(getenv("SUDO_GID"))
+	if uidValue == "" || gidValue == "" {
+		return 0, 0, false
+	}
+
+	uid, err := strconv.Atoi(uidValue)
+	if err != nil {
+		return 0, 0, false
+	}
+	gid, err := strconv.Atoi(gidValue)
+	if err != nil {
+		return 0, 0, false
+	}
+
+	return uid, gid, true
+}
+
+func chownIfExists(path string, uid int, gid int) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("stat sqlite path %q: %w", path, err)
+	}
+
+	if err := os.Chown(path, uid, gid); err != nil {
+		return fmt.Errorf("adjust sqlite ownership for %q: %w", path, err)
+	}
+
+	mode := os.FileMode(0o664)
+	if info.IsDir() {
+		mode = 0o775
+	}
+	if err := os.Chmod(path, mode); err != nil {
+		return fmt.Errorf("adjust sqlite mode for %q: %w", path, err)
+	}
+
+	return nil
 }
 
 func marshalJSON(value any) (string, error) {
