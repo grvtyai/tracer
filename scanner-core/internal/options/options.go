@@ -59,7 +59,7 @@ func DefaultEffectiveOptions() EffectiveOptions {
 	return EffectiveOptions{
 		ContinueOnError:      true,
 		RetainPartialResults: true,
-		ReevaluateAmbiguous:  true,
+		ReevaluateAmbiguous:  false,
 		ReevaluateAfter:      "30m",
 		PassiveMode:          "auto",
 		AutoStartZeek:        true,

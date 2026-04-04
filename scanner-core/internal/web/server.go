@@ -50,9 +50,12 @@ type pageData struct {
 	Settings          storage.AppSettings
 	PreflightChecks   []preflightCheck
 	PreflightHealthy  bool
+	PreflightState    string
 	ScanForm          scanFormData
 	RecentRuns        []storage.RunSummary
+	RecentRunItems    []runListItem
 	Runs              []storage.RunSummary
+	RunItems          []runListItem
 	Run               *storage.RunDetails
 	Assets            []storage.AssetSummary
 	Asset             *storage.AssetDetails
@@ -74,6 +77,7 @@ type dashboardStats struct {
 }
 
 type hostSummary struct {
+	AssetID          string
 	Target          string
 	Verdict         string
 	Confidence      string
@@ -81,6 +85,7 @@ type hostSummary struct {
 	EvidenceCount   int
 	BlockingReasons []string
 	LastObserved    time.Time
+	Reevaluate      bool
 }
 
 type assetGroup struct {
@@ -91,6 +96,14 @@ type assetGroup struct {
 type labelCount struct {
 	Label string
 	Count int
+}
+
+type runListItem struct {
+	Run         storage.RunSummary
+	HostCount   int
+	SubnetCount int
+	StatusLabel string
+	Clickable   bool
 }
 
 type projectFormData struct {
@@ -182,7 +195,6 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	preflightChecks := collectPreflightChecks(s.options.DBPath)
 	projectAssets, err := s.repo.ListAssets(ctx, currentProject.ID)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
@@ -203,9 +215,8 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		ProjectSwitchPath: "/",
 		Project:           currentProject,
 		RecentRuns:        takeRuns(runs, 8),
+		RecentRunItems:    buildRunListItems(ctx, s.repo, takeRuns(runs, 8)),
 		Assets:            takeAssets(projectAssets, 8),
-		PreflightChecks:   preflightChecks,
-		PreflightHealthy:  preflightHealthy(preflightChecks),
 		Stats: dashboardStats{
 			RunCount:      len(runs),
 			AssetCount:    len(projectAssets),
@@ -359,6 +370,7 @@ func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 		ProjectSwitchPath: "/runs",
 		Project:           currentProject,
 		Runs:              runs,
+		RunItems:          buildRunListItems(ctx, s.repo, runs),
 		DiffAPI:           "/api/diff",
 		Settings:          appSettings,
 	}
@@ -400,7 +412,7 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		ProjectSwitchPath: "/runs",
 		Project:           &project,
 		Run:               &run,
-		Hosts:             buildHostSummaries(run),
+		Hosts:             buildHostSummaries(run, mustListAssets(r.Context(), s.repo, project.ID)),
 		Settings:          appSettings,
 	}
 	s.render(w, "run.html", data)
@@ -511,6 +523,7 @@ func (s *Server) handleAssetEdit(w http.ResponseWriter, r *http.Request, assetID
 		DisplayName:    r.FormValue("display_name"),
 		DeviceType:     r.FormValue("manual_device_type"),
 		ConnectionType: r.FormValue("manual_connection_type"),
+		Reevaluate:     isChecked(r.FormValue("manual_reevaluate")),
 		Tags:           splitTags(r.FormValue("tags")),
 		Notes:          r.FormValue("manual_notes"),
 	})
@@ -757,6 +770,7 @@ func (s *Server) handleAssetAPI(w http.ResponseWriter, r *http.Request) {
 			DisplayName:    r.FormValue("display_name"),
 			DeviceType:     r.FormValue("manual_device_type"),
 			ConnectionType: r.FormValue("manual_connection_type"),
+			Reevaluate:     isChecked(r.FormValue("manual_reevaluate")),
 			Tags:           splitTags(r.FormValue("tags")),
 			Notes:          r.FormValue("manual_notes"),
 		})
@@ -841,6 +855,12 @@ func (s *Server) handleDiffAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) render(w http.ResponseWriter, name string, data pageData) {
+	if data.PreflightChecks == nil {
+		data.PreflightChecks = collectPreflightChecks(s.options.DBPath)
+	}
+	data.PreflightHealthy = preflightHealthy(data.PreflightChecks)
+	data.PreflightState = preflightState(data.PreflightChecks)
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	templates, err := template.ParseFS(assets, "templates/base.html", "templates/"+name)
 	if err != nil {
@@ -905,9 +925,17 @@ func findProjectInList(projects []storage.ProjectSummary, ref string) *storage.P
 	return nil
 }
 
-func buildHostSummaries(run storage.RunDetails) []hostSummary {
+func buildHostSummaries(run storage.RunDetails, projectAssets []storage.AssetSummary) []hostSummary {
 	perTarget := make(map[string]*hostSummary)
 	openPorts := make(map[string]map[int]struct{})
+	assetByTarget := make(map[string]storage.AssetSummary, len(projectAssets))
+	for _, asset := range projectAssets {
+		target := strings.TrimSpace(asset.PrimaryTarget)
+		if target == "" {
+			continue
+		}
+		assetByTarget[target] = asset
+	}
 
 	for _, record := range run.Evidence {
 		target := strings.TrimSpace(record.Target)
@@ -917,6 +945,10 @@ func buildHostSummaries(run storage.RunDetails) []hostSummary {
 		entry, ok := perTarget[target]
 		if !ok {
 			entry = &hostSummary{Target: target}
+			if asset, exists := assetByTarget[target]; exists {
+				entry.AssetID = asset.ID
+				entry.Reevaluate = asset.ManualReevaluate
+			}
 			perTarget[target] = entry
 		}
 		entry.EvidenceCount++
@@ -942,6 +974,10 @@ func buildHostSummaries(run storage.RunDetails) []hostSummary {
 		entry, ok := perTarget[target]
 		if !ok {
 			entry = &hostSummary{Target: target}
+			if asset, exists := assetByTarget[target]; exists {
+				entry.AssetID = asset.ID
+				entry.Reevaluate = asset.ManualReevaluate
+			}
 			perTarget[target] = entry
 		}
 		entry.Verdict = string(assessment.Verdict)
@@ -973,6 +1009,24 @@ func buildHostSummaries(run storage.RunDetails) []hostSummary {
 		return hosts[i].Target < hosts[j].Target
 	})
 	return hosts
+}
+
+func buildRunListItems(ctx context.Context, repo *storage.SQLiteRepository, runs []storage.RunSummary) []runListItem {
+	items := make([]runListItem, 0, len(runs))
+	for _, run := range runs {
+		item := runListItem{
+			Run:         run,
+			StatusLabel: runStatusLabel(run.Status),
+			Clickable:   strings.TrimSpace(strings.ToLower(run.Status)) != "running",
+		}
+		details, err := repo.GetRun(ctx, run.ID)
+		if err == nil {
+			item.HostCount = countRunHosts(details)
+			item.SubnetCount = len(details.Scope.CIDRs)
+		}
+		items = append(items, item)
+	}
+	return items
 }
 
 func countEvidence(runs []storage.RunSummary) int {
@@ -1055,9 +1109,48 @@ func countRunStatuses(runs []storage.RunSummary) []labelCount {
 		if label == "" {
 			label = "unknown"
 		}
+		label = runStatusLabel(label)
 		counts[label]++
 	}
 	return mapToLabelCounts(counts)
+}
+
+func countRunHosts(run storage.RunDetails) int {
+	targets := make(map[string]struct{})
+	for _, record := range run.Evidence {
+		if target := strings.TrimSpace(record.Target); target != "" {
+			targets[target] = struct{}{}
+		}
+	}
+	for _, assessment := range run.Blocking {
+		if target := strings.TrimSpace(assessment.Target); target != "" {
+			targets[target] = struct{}{}
+		}
+	}
+	return len(targets)
+}
+
+func runStatusLabel(status string) string {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "running":
+		return "Running"
+	case "completed":
+		return "Completed"
+	case "partial":
+		return "Needs attention"
+	case "failed":
+		return "Failed"
+	default:
+		return firstNonEmptyWeb(strings.TrimSpace(status), "Unknown")
+	}
+}
+
+func mustListAssets(ctx context.Context, repo *storage.SQLiteRepository, projectID string) []storage.AssetSummary {
+	assets, err := repo.ListAssets(ctx, projectID)
+	if err != nil {
+		return nil
+	}
+	return assets
 }
 
 func mapToLabelCounts(values map[string]int) []labelCount {

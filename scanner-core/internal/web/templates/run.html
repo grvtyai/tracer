@@ -9,15 +9,15 @@
         </div>
         <div class="stat-card">
             <div class="stat-label">Status</div>
-            <div class="stat-value">{{.Run.Run.Status}}</div>
+            <div class="stat-value">{{if eq .Run.Run.Status "running"}}<span class="status-label running-label"><span class="spinner"></span>Running</span>{{else if eq .Run.Run.Status "partial"}}Needs attention{{else if eq .Run.Run.Status "completed"}}Completed{{else}}{{.Run.Run.Status}}{{end}}</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Jobs</div>
-            <div class="stat-value">{{.Run.Run.JobCount}}</div>
+            <div class="stat-label">Hosts</div>
+            <div class="stat-value">{{len .Hosts}}</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Evidence</div>
-            <div class="stat-value">{{.Run.Run.EvidenceCount}}</div>
+            <div class="stat-label">Subnets</div>
+            <div class="stat-value">{{len .Run.Scope.CIDRs}}</div>
         </div>
     </article>
 
@@ -53,22 +53,26 @@
                     <th>Confidence</th>
                     <th>Open Ports</th>
                     <th>Evidence</th>
+                    <th>Asset</th>
+                    <th>Reevaluate</th>
                     <th>Last Observed</th>
                 </tr>
             </thead>
             <tbody>
                 {{range .Hosts}}
                 <tr>
-                    <td class="mono">{{.Target}}</td>
+                    <td class="mono">{{if .AssetID}}<a class="table-link" href="/assets/{{.AssetID}}">{{.Target}}</a>{{else}}{{.Target}}{{end}}</td>
                     <td>{{.Verdict}}</td>
                     <td>{{.Confidence}}</td>
                     <td>{{if .OpenPorts}}{{range $index, $port := .OpenPorts}}{{if $index}}, {{end}}{{$port}}{{end}}{{else}}-{{end}}</td>
                     <td>{{.EvidenceCount}}</td>
+                    <td>{{if .AssetID}}<a class="table-link" href="/assets/{{.AssetID}}">Open asset</a>{{else}}-{{end}}</td>
+                    <td>{{if .Reevaluate}}enabled{{else}}off{{end}}</td>
                     <td>{{if .LastObserved.IsZero}}-{{else}}{{.LastObserved.Format "2006-01-02 15:04:05"}}{{end}}</td>
                 </tr>
                 {{if .BlockingReasons}}
                 <tr>
-                    <td colspan="6" class="reason-row">{{range $index, $reason := .BlockingReasons}}{{if $index}} | {{end}}{{$reason}}{{end}}</td>
+                    <td colspan="8" class="reason-row">{{range $index, $reason := .BlockingReasons}}{{if $index}} | {{end}}{{$reason}}{{end}}</td>
                 </tr>
                 {{end}}
                 {{end}}

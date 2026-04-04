@@ -40,16 +40,38 @@
                 </div>
                 <div class="topbar-meta">
                     <label class="switcher-label" for="project-switcher">Project</label>
-                    <select id="project-switcher" class="input project-switcher" data-switch-path="{{.ProjectSwitchPath}}">
-                        {{if .Projects}}
-                            {{range .Projects}}
-                            <option value="{{.ID}}" {{if $.CurrentProject}}{{if eq $.CurrentProject.ID .ID}}selected{{end}}{{end}}>{{.Name}} {{if .PublicID}}({{.PublicID}}){{end}}</option>
+                    <div class="project-status">
+                        <select id="project-switcher" class="input project-switcher" data-switch-path="{{.ProjectSwitchPath}}">
+                            {{if .Projects}}
+                                {{range .Projects}}
+                                <option value="{{.ID}}" {{if $.CurrentProject}}{{if eq $.CurrentProject.ID .ID}}selected{{end}}{{end}}>{{.Name}} {{if .PublicID}}({{.PublicID}}){{end}}</option>
+                                {{end}}
+                            {{else}}
+                                <option value="">No projects yet</option>
                             {{end}}
-                        {{else}}
-                            <option value="">No projects yet</option>
-                        {{end}}
-                        <option value="__new__">Neues Projekt +</option>
-                    </select>
+                            <option value="__new__">Neues Projekt +</option>
+                        </select>
+                        <div class="preflight-indicator state-{{.PreflightState}}" aria-label="Preflight {{.PreflightState}}">
+                            <span class="preflight-dot"></span>
+                            <div class="preflight-card">
+                                <div class="preflight-card-head">
+                                    <strong>System Check</strong>
+                                    <span class="pill subtle">{{if eq .PreflightState "ok"}}bereit{{else if eq .PreflightState "warning"}}Hinweis{{else}}Problem{{end}}</span>
+                                </div>
+                                <div class="preflight-mini-list">
+                                    {{range .PreflightChecks}}
+                                    <div class="preflight-mini-item">
+                                        <span class="mini-state state-{{.Status}}"></span>
+                                        <div>
+                                            <div class="list-title">{{.Name}}</div>
+                                            <div class="list-meta">{{.Detail}}</div>
+                                        </div>
+                                    </div>
+                                    {{end}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
 

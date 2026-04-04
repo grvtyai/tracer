@@ -46,24 +46,6 @@
 <section class="panel-grid">
     <article class="panel">
         <div class="panel-head">
-            <h2>Preflight</h2>
-            <span class="pill {{if .PreflightHealthy}}subtle{{end}}">{{if .PreflightHealthy}}ready{{else}}attention{{end}}</span>
-        </div>
-        <div class="list">
-            {{range .PreflightChecks}}
-            <div class="list-item static">
-                <div>
-                    <div class="list-title">{{.Name}}</div>
-                    <div class="list-meta">{{.Detail}}</div>
-                </div>
-                <span class="pill subtle">{{.Status}}</span>
-            </div>
-            {{end}}
-        </div>
-    </article>
-
-    <article class="panel">
-        <div class="panel-head">
             <h2>Next Step</h2>
         </div>
         {{if .RecentRuns}}
@@ -87,16 +69,16 @@
         <div class="panel-head">
             <h2>Latest Runs</h2>
         </div>
-        {{if .RecentRuns}}
+        {{if .RecentRunItems}}
         <div class="list">
-            {{range .RecentRuns}}
-            <a class="list-item" href="/runs/{{.ID}}">
+            {{range .RecentRunItems}}
+            <{{if .Clickable}}a href="/runs/{{.Run.ID}}"{{else}}div{{end}} class="list-item {{if not .Clickable}}disabled{{end}}">
                 <div>
-                    <div class="list-title">{{.TemplateName}}</div>
-                    <div class="list-meta">{{.Status}} | {{.StartedAt.Format "2006-01-02 15:04"}}</div>
+                    <div class="list-title">{{.Run.TemplateName}}</div>
+                    <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts | {{.SubnetCount}} subnet{{if ne .SubnetCount 1}}s{{end}}</div>
                 </div>
-                <span class="pill">{{.EvidenceCount}} ev</span>
-            </a>
+                <span class="pill {{if eq .Run.Status "running"}}running-pill{{end}}">{{if eq .Run.Status "running"}}<span class="spinner tiny"></span>{{end}}{{.StatusLabel}}</span>
+            </{{if .Clickable}}a{{else}}div{{end}}>
             {{end}}
         </div>
         {{else}}

@@ -1,35 +1,16 @@
 {{define "scan_new.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-<section class="panel-grid">
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Preflight Before Launch</h2>
-            <span class="pill {{if .PreflightHealthy}}subtle{{end}}">{{if .PreflightHealthy}}ready{{else}}attention{{end}}</span>
-        </div>
-        <div class="list">
-            {{range .PreflightChecks}}
-            <div class="list-item static">
-                <div>
-                    <div class="list-title">{{.Name}}</div>
-                    <div class="list-meta">{{.Detail}}</div>
-                </div>
-                <span class="pill subtle">{{.Status}}</span>
-            </div>
-            {{end}}
-        </div>
-    </article>
-
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Launch Notes</h2>
-        </div>
-        <ul class="bullet-list">
-            <li>The start time is displayed for clarity, but scans begin immediately after you submit the form.</li>
-            <li>Port templates stay operator-friendly so the same choices can later be reused from CLI and GUI.</li>
-            <li>Passive ingest can stay in auto mode, which keeps Zeek available without forcing it into every situation.</li>
-        </ul>
-    </article>
+<section class="panel">
+    <div class="panel-head">
+        <h2>Launch Notes</h2>
+    </div>
+    <ul class="bullet-list">
+        <li>Scans start immediately after you submit the configuration. The displayed start time is only informational for now.</li>
+        <li>Local network neighbor discovery is the clearer name for the old Layer 2 option. It only helps on the same broadcast segment and is optional.</li>
+        <li>Reevaluate is off by default. Turn it on only when you want the system to flag uncertain results for later re-checks.</li>
+        <li>Passive mode can stay on auto so Zeek is available when it is useful without forcing passive ingest into every run.</li>
+    </ul>
 </section>
 
 <section class="panel">
@@ -41,13 +22,15 @@
         <input type="hidden" name="project_id" value="{{.ScanForm.ProjectID}}" />
 
         <label class="form-row">
-            <span class="form-label">Scan name</span>
+            <span class="form-label">Scan name (optional)</span>
             <input class="input" type="text" name="scan_name" value="{{.ScanForm.ScanName}}" />
+            <span class="form-hint">Friendly label for the run inside the GUI. If you leave it alone, a sensible default is used.</span>
         </label>
 
         <label class="form-row">
             <span class="form-label">Scope / IP ranges</span>
             <textarea class="input textarea" name="scope_input" placeholder="192.168.178.0/24 or one target per line">{{.ScanForm.ScopeInput}}</textarea>
+            <span class="form-hint">Required. You can mix individual IPs, hostnames and CIDR ranges. Use one target per line for readability.</span>
         </label>
 
         <div class="form-grid">
@@ -59,11 +42,13 @@
                     <option value="web-only" {{if eq .ScanForm.PortTemplate "web-only"}}selected{{end}}>Web Only</option>
                     <option value="entra-id" {{if eq .ScanForm.PortTemplate "entra-id"}}selected{{end}}>Entra ID</option>
                 </select>
+                <span class="form-hint">Defines the initial active port set. Use narrower templates for faster checks or service-specific sweeps.</span>
             </label>
 
             <label class="form-row">
                 <span class="form-label">Start time</span>
                 <input class="input" type="text" value="{{.ScanForm.StartTimeDisplay}}" disabled />
+                <span class="form-hint">Display only for now. Scheduled scans come later, but the UI already shows when this launch was prepared.</span>
             </label>
 
             <label class="form-row">
@@ -72,6 +57,7 @@
                     <option value="internal" {{if eq .ScanForm.ScanTag "internal"}}selected{{end}}>internal</option>
                     <option value="external" {{if eq .ScanForm.ScanTag "external"}}selected{{end}}>external</option>
                 </select>
+                <span class="form-hint">Tags the run context for later grouping, for example internal home scans versus external perimeter checks.</span>
             </label>
         </div>
 
@@ -79,10 +65,12 @@
             <label class="form-row">
                 <span class="form-label">Active interface</span>
                 <input class="input" type="text" name="active_interface" value="{{.ScanForm.ActiveInterface}}" />
+                <span class="form-hint">Interface used for active probing such as naabu, scamper, nmap, httpx and zgrab2.</span>
             </label>
             <label class="form-row">
-                <span class="form-label">Passive interface</span>
+                <span class="form-label">Passive interface (optional)</span>
                 <input class="input" type="text" name="passive_interface" value="{{.ScanForm.PassiveInterface}}" />
+                <span class="form-hint">Interface used for passive ingestion. Useful when Zeek should observe the same segment as the active scan.</span>
             </label>
         </div>
 
@@ -94,29 +82,32 @@
                     <option value="auto" {{if eq .ScanForm.PassiveMode "auto"}}selected{{end}}>auto</option>
                     <option value="always" {{if eq .ScanForm.PassiveMode "always"}}selected{{end}}>always</option>
                 </select>
+                <span class="form-hint">Off disables passive ingest. Auto keeps Zeek available when useful. Always forces passive ingest into the run.</span>
             </label>
             <label class="form-row">
-                <span class="form-label">Zeek log dir</span>
+                <span class="form-label">Zeek log dir (optional)</span>
                 <input class="input" type="text" name="zeek_log_dir" value="{{.ScanForm.ZeekLogDir}}" />
+                <span class="form-hint">Path to the Zeek log directory when passive mode is used. On Ubuntu this is often <span class="mono">/opt/zeek/logs/current</span>.</span>
             </label>
         </div>
 
         <div class="checkbox-grid">
-            <label class="check-row"><input type="checkbox" name="enable_route_sampling" {{if .ScanForm.EnableRouteSampling}}checked{{end}} /> Route sampling</label>
-            <label class="check-row"><input type="checkbox" name="enable_service_scan" {{if .ScanForm.EnableServiceScan}}checked{{end}} /> Service scan</label>
-            <label class="check-row"><input type="checkbox" name="enable_passive_ingest" {{if .ScanForm.EnablePassiveIngest}}checked{{end}} /> Passive ingest</label>
-            <label class="check-row"><input type="checkbox" name="enable_os_detection" {{if .ScanForm.EnableOSDetection}}checked{{end}} /> OS detection</label>
-            <label class="check-row"><input type="checkbox" name="enable_layer2" {{if .ScanForm.EnableLayer2}}checked{{end}} /> Layer 2</label>
-            <label class="check-row"><input type="checkbox" name="use_large_range_strategy" {{if .ScanForm.UseLargeRangeStrategy}}checked{{end}} /> Large range strategy</label>
-            <label class="check-row"><input type="checkbox" name="zeek_auto_start" {{if .ScanForm.ZeekAutoStart}}checked{{end}} /> Zeek auto start</label>
-            <label class="check-row"><input type="checkbox" name="continue_on_error" {{if .ScanForm.ContinueOnError}}checked{{end}} /> Continue on error</label>
-            <label class="check-row"><input type="checkbox" name="retain_partial_results" {{if .ScanForm.RetainPartialResults}}checked{{end}} /> Retain partial results</label>
-            <label class="check-row"><input type="checkbox" name="reevaluate_ambiguous" {{if .ScanForm.ReevaluateAmbiguous}}checked{{end}} /> Reevaluate ambiguous</label>
+            <label class="check-row"><input type="checkbox" name="enable_route_sampling" {{if .ScanForm.EnableRouteSampling}}checked{{end}} /> <span>Route sampling (optional)<small class="check-hint">Adds scamper traceroute-style reachability context per discovered host.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="enable_service_scan" {{if .ScanForm.EnableServiceScan}}checked{{end}} /> <span>Service scan<small class="check-hint">Runs deeper service fingerprinting such as nmap on interesting ports.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="enable_passive_ingest" {{if .ScanForm.EnablePassiveIngest}}checked{{end}} /> <span>Passive ingest (optional)<small class="check-hint">Allows passive evidence such as Zeek observations to enrich the run.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="enable_os_detection" {{if .ScanForm.EnableOSDetection}}checked{{end}} /> <span>OS detection (optional)<small class="check-hint">Attempts host OS fingerprints where active probing makes that possible.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="enable_layer2" {{if .ScanForm.EnableLayer2}}checked{{end}} /> <span>Local network neighbor discovery (optional)<small class="check-hint">Useful on the same local segment for MAC- or neighbor-oriented discovery. It is not needed for every subnet scan.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="use_large_range_strategy" {{if .ScanForm.UseLargeRangeStrategy}}checked{{end}} /> <span>Large range strategy (optional)<small class="check-hint">Biases planning toward safer behavior when the scope contains larger CIDR ranges.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="zeek_auto_start" {{if .ScanForm.ZeekAutoStart}}checked{{end}} /> <span>Zeek auto start (optional)<small class="check-hint">Lets the runner try to start Zeek when passive mode expects it.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="continue_on_error" {{if .ScanForm.ContinueOnError}}checked{{end}} /> <span>Continue on error (optional)<small class="check-hint">Keeps the run going even when a plugin or stage fails.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="retain_partial_results" {{if .ScanForm.RetainPartialResults}}checked{{end}} /> <span>Retain partial results (optional)<small class="check-hint">Stores successful evidence even when the overall run ends with warnings.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="reevaluate_ambiguous" {{if .ScanForm.ReevaluateAmbiguous}}checked{{end}} /> <span>Reevaluate ambiguous (optional)<small class="check-hint">Off by default. Turn this on when uncertain outcomes should be flagged for later verification.</small></span></label>
         </div>
 
         <label class="form-row">
-            <span class="form-label">Reevaluate after</span>
+            <span class="form-label">Reevaluate after (optional)</span>
             <input class="input" type="text" name="reevaluate_after" value="{{.ScanForm.ReevaluateAfter}}" />
+            <span class="form-hint">Delay before a flagged host should be checked again, for example <span class="mono">30m</span>. Only relevant when reevaluate is enabled.</span>
         </label>
 
         <div class="hero-actions">

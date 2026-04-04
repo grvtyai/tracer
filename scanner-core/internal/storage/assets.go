@@ -31,6 +31,7 @@ type AssetSummary struct {
 	ManualDisplayName        string    `json:"manual_display_name,omitempty"`
 	ManualDeviceType         string    `json:"manual_device_type,omitempty"`
 	ManualConnectionType     string    `json:"manual_connection_type,omitempty"`
+	ManualReevaluate         bool      `json:"manual_reevaluate"`
 	ManualNotes              string    `json:"manual_notes,omitempty"`
 	ManualTags               []string  `json:"manual_tags,omitempty"`
 	DisplayName              string    `json:"display_name"`
@@ -74,6 +75,7 @@ type AssetUpdateInput struct {
 	DisplayName    string
 	DeviceType     string
 	ConnectionType string
+	Reevaluate     bool
 	Tags           []string
 	Notes          string
 }
@@ -132,6 +134,7 @@ func (r *SQLiteRepository) queryAssets(ctx context.Context, projectRef string) (
 			a.manual_display_name,
 			a.manual_device_type,
 			a.manual_connection_type,
+			a.manual_reevaluate,
 			a.manual_notes,
 			a.manual_tags_json,
 			a.last_run_id,
@@ -156,7 +159,7 @@ func (r *SQLiteRepository) queryAssets(ctx context.Context, projectRef string) (
 			a.id, a.project_id, p.name, a.identity_key, a.primary_target, a.current_hostname, a.current_os,
 			a.current_vendor, a.current_product, a.current_open_ports_json, a.device_type_guess, a.device_type_confidence,
 			a.connection_type_guess, a.connection_type_confidence, a.manual_display_name, a.manual_device_type,
-			a.manual_connection_type, a.manual_notes, a.manual_tags_json, a.last_run_id, a.first_seen_at,
+			a.manual_connection_type, a.manual_reevaluate, a.manual_notes, a.manual_tags_json, a.last_run_id, a.first_seen_at,
 			a.last_seen_at, a.created_at, a.updated_at
 		ORDER BY p.name ASC, a.primary_target ASC
 	`
@@ -205,6 +208,7 @@ func (r *SQLiteRepository) GetAsset(ctx context.Context, assetID string) (AssetD
 			a.manual_display_name,
 			a.manual_device_type,
 			a.manual_connection_type,
+			a.manual_reevaluate,
 			a.manual_notes,
 			a.manual_tags_json,
 			a.last_run_id,
@@ -221,7 +225,7 @@ func (r *SQLiteRepository) GetAsset(ctx context.Context, assetID string) (AssetD
 			a.id, a.project_id, p.name, a.identity_key, a.primary_target, a.current_hostname, a.current_os,
 			a.current_vendor, a.current_product, a.current_open_ports_json, a.device_type_guess, a.device_type_confidence,
 			a.connection_type_guess, a.connection_type_confidence, a.manual_display_name, a.manual_device_type,
-			a.manual_connection_type, a.manual_notes, a.manual_tags_json, a.last_run_id, a.first_seen_at,
+			a.manual_connection_type, a.manual_reevaluate, a.manual_notes, a.manual_tags_json, a.last_run_id, a.first_seen_at,
 			a.last_seen_at, a.created_at, a.updated_at
 	`, assetID)
 
@@ -252,9 +256,9 @@ func (r *SQLiteRepository) UpdateAsset(ctx context.Context, assetID string, inpu
 	_, err = r.db.ExecContext(ctx, `
 		UPDATE assets
 		SET manual_display_name = ?, manual_device_type = ?, manual_connection_type = ?,
-			manual_notes = ?, manual_tags_json = ?, updated_at = ?
+			manual_reevaluate = ?, manual_notes = ?, manual_tags_json = ?, updated_at = ?
 		WHERE id = ?
-	`, strings.TrimSpace(input.DisplayName), normalizeEditableType(input.DeviceType), normalizeEditableConnectionType(input.ConnectionType), strings.TrimSpace(input.Notes), manualTagsJSON, time.Now().UTC().Format(time.RFC3339Nano), assetID)
+	`, strings.TrimSpace(input.DisplayName), normalizeEditableType(input.DeviceType), normalizeEditableConnectionType(input.ConnectionType), boolToInt(input.Reevaluate), strings.TrimSpace(input.Notes), manualTagsJSON, time.Now().UTC().Format(time.RFC3339Nano), assetID)
 	if err != nil {
 		return AssetDetails{}, fmt.Errorf("update asset: %w", err)
 	}
@@ -347,9 +351,9 @@ func (r *SQLiteRepository) upsertAssetTx(ctx context.Context, tx *sql.Tx, projec
 				id, project_id, identity_key, primary_target, current_hostname, current_os, current_vendor,
 				current_product, current_open_ports_json, device_type_guess, device_type_confidence,
 				connection_type_guess, connection_type_confidence, manual_display_name, manual_device_type,
-				manual_connection_type, manual_notes, manual_tags_json, last_run_id, first_seen_at, last_seen_at,
+				manual_connection_type, manual_reevaluate, manual_notes, manual_tags_json, last_run_id, first_seen_at, last_seen_at,
 				created_at, updated_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', '', '', ?, ?, ?, ?, ?, ?)
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', '', '', 0, '', ?, ?, ?, ?, ?, ?)
 		`, assetID, projectID, item.IdentityKey, item.PrimaryTarget, item.Hostname, item.OSName, item.Vendor, item.Product, currentOpenPortsJSON, item.DeviceTypeGuess, item.DeviceTypeConfidence, item.ConnectionTypeGuess, item.ConnectionTypeConfidence, manualTagsJSON, runID, observedAt, observedAt, now, now)
 		if err != nil {
 			return "", fmt.Errorf("insert asset: %w", err)
@@ -456,6 +460,7 @@ func scanAssetSummary(rows *sql.Rows) (AssetSummary, error) {
 	var asset AssetSummary
 	var currentOpenPortsJSON string
 	var manualTagsJSON string
+	var manualReevaluate int
 	var firstSeenAt string
 	var lastSeenAt string
 	var createdAt string
@@ -479,6 +484,7 @@ func scanAssetSummary(rows *sql.Rows) (AssetSummary, error) {
 		&asset.ManualDisplayName,
 		&asset.ManualDeviceType,
 		&asset.ManualConnectionType,
+		&manualReevaluate,
 		&asset.ManualNotes,
 		&manualTagsJSON,
 		&asset.LastRunID,
@@ -497,6 +503,7 @@ func scanAssetSummary(rows *sql.Rows) (AssetSummary, error) {
 	if err := unmarshalJSON(manualTagsJSON, &asset.ManualTags); err != nil {
 		return AssetSummary{}, err
 	}
+	asset.ManualReevaluate = manualReevaluate != 0
 	asset.FirstSeenAt = mustParseTime(firstSeenAt)
 	asset.LastSeenAt = mustParseTime(lastSeenAt)
 	asset.CreatedAt = mustParseTime(createdAt)
@@ -508,6 +515,7 @@ func scanAssetSummaryRow(row *sql.Row) (AssetSummary, error) {
 	var asset AssetSummary
 	var currentOpenPortsJSON string
 	var manualTagsJSON string
+	var manualReevaluate int
 	var firstSeenAt string
 	var lastSeenAt string
 	var createdAt string
@@ -531,6 +539,7 @@ func scanAssetSummaryRow(row *sql.Row) (AssetSummary, error) {
 		&asset.ManualDisplayName,
 		&asset.ManualDeviceType,
 		&asset.ManualConnectionType,
+		&manualReevaluate,
 		&asset.ManualNotes,
 		&manualTagsJSON,
 		&asset.LastRunID,
@@ -549,6 +558,7 @@ func scanAssetSummaryRow(row *sql.Row) (AssetSummary, error) {
 	if err := unmarshalJSON(manualTagsJSON, &asset.ManualTags); err != nil {
 		return AssetSummary{}, err
 	}
+	asset.ManualReevaluate = manualReevaluate != 0
 	asset.FirstSeenAt = mustParseTime(firstSeenAt)
 	asset.LastSeenAt = mustParseTime(lastSeenAt)
 	asset.CreatedAt = mustParseTime(createdAt)

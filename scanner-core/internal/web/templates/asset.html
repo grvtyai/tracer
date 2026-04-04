@@ -67,6 +67,11 @@
                 </select>
             </label>
 
+            <label class="check-row">
+                <input type="checkbox" name="manual_reevaluate" {{if .Asset.Asset.ManualReevaluate}}checked{{end}} />
+                <span>Reevaluate this host (optional)<small class="check-hint">Keeps this asset marked for later follow-up even when run-wide reevaluation stays off.</small></span>
+            </label>
+
             <label class="form-row">
                 <span class="form-label">Tags</span>
                 <input class="input" type="text" name="tags" value="{{range $index, $tag := .Asset.Asset.ManualTags}}{{if $index}}, {{end}}{{$tag}}{{end}}" />

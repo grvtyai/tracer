@@ -93,7 +93,6 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 		Project:           currentProject,
 		Settings:          appSettings,
 		PreflightChecks:   preflightChecks,
-		PreflightHealthy:  preflightHealthy(preflightChecks),
 		ScanForm:          form,
 	}
 	s.render(w, "scan_new.html", data)
@@ -186,9 +185,11 @@ func (s *Server) executeScanAsync(project storage.ProjectSummary, runRecord stor
 }
 
 func (s *Server) handlePreflightAPI(w http.ResponseWriter, r *http.Request) {
+	checks := collectPreflightChecks(s.options.DBPath)
 	s.writeJSON(w, http.StatusOK, map[string]any{
-		"checks":  collectPreflightChecks(s.options.DBPath),
-		"healthy": preflightHealthy(collectPreflightChecks(s.options.DBPath)),
+		"checks":  checks,
+		"healthy": preflightHealthy(checks),
+		"state":   preflightState(checks),
 	})
 }
 
@@ -250,6 +251,20 @@ func preflightHealthy(checks []preflightCheck) bool {
 	return true
 }
 
+func preflightState(checks []preflightCheck) string {
+	for _, check := range checks {
+		if check.Required && check.Status != "ok" {
+			return "error"
+		}
+	}
+	for _, check := range checks {
+		if check.Status != "ok" {
+			return "warning"
+		}
+	}
+	return "ok"
+}
+
 func defaultScanForm(project *storage.ProjectSummary) scanFormData {
 	scope := ""
 	if project != nil && strings.TrimSpace(project.Notes) != "" {
@@ -266,7 +281,7 @@ func defaultScanForm(project *storage.ProjectSummary) scanFormData {
 		ZeekLogDir:           "/opt/zeek/logs/current",
 		ContinueOnError:      true,
 		RetainPartialResults: true,
-		ReevaluateAmbiguous:  true,
+		ReevaluateAmbiguous:  false,
 		ReevaluateAfter:      "30m",
 		EnableRouteSampling:  true,
 		EnableServiceScan:    true,
@@ -337,6 +352,9 @@ func buildTemplateFromForm(form scanFormData, project storage.ProjectSummary, se
 	}
 
 	effective := app.ResolveOptions(template, options.TemplateOptions{})
+	if !form.ReevaluateAmbiguous {
+		effective.ReevaluateAfter = ""
+	}
 	effective.Project = project.Name
 	effective.DataDir = serverOptions.DataDir
 	effective.DBPath = serverOptions.DBPath

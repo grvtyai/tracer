@@ -873,6 +873,7 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 			manual_display_name TEXT NOT NULL DEFAULT '',
 			manual_device_type TEXT NOT NULL DEFAULT '',
 			manual_connection_type TEXT NOT NULL DEFAULT '',
+			manual_reevaluate INTEGER NOT NULL DEFAULT 0,
 			manual_notes TEXT NOT NULL DEFAULT '',
 			manual_tags_json TEXT NOT NULL DEFAULT '[]',
 			last_run_id TEXT NOT NULL DEFAULT '',
@@ -921,6 +922,41 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 		}
 	}
 
+	if err := ensureColumnExists(ctx, r.db, "assets", "manual_reevaluate", "ALTER TABLE assets ADD COLUMN manual_reevaluate INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ensureColumnExists(ctx context.Context, db *sql.DB, tableName string, columnName string, alterStatement string) error {
+	rows, err := db.QueryContext(ctx, "PRAGMA table_info("+tableName+")")
+	if err != nil {
+		return fmt.Errorf("inspect sqlite table %q: %w", tableName, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cid int
+		var name string
+		var columnType string
+		var notNull int
+		var defaultValue sql.NullString
+		var pk int
+		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &pk); err != nil {
+			return fmt.Errorf("scan sqlite table info for %q: %w", tableName, err)
+		}
+		if strings.EqualFold(name, columnName) {
+			return nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("iterate sqlite table info for %q: %w", tableName, err)
+	}
+
+	if _, err := db.ExecContext(ctx, alterStatement); err != nil {
+		return fmt.Errorf("migrate sqlite column %q on %q: %w", columnName, tableName, err)
+	}
 	return nil
 }
 

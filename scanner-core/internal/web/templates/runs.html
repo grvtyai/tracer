@@ -9,27 +9,38 @@
             <span class="pill">{{len .Runs}} runs</span>
         </div>
     </div>
-    {{if .Runs}}
+    {{if .RunItems}}
     <table class="table">
         <thead>
             <tr>
                 <th>Started</th>
                 <th>Status</th>
                 <th>Template</th>
-                <th>Jobs</th>
-                <th>Evidence</th>
-                <th>Open</th>
+                <th>Hosts</th>
+                <th>Subnets</th>
+                <th>Run ID</th>
             </tr>
         </thead>
         <tbody>
-            {{range .Runs}}
-            <tr>
-                <td><a class="table-link" href="/runs/{{.ID}}">{{.StartedAt.Format "2006-01-02 15:04"}}</a></td>
-                <td>{{.Status}}</td>
-                <td>{{.TemplateName}}</td>
-                <td>{{.JobCount}}</td>
-                <td>{{.EvidenceCount}}</td>
-                <td class="mono">{{.ID}}</td>
+            {{range .RunItems}}
+            <tr class="{{if not .Clickable}}row-disabled{{end}}">
+                <td>
+                    {{if .Clickable}}
+                    <a class="table-link" href="/runs/{{.Run.ID}}">{{.Run.StartedAt.Format "2006-01-02 15:04"}}</a>
+                    {{else}}
+                    <span>{{.Run.StartedAt.Format "2006-01-02 15:04"}}</span>
+                    {{end}}
+                </td>
+                <td>
+                    <span class="status-label {{if eq .Run.Status "running"}}running-label{{end}}">
+                        {{if eq .Run.Status "running"}}<span class="spinner"></span>{{end}}
+                        {{.StatusLabel}}
+                    </span>
+                </td>
+                <td>{{.Run.TemplateName}}</td>
+                <td>{{.HostCount}}</td>
+                <td>{{.SubnetCount}}</td>
+                <td class="mono">{{.Run.ID}}</td>
             </tr>
             {{end}}
         </tbody>
