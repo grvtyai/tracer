@@ -1,0 +1,43 @@
+{
+  "name": "home-lab",
+  "description": "Active-first home network sweep with Zeek in auto mode on the home-facing interface.",
+  "scope": {
+    "name": "home-net",
+    "cidrs": [
+      "192.168.178.0/24"
+    ]
+  },
+  "profile": {
+    "name": "default",
+    "enable_layer2": false,
+    "use_large_range_strategy": false,
+    "enable_route_sampling": true,
+    "enable_service_scan": true,
+    "enable_os_detection": true,
+    "enable_passive_ingest": true,
+    "zeek_log_dir": "/opt/zeek/logs/current"
+  },
+  "options": {
+    "execution": {
+      "continue_on_error": true,
+      "retain_partial_results": true,
+      "reevaluate_ambiguous": true,
+      "reevaluate_after": "30m"
+    },
+    "network": {
+      "active_interface": "eth2",
+      "passive_interface": "eth2"
+    },
+    "scan": {
+      "port_template": "all-default-ports"
+    },
+    "sensors": {
+      "passive_mode": "auto",
+      "auto_start_zeek": true,
+      "zeek_log_dir": "/opt/zeek/logs/current"
+    },
+    "storage": {
+      "project": "Heimnetz"
+    }
+  }
+}
