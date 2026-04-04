@@ -206,6 +206,133 @@ func TestSQLiteRepositoryListsRunsAndBuildsDiff(t *testing.T) {
 	}
 }
 
+func TestSQLiteRepositoryBackfillsAssetsAndSupportsManualOverrides(t *testing.T) {
+	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "tracer.db"))
+	if err != nil {
+		t.Fatalf("OpenSQLite returned error: %v", err)
+	}
+	defer repo.Close()
+
+	project, err := repo.EnsureProject(context.Background(), "Heimnetz", "Private network")
+	if err != nil {
+		t.Fatalf("EnsureProject returned error: %v", err)
+	}
+
+	run, runStore, err := repo.StartRun(context.Background(), project.ID, RunSpec{
+		TemplateName: "home-lab",
+		TemplatePath: "examples/tracer-home-lab.json",
+		Mode:         "run",
+		Scope: ingest.Scope{
+			Targets: []string{"192.168.178.50"},
+		},
+		Profile: ingest.RunProfile{
+			EnableServiceScan: true,
+		},
+		Options: options.EffectiveOptions{
+			Project: "Heimnetz",
+			DBPath:  repo.Path(),
+		},
+	})
+	if err != nil {
+		t.Fatalf("StartRun returned error: %v", err)
+	}
+
+	if err := runStore.WriteEvidence(context.Background(), []evidence.Record{
+		{
+			ID:         "iphone-open",
+			Source:     "naabu",
+			Kind:       "open_port",
+			Target:     "192.168.178.50",
+			Port:       62078,
+			Protocol:   "tcp",
+			Summary:    "open tcp port 62078 on 192.168.178.50",
+			Confidence: evidence.ConfidenceConfirmed,
+			ObservedAt: time.Date(2026, 4, 4, 13, 0, 0, 0, time.UTC),
+		},
+		{
+			ID:         "iphone-service",
+			Source:     "nmap",
+			Kind:       "service_fingerprint",
+			Target:     "192.168.178.50",
+			Port:       62078,
+			Protocol:   "tcp",
+			Summary:    "iphone sync service detected on tcp/62078 at 192.168.178.50",
+			Confidence: evidence.ConfidenceConfirmed,
+			ObservedAt: time.Date(2026, 4, 4, 13, 0, 30, 0, time.UTC),
+			Attributes: map[string]string{
+				"hostname": "iphone-von-andre.fritz.box",
+				"os_name":  "iOS",
+				"product":  "Apple iPhone sync",
+				"vendor":   "Apple",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("WriteEvidence returned error: %v", err)
+	}
+
+	if err := repo.CompleteRun(context.Background(), run.ID, RunCompletion{
+		Status: "completed",
+		Plan: []jobs.Job{
+			{ID: "service-iphone", Kind: jobs.KindServiceProbe, Plugin: "nmap"},
+		},
+		Blocking: []analysis.BlockingAssessment{
+			{
+				Target:     "192.168.178.50",
+				Verdict:    evidence.VerdictReachable,
+				Confidence: evidence.ConfidenceConfirmed,
+			},
+		},
+	}); err != nil {
+		t.Fatalf("CompleteRun returned error: %v", err)
+	}
+
+	assets, err := repo.ListAssets(context.Background(), "Heimnetz")
+	if err != nil {
+		t.Fatalf("ListAssets returned error: %v", err)
+	}
+	if len(assets) != 1 {
+		t.Fatalf("unexpected asset count: want 1, got %d", len(assets))
+	}
+
+	asset := assets[0]
+	if asset.EffectiveDeviceType != "smartphone" {
+		t.Fatalf("unexpected effective device type: want smartphone, got %q", asset.EffectiveDeviceType)
+	}
+	if asset.EffectiveConnectionType != "wifi" {
+		t.Fatalf("unexpected effective connection type: want wifi, got %q", asset.EffectiveConnectionType)
+	}
+	if asset.DisplayName != "iphone-von-andre.fritz.box" {
+		t.Fatalf("unexpected asset display name: got %q", asset.DisplayName)
+	}
+
+	details, err := repo.UpdateAsset(context.Background(), asset.ID, AssetUpdateInput{
+		DisplayName:    "Andres iPhone",
+		DeviceType:     "smartphone",
+		ConnectionType: "wifi",
+		Tags:           []string{"privat", "family", "privat"},
+		Notes:          "Manually confirmed phone on home wifi.",
+	})
+	if err != nil {
+		t.Fatalf("UpdateAsset returned error: %v", err)
+	}
+
+	if details.Asset.DisplayName != "Andres iPhone" {
+		t.Fatalf("unexpected overridden display name: got %q", details.Asset.DisplayName)
+	}
+	if details.Asset.EffectiveDeviceType != "smartphone" {
+		t.Fatalf("unexpected overridden device type: got %q", details.Asset.EffectiveDeviceType)
+	}
+	if details.Asset.EffectiveConnectionType != "wifi" {
+		t.Fatalf("unexpected overridden connection type: got %q", details.Asset.EffectiveConnectionType)
+	}
+	if len(details.Asset.Tags) != 2 || details.Asset.Tags[0] != "family" || details.Asset.Tags[1] != "privat" {
+		t.Fatalf("unexpected normalized tags: %#v", details.Asset.Tags)
+	}
+	if len(details.Observations) != 1 {
+		t.Fatalf("unexpected observation count: want 1, got %d", len(details.Observations))
+	}
+}
+
 func assertCount(t *testing.T, repo *SQLiteRepository, table string, want int) {
 	t.Helper()
 

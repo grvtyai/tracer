@@ -32,23 +32,27 @@ type Server struct {
 }
 
 type pageData struct {
-	Title      string
-	AppName    string
-	ActiveNav  string
-	BasePath   string
-	Generated  time.Time
-	DBPath     string
-	DataDir    string
-	BodyClass  string
-	HeroNote   string
-	Project    *storage.ProjectSummary
-	Projects   []storage.ProjectSummary
-	RecentRuns []storage.RunSummary
-	Runs       []storage.RunSummary
-	Run        *storage.RunDetails
-	Hosts      []hostSummary
-	DiffAPI    string
-	Stats      dashboardStats
+	Title       string
+	AppName     string
+	ActiveNav   string
+	BasePath    string
+	Generated   time.Time
+	DBPath      string
+	DataDir     string
+	BodyClass   string
+	HeroNote    string
+	Project     *storage.ProjectSummary
+	Projects    []storage.ProjectSummary
+	RecentRuns  []storage.RunSummary
+	Runs        []storage.RunSummary
+	Run         *storage.RunDetails
+	Assets      []storage.AssetSummary
+	Asset       *storage.AssetDetails
+	AssetGroups []assetGroup
+	Hosts       []hostSummary
+	DiffAPI     string
+	Stats       dashboardStats
+	Notice      string
 }
 
 type dashboardStats struct {
@@ -66,6 +70,11 @@ type hostSummary struct {
 	EvidenceCount   int
 	BlockingReasons []string
 	LastObserved    time.Time
+}
+
+type assetGroup struct {
+	Name   string
+	Assets []storage.AssetSummary
 }
 
 type optionsResponse struct {
@@ -104,6 +113,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/", s.handleLanding)
 	s.mux.HandleFunc("/projects", s.handleProjects)
 	s.mux.HandleFunc("/projects/", s.handleProject)
+	s.mux.HandleFunc("/assets", s.handleAssets)
+	s.mux.HandleFunc("/assets/", s.handleAsset)
 	s.mux.HandleFunc("/runs/", s.handleRun)
 	s.mux.HandleFunc("/settings", s.handleSettings)
 
@@ -111,6 +122,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/api/options", s.handleOptionsAPI)
 	s.mux.HandleFunc("/api/projects", s.handleProjectsAPI)
 	s.mux.HandleFunc("/api/projects/", s.handleProjectRunsAPI)
+	s.mux.HandleFunc("/api/assets", s.handleAssetsAPI)
+	s.mux.HandleFunc("/api/assets/", s.handleAssetAPI)
 	s.mux.HandleFunc("/api/runs/", s.handleRunAPI)
 	s.mux.HandleFunc("/api/diff", s.handleDiffAPI)
 }
@@ -225,6 +238,94 @@ func (s *Server) handleProject(w http.ResponseWriter, r *http.Request) {
 	s.render(w, "project.html", data)
 }
 
+func (s *Server) handleAssets(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/assets" {
+		http.NotFound(w, r)
+		return
+	}
+
+	projectRef := strings.TrimSpace(r.URL.Query().Get("project"))
+	assets, err := s.repo.ListAssets(r.Context(), projectRef)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	data := pageData{
+		Title:       "Assets",
+		AppName:     s.options.AppName,
+		ActiveNav:   "assets",
+		BasePath:    s.options.BasePath,
+		Generated:   time.Now().UTC(),
+		DBPath:      s.options.DBPath,
+		DataDir:     s.options.DataDir,
+		Assets:      assets,
+		AssetGroups: groupAssets(assets),
+		Notice:      strings.TrimSpace(r.URL.Query().Get("notice")),
+	}
+	s.render(w, "assets.html", data)
+}
+
+func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
+	trimmed := strings.Trim(strings.TrimPrefix(r.URL.Path, "/assets/"), "/")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) == 0 || parts[0] == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	assetID := parts[0]
+	if len(parts) == 2 && parts[1] == "edit" && r.Method == http.MethodPost {
+		s.handleAssetEdit(w, r, assetID)
+		return
+	}
+	if len(parts) != 1 {
+		http.NotFound(w, r)
+		return
+	}
+
+	asset, err := s.repo.GetAsset(r.Context(), assetID)
+	if err != nil {
+		s.writeError(w, http.StatusNotFound, err)
+		return
+	}
+
+	data := pageData{
+		Title:     "Asset " + asset.Asset.DisplayName,
+		AppName:   s.options.AppName,
+		ActiveNav: "assets",
+		BasePath:  s.options.BasePath,
+		Generated: time.Now().UTC(),
+		DBPath:    s.options.DBPath,
+		DataDir:   s.options.DataDir,
+		Asset:     &asset,
+		Notice:    strings.TrimSpace(r.URL.Query().Get("notice")),
+	}
+	s.render(w, "asset.html", data)
+}
+
+func (s *Server) handleAssetEdit(w http.ResponseWriter, r *http.Request, assetID string) {
+	if err := r.ParseForm(); err != nil {
+		s.writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	tags := splitTags(r.FormValue("tags"))
+	_, err := s.repo.UpdateAsset(r.Context(), assetID, storage.AssetUpdateInput{
+		DisplayName:    r.FormValue("display_name"),
+		DeviceType:     r.FormValue("manual_device_type"),
+		ConnectionType: r.FormValue("manual_connection_type"),
+		Tags:           tags,
+		Notes:          r.FormValue("manual_notes"),
+	})
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	http.Redirect(w, r, "/assets/"+assetID+"?notice=asset-updated", http.StatusSeeOther)
+}
+
 func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	runID := strings.Trim(strings.TrimPrefix(r.URL.Path, "/runs/"), "/")
 	if runID == "" {
@@ -302,6 +403,61 @@ func (s *Server) handleProjectsAPI(w http.ResponseWriter, r *http.Request) {
 	s.writeJSON(w, http.StatusOK, map[string]any{
 		"projects": projects,
 	})
+}
+
+func (s *Server) handleAssetsAPI(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/api/assets" {
+		http.NotFound(w, r)
+		return
+	}
+
+	projectRef := strings.TrimSpace(r.URL.Query().Get("project"))
+	assets, err := s.repo.ListAssets(r.Context(), projectRef)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"project": projectRef,
+		"assets":  assets,
+	})
+}
+
+func (s *Server) handleAssetAPI(w http.ResponseWriter, r *http.Request) {
+	assetID := strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/assets/"), "/")
+	if assetID == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		asset, err := s.repo.GetAsset(r.Context(), assetID)
+		if err != nil {
+			s.writeError(w, http.StatusNotFound, err)
+			return
+		}
+		s.writeJSON(w, http.StatusOK, asset)
+	case http.MethodPost:
+		if err := r.ParseForm(); err != nil {
+			s.writeError(w, http.StatusBadRequest, err)
+			return
+		}
+		asset, err := s.repo.UpdateAsset(r.Context(), assetID, storage.AssetUpdateInput{
+			DisplayName:    r.FormValue("display_name"),
+			DeviceType:     r.FormValue("manual_device_type"),
+			ConnectionType: r.FormValue("manual_connection_type"),
+			Tags:           splitTags(r.FormValue("tags")),
+			Notes:          r.FormValue("manual_notes"),
+		})
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		s.writeJSON(w, http.StatusOK, asset)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
 }
 
 func (s *Server) handleProjectRunsAPI(w http.ResponseWriter, r *http.Request) {
@@ -515,6 +671,49 @@ func takeRuns(runs []storage.RunSummary, n int) []storage.RunSummary {
 		return runs
 	}
 	return runs[:n]
+}
+
+func groupAssets(assets []storage.AssetSummary) []assetGroup {
+	grouped := make(map[string][]storage.AssetSummary)
+	for _, asset := range assets {
+		key := asset.EffectiveDeviceType
+		if strings.TrimSpace(key) == "" {
+			key = "unknown"
+		}
+		grouped[key] = append(grouped[key], asset)
+	}
+
+	keys := make([]string, 0, len(grouped))
+	for key := range grouped {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	groups := make([]assetGroup, 0, len(keys))
+	for _, key := range keys {
+		group := assetGroup{
+			Name:   key,
+			Assets: grouped[key],
+		}
+		sort.Slice(group.Assets, func(i, j int) bool {
+			return group.Assets[i].DisplayName < group.Assets[j].DisplayName
+		})
+		groups = append(groups, group)
+	}
+	return groups
+}
+
+func splitTags(raw string) []string {
+	parts := strings.FieldsFunc(raw, func(r rune) bool {
+		return r == ',' || r == '\n' || r == ';'
+	})
+	tags := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			tags = append(tags, trimmed)
+		}
+	}
+	return tags
 }
 
 func min(a, b int) int {

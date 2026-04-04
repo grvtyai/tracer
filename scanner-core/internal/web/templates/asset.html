@@ -1,0 +1,126 @@
+{{define "asset.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+{{if .Notice}}
+<section class="notice success">Asset successfully updated.</section>
+{{end}}
+
+<section class="hero-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>{{.Asset.Asset.DisplayName}}</h2>
+            <span class="pill">{{.Asset.Asset.PrimaryTarget}}</span>
+        </div>
+        <div class="kv-grid">
+            <div class="kv-key">Effective device type</div>
+            <div class="kv-value">{{.Asset.Asset.EffectiveDeviceType}}</div>
+            <div class="kv-key">Effective connection</div>
+            <div class="kv-value">{{.Asset.Asset.EffectiveConnectionType}}</div>
+            <div class="kv-key">Guessed device type</div>
+            <div class="kv-value">{{.Asset.Asset.DeviceTypeGuess}} {{if .Asset.Asset.DeviceTypeConfidence}}({{.Asset.Asset.DeviceTypeConfidence}}){{end}}</div>
+            <div class="kv-key">Guessed connection</div>
+            <div class="kv-value">{{.Asset.Asset.ConnectionTypeGuess}} {{if .Asset.Asset.ConnectionTypeConfidence}}({{.Asset.Asset.ConnectionTypeConfidence}}){{end}}</div>
+            <div class="kv-key">Hostname</div>
+            <div class="kv-value">{{if .Asset.Asset.CurrentHostname}}{{.Asset.Asset.CurrentHostname}}{{else}}-{{end}}</div>
+            <div class="kv-key">OS</div>
+            <div class="kv-value">{{if .Asset.Asset.CurrentOS}}{{.Asset.Asset.CurrentOS}}{{else}}-{{end}}</div>
+            <div class="kv-key">Product</div>
+            <div class="kv-value">{{if .Asset.Asset.CurrentProduct}}{{.Asset.Asset.CurrentProduct}}{{else}}-{{end}}</div>
+            <div class="kv-key">Open ports</div>
+            <div class="kv-value">{{if .Asset.Asset.CurrentOpenPorts}}{{range $index, $port := .Asset.Asset.CurrentOpenPorts}}{{if $index}}, {{end}}{{$port}}{{end}}{{else}}-{{end}}</div>
+            <div class="kv-key">First seen</div>
+            <div class="kv-value">{{if .Asset.Asset.FirstSeenAt.IsZero}}-{{else}}{{.Asset.Asset.FirstSeenAt.Format "2006-01-02 15:04:05"}}{{end}}</div>
+            <div class="kv-key">Last seen</div>
+            <div class="kv-value">{{if .Asset.Asset.LastSeenAt.IsZero}}-{{else}}{{.Asset.Asset.LastSeenAt.Format "2006-01-02 15:04:05"}}{{end}}</div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Manual Overrides</h2>
+        </div>
+        <p class="empty-note">
+            Device and connection guesses come from scan evidence and fingerprints. Saving overrides keeps the raw observations untouched and adds your operator-confirmed labels on top.
+        </p>
+        <form method="post" action="/assets/{{.Asset.Asset.ID}}/edit" class="asset-form">
+            <label class="form-row">
+                <span class="form-label">Display name</span>
+                <input class="input" type="text" name="display_name" value="{{.Asset.Asset.ManualDisplayName}}" />
+            </label>
+
+            <label class="form-row">
+                <span class="form-label">Device type</span>
+                <select class="input" name="manual_device_type">
+                    <option value="" {{if eq .Asset.Asset.ManualDeviceType ""}}selected{{end}}>auto / unknown</option>
+                    <option value="smartphone" {{if eq .Asset.Asset.ManualDeviceType "smartphone"}}selected{{end}}>smartphone</option>
+                    <option value="tablet" {{if eq .Asset.Asset.ManualDeviceType "tablet"}}selected{{end}}>tablet</option>
+                    <option value="workstation" {{if eq .Asset.Asset.ManualDeviceType "workstation"}}selected{{end}}>workstation</option>
+                    <option value="server" {{if eq .Asset.Asset.ManualDeviceType "server"}}selected{{end}}>server</option>
+                    <option value="iot" {{if eq .Asset.Asset.ManualDeviceType "iot"}}selected{{end}}>iot</option>
+                    <option value="router" {{if eq .Asset.Asset.ManualDeviceType "router"}}selected{{end}}>router</option>
+                    <option value="printer" {{if eq .Asset.Asset.ManualDeviceType "printer"}}selected{{end}}>printer</option>
+                </select>
+            </label>
+
+            <label class="form-row">
+                <span class="form-label">Connection type</span>
+                <select class="input" name="manual_connection_type">
+                    <option value="" {{if eq .Asset.Asset.ManualConnectionType ""}}selected{{end}}>auto / unknown</option>
+                    <option value="wifi" {{if eq .Asset.Asset.ManualConnectionType "wifi"}}selected{{end}}>wifi</option>
+                    <option value="wired" {{if eq .Asset.Asset.ManualConnectionType "wired"}}selected{{end}}>wired</option>
+                </select>
+            </label>
+
+            <label class="form-row">
+                <span class="form-label">Tags</span>
+                <input class="input" type="text" name="tags" value="{{range $index, $tag := .Asset.Asset.ManualTags}}{{if $index}}, {{end}}{{$tag}}{{end}}" />
+            </label>
+
+            <label class="form-row">
+                <span class="form-label">Notes</span>
+                <textarea class="input textarea" name="manual_notes">{{.Asset.Asset.ManualNotes}}</textarea>
+            </label>
+
+            <div class="hero-actions">
+                <button class="button button-primary" type="submit">Save overrides</button>
+                <a class="button button-secondary" href="/assets">Back to assets</a>
+            </div>
+        </form>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Observed History</h2>
+        <span class="pill">{{len .Asset.Observations}} observations</span>
+    </div>
+    {{if .Asset.Observations}}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Observed</th>
+                <th>Run</th>
+                <th>Verdict</th>
+                <th>Type Guess</th>
+                <th>Connection Guess</th>
+                <th>Ports</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Asset.Observations}}
+            <tr>
+                <td>{{if .ObservedAt.IsZero}}-{{else}}{{.ObservedAt.Format "2006-01-02 15:04:05"}}{{end}}</td>
+                <td class="mono">{{.RunID}}</td>
+                <td>{{.Verdict}} {{if .Confidence}}({{.Confidence}}){{end}}</td>
+                <td>{{.DeviceTypeGuess}} {{if .DeviceTypeConfidence}}({{.DeviceTypeConfidence}}){{end}}</td>
+                <td>{{.ConnectionTypeGuess}} {{if .ConnectionTypeConfidence}}({{.ConnectionTypeConfidence}}){{end}}</td>
+                <td>{{if .OpenPorts}}{{range $index, $port := .OpenPorts}}{{if $index}}, {{end}}{{$port}}{{end}}{{else}}-{{end}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="empty-note">No observations stored for this asset yet.</p>
+    {{end}}
+</section>
+{{end}}

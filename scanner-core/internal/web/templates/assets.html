@@ -1,0 +1,53 @@
+{{define "assets.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+{{if .Notice}}
+<section class="notice success">Asset successfully updated.</section>
+{{end}}
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Asset Inventory</h2>
+        <span class="pill">{{len .Assets}} assets</span>
+    </div>
+    <p class="empty-note">
+        Assets are persistent entries above individual runs. Scanner observations stay intact, while manual names, tags and classifications can be added safely as operator overrides.
+    </p>
+    <p class="empty-note">
+        Grouping uses the effective device type. Connection type stays a best-effort guess unless it is confirmed manually.
+    </p>
+</section>
+
+{{if .AssetGroups}}
+<section class="panel-grid">
+    {{range .AssetGroups}}
+    <article class="panel">
+        <div class="panel-head">
+            <h2>{{.Name}}</h2>
+            <span class="pill">{{len .Assets}}</span>
+        </div>
+        <div class="list">
+            {{range .Assets}}
+            <a class="list-item" href="/assets/{{.ID}}">
+                <div>
+                    <div class="list-title">{{.DisplayName}}</div>
+                    <div class="list-meta">{{.PrimaryTarget}} | {{.EffectiveConnectionType}} | {{.CurrentOS}}</div>
+                    {{if .Tags}}
+                    <div class="tag-row">
+                        {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+                    </div>
+                    {{end}}
+                </div>
+                <span class="pill subtle">{{len .CurrentOpenPorts}} ports</span>
+            </a>
+            {{end}}
+        </div>
+    </article>
+    {{end}}
+</section>
+{{else}}
+<section class="panel">
+    <p class="empty-note">No assets are available yet. Run a persisted scan first and the inventory will backfill from stored runs.</p>
+</section>
+{{end}}
+{{end}}

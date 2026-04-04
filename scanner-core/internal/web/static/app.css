@@ -272,6 +272,71 @@ h2 { font-size: 20px; }
 
 .reason-row { font-size: 13px; }
 
+.notice {
+    padding: 14px 16px;
+    border-radius: 16px;
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+}
+
+.notice.success {
+    border-color: rgba(63, 220, 122, 0.3);
+    background: rgba(63, 220, 122, 0.08);
+}
+
+.tag-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(47,215,255,0.08);
+    border: 1px solid rgba(47,215,255,0.2);
+    color: var(--text);
+    font-size: 12px;
+}
+
+.asset-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.04);
+    color: var(--text);
+    font: inherit;
+}
+
+.textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
 @media (max-width: 1080px) {
     .shell { grid-template-columns: 1fr; }
     .sidebar {

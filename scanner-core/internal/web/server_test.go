@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -92,6 +93,82 @@ func TestServerRunPageRendersHostData(t *testing.T) {
 	}
 	if !strings.Contains(body, "reachable") {
 		t.Fatalf("expected run page to contain reachable verdict, body=%q", body)
+	}
+}
+
+func TestServerAssetsAPIAndPageSupportManualOverrides(t *testing.T) {
+	repo := openTestRepo(t)
+	defer repo.Close()
+
+	projectID, assetID := seedTestAsset(t, repo)
+
+	server, err := NewServer(repo, Options{
+		DBPath:  repo.Path(),
+		DataDir: filepath.Dir(repo.Path()),
+		AppName: "Startrace",
+	})
+	if err != nil {
+		t.Fatalf("NewServer returned error: %v", err)
+	}
+
+	listReq := httptest.NewRequest(http.MethodGet, "/api/assets?project="+url.QueryEscape(projectID), nil)
+	listRecorder := httptest.NewRecorder()
+	server.Handler().ServeHTTP(listRecorder, listReq)
+	if listRecorder.Code != http.StatusOK {
+		t.Fatalf("expected assets API 200, got %d", listRecorder.Code)
+	}
+
+	var listPayload struct {
+		Assets []storage.AssetSummary `json:"assets"`
+	}
+	if err := json.Unmarshal(listRecorder.Body.Bytes(), &listPayload); err != nil {
+		t.Fatalf("Unmarshal assets payload returned error: %v", err)
+	}
+	if len(listPayload.Assets) != 1 {
+		t.Fatalf("expected 1 asset, got %d", len(listPayload.Assets))
+	}
+	if listPayload.Assets[0].EffectiveDeviceType != "smartphone" {
+		t.Fatalf("unexpected effective device type: got %q", listPayload.Assets[0].EffectiveDeviceType)
+	}
+
+	form := url.Values{
+		"display_name":           {"Andres iPhone"},
+		"manual_device_type":     {"smartphone"},
+		"manual_connection_type": {"wifi"},
+		"tags":                   {"family, privat"},
+		"manual_notes":           {"Confirmed manually from the dashboard."},
+	}
+	updateReq := httptest.NewRequest(http.MethodPost, "/api/assets/"+assetID, strings.NewReader(form.Encode()))
+	updateReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	updateRecorder := httptest.NewRecorder()
+	server.Handler().ServeHTTP(updateRecorder, updateReq)
+	if updateRecorder.Code != http.StatusOK {
+		t.Fatalf("expected asset update 200, got %d", updateRecorder.Code)
+	}
+
+	var details storage.AssetDetails
+	if err := json.Unmarshal(updateRecorder.Body.Bytes(), &details); err != nil {
+		t.Fatalf("Unmarshal asset details returned error: %v", err)
+	}
+	if details.Asset.DisplayName != "Andres iPhone" {
+		t.Fatalf("unexpected updated display name: got %q", details.Asset.DisplayName)
+	}
+	if len(details.Asset.Tags) != 2 {
+		t.Fatalf("unexpected updated tags: %#v", details.Asset.Tags)
+	}
+
+	pageReq := httptest.NewRequest(http.MethodGet, "/assets/"+assetID, nil)
+	pageRecorder := httptest.NewRecorder()
+	server.Handler().ServeHTTP(pageRecorder, pageReq)
+	if pageRecorder.Code != http.StatusOK {
+		t.Fatalf("expected asset page 200, got %d", pageRecorder.Code)
+	}
+	body := pageRecorder.Body.String()
+	if !strings.Contains(body, "Andres iPhone") {
+		t.Fatalf("expected asset page to contain manual display name, body=%q", body)
+	}
+	if !strings.Contains(body, "operator-confirmed labels") {
+		t.Fatalf("expected asset page to contain override guidance, body=%q", body)
 	}
 }
 
@@ -191,4 +268,90 @@ func seedTestRun(t *testing.T, repo *storage.SQLiteRepository) string {
 	}
 
 	return run.ID
+}
+
+func seedTestAsset(t *testing.T, repo *storage.SQLiteRepository) (string, string) {
+	t.Helper()
+
+	ctx := context.Background()
+	project, err := repo.EnsureProject(ctx, "Heimnetz Assets", "")
+	if err != nil {
+		t.Fatalf("EnsureProject returned error: %v", err)
+	}
+
+	run, store, err := repo.StartRun(ctx, project.ID, storage.RunSpec{
+		TemplateName: "home-assets",
+		TemplatePath: "examples/tracer-home-lab.json",
+		Mode:         "run",
+		Scope: ingest.Scope{
+			Targets: []string{"192.168.178.50"},
+		},
+		Profile: ingest.RunProfile{
+			EnableServiceScan: true,
+		},
+		Options: options.EffectiveOptions{
+			Project: "Heimnetz Assets",
+			DBPath:  repo.Path(),
+		},
+	})
+	if err != nil {
+		t.Fatalf("StartRun returned error: %v", err)
+	}
+
+	if err := store.WriteEvidence(ctx, []evidence.Record{
+		{
+			ID:         "asset-open",
+			Source:     "naabu",
+			Kind:       "open_port",
+			Target:     "192.168.178.50",
+			Port:       62078,
+			Protocol:   "tcp",
+			Summary:    "open tcp port 62078 on 192.168.178.50",
+			Confidence: evidence.ConfidenceConfirmed,
+		},
+		{
+			ID:         "asset-service",
+			Source:     "nmap",
+			Kind:       "service_fingerprint",
+			Target:     "192.168.178.50",
+			Port:       62078,
+			Protocol:   "tcp",
+			Summary:    "iphone sync service detected on tcp/62078 at 192.168.178.50",
+			Confidence: evidence.ConfidenceConfirmed,
+			Attributes: map[string]string{
+				"hostname": "iphone-von-andre.fritz.box",
+				"os_name":  "iOS",
+				"product":  "Apple iPhone sync",
+				"vendor":   "Apple",
+			},
+		},
+	}); err != nil {
+		t.Fatalf("WriteEvidence returned error: %v", err)
+	}
+
+	if err := repo.CompleteRun(ctx, run.ID, storage.RunCompletion{
+		Status: "completed",
+		Plan: []jobs.Job{
+			{ID: "service-iphone", Kind: jobs.KindServiceProbe, Plugin: "nmap"},
+		},
+		Blocking: []analysis.BlockingAssessment{
+			{
+				Target:     "192.168.178.50",
+				Verdict:    evidence.VerdictReachable,
+				Confidence: evidence.ConfidenceConfirmed,
+			},
+		},
+	}); err != nil {
+		t.Fatalf("CompleteRun returned error: %v", err)
+	}
+
+	assets, err := repo.ListAssets(ctx, project.ID)
+	if err != nil {
+		t.Fatalf("ListAssets returned error: %v", err)
+	}
+	if len(assets) != 1 {
+		t.Fatalf("unexpected asset count: want 1, got %d", len(assets))
+	}
+
+	return project.ID, assets[0].ID
 }

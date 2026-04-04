@@ -329,6 +329,10 @@ func (r *SQLiteRepository) CompleteRun(ctx context.Context, runID string, comple
 		return fmt.Errorf("commit sqlite transaction: %w", err)
 	}
 
+	if err := r.syncAssetsForRun(ctx, runID); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -748,10 +752,62 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 			raw_json TEXT NOT NULL DEFAULT '{}',
 			FOREIGN KEY(run_id) REFERENCES runs(id)
 		);`,
+		`CREATE TABLE IF NOT EXISTS assets (
+			id TEXT PRIMARY KEY,
+			project_id TEXT NOT NULL,
+			identity_key TEXT NOT NULL,
+			primary_target TEXT NOT NULL,
+			current_hostname TEXT NOT NULL DEFAULT '',
+			current_os TEXT NOT NULL DEFAULT '',
+			current_vendor TEXT NOT NULL DEFAULT '',
+			current_product TEXT NOT NULL DEFAULT '',
+			current_open_ports_json TEXT NOT NULL DEFAULT '[]',
+			device_type_guess TEXT NOT NULL DEFAULT '',
+			device_type_confidence TEXT NOT NULL DEFAULT '',
+			connection_type_guess TEXT NOT NULL DEFAULT '',
+			connection_type_confidence TEXT NOT NULL DEFAULT '',
+			manual_display_name TEXT NOT NULL DEFAULT '',
+			manual_device_type TEXT NOT NULL DEFAULT '',
+			manual_connection_type TEXT NOT NULL DEFAULT '',
+			manual_notes TEXT NOT NULL DEFAULT '',
+			manual_tags_json TEXT NOT NULL DEFAULT '[]',
+			last_run_id TEXT NOT NULL DEFAULT '',
+			first_seen_at TEXT NOT NULL DEFAULT '',
+			last_seen_at TEXT NOT NULL DEFAULT '',
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			FOREIGN KEY(project_id) REFERENCES projects(id)
+		);`,
+		`CREATE TABLE IF NOT EXISTS asset_observations (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			asset_id TEXT NOT NULL,
+			run_id TEXT NOT NULL,
+			target TEXT NOT NULL DEFAULT '',
+			hostname TEXT NOT NULL DEFAULT '',
+			os_name TEXT NOT NULL DEFAULT '',
+			vendor TEXT NOT NULL DEFAULT '',
+			product TEXT NOT NULL DEFAULT '',
+			open_ports_json TEXT NOT NULL DEFAULT '[]',
+			evidence_count INTEGER NOT NULL DEFAULT 0,
+			verdict TEXT NOT NULL DEFAULT '',
+			confidence TEXT NOT NULL DEFAULT '',
+			device_type_guess TEXT NOT NULL DEFAULT '',
+			device_type_confidence TEXT NOT NULL DEFAULT '',
+			connection_type_guess TEXT NOT NULL DEFAULT '',
+			connection_type_confidence TEXT NOT NULL DEFAULT '',
+			observed_at TEXT NOT NULL DEFAULT '',
+			raw_json TEXT NOT NULL DEFAULT '{}',
+			FOREIGN KEY(asset_id) REFERENCES assets(id),
+			FOREIGN KEY(run_id) REFERENCES runs(id)
+		);`,
 		`CREATE INDEX IF NOT EXISTS idx_runs_project_id ON runs(project_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_job_results_run_id ON job_results(run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_evidence_run_id ON evidence(run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_evidence_target_port ON evidence(target, port);`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_assets_project_identity ON assets(project_id, identity_key);`,
+		`CREATE INDEX IF NOT EXISTS idx_assets_project_last_seen ON assets(project_id, last_seen_at);`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_asset_observations_asset_run ON asset_observations(asset_id, run_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_asset_observations_run_id ON asset_observations(run_id);`,
 	}
 
 	for _, statement := range statements {
