@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/netip"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -67,7 +68,8 @@ func (p Plugin) Run(ctx context.Context, job jobs.Job) ([]evidence.Record, error
 		}
 	}
 
-	targets := makeTargetSet(job.Targets)
+	matcher := makeTargetMatcher(job.Targets)
+	observedAfter := parseCutoff(job.Metadata["run_started_at"])
 	files := []struct {
 		path    string
 		builder func(zeekRow, jobs.Job, string, int) (evidence.Record, bool, error)
@@ -86,7 +88,7 @@ func (p Plugin) Run(ctx context.Context, job jobs.Job) ([]evidence.Record, error
 			return nil, fmt.Errorf("stat zeek log %s: %w", file.path, err)
 		}
 
-		fileRecords, err := parseLogFile(file.path, job, targets, file.builder)
+		fileRecords, err := parseLogFile(file.path, job, matcher, observedAfter, file.builder)
 		if err != nil {
 			return nil, err
 		}
@@ -162,7 +164,12 @@ type zeekRow struct {
 	observedAt time.Time
 }
 
-func parseLogFile(path string, job jobs.Job, targets map[string]struct{}, builder func(zeekRow, jobs.Job, string, int) (evidence.Record, bool, error)) ([]evidence.Record, error) {
+type targetMatcher struct {
+	exact    map[string]struct{}
+	prefixes []netip.Prefix
+}
+
+func parseLogFile(path string, job jobs.Job, matcher targetMatcher, observedAfter time.Time, builder func(zeekRow, jobs.Job, string, int) (evidence.Record, bool, error)) ([]evidence.Record, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("open zeek log %s: %w", path, err)
@@ -193,11 +200,13 @@ func parseLogFile(path string, job jobs.Job, targets map[string]struct{}, builde
 		}
 
 		row := parseRow(line, format)
+		if !observedAfter.IsZero() && !row.observedAt.IsZero() && row.observedAt.Before(observedAfter) {
+			continue
+		}
+
 		target := strings.TrimSpace(row.values["id.resp_h"])
-		if len(targets) > 0 && target != "" {
-			if _, ok := targets[target]; !ok {
-				continue
-			}
+		if !matcher.match(target) {
+			continue
 		}
 
 		record, ok, err := builder(row, job, path, lineNumber)
@@ -431,20 +440,69 @@ func buildPassiveURL(host string, target string, port int, uri string) string {
 	return fmt.Sprintf("http://%s:%d%s", base, port, uri)
 }
 
-func makeTargetSet(targets []string) map[string]struct{} {
-	if len(targets) == 0 {
-		return nil
+func makeTargetMatcher(targets []string) targetMatcher {
+	matcher := targetMatcher{
+		exact:    make(map[string]struct{}),
+		prefixes: make([]netip.Prefix, 0),
 	}
 
-	set := make(map[string]struct{}, len(targets))
 	for _, target := range targets {
-		if strings.TrimSpace(target) == "" {
+		trimmed := strings.TrimSpace(target)
+		if trimmed == "" {
 			continue
 		}
-		set[strings.TrimSpace(target)] = struct{}{}
+
+		if prefix, err := netip.ParsePrefix(trimmed); err == nil {
+			matcher.prefixes = append(matcher.prefixes, prefix)
+			continue
+		}
+
+		matcher.exact[trimmed] = struct{}{}
 	}
 
-	return set
+	return matcher
+}
+
+func (m targetMatcher) match(target string) bool {
+	trimmed := strings.TrimSpace(target)
+	if trimmed == "" {
+		return false
+	}
+
+	if len(m.exact) == 0 && len(m.prefixes) == 0 {
+		return true
+	}
+
+	if _, ok := m.exact[trimmed]; ok {
+		return true
+	}
+
+	addr, err := netip.ParseAddr(trimmed)
+	if err != nil {
+		return false
+	}
+
+	for _, prefix := range m.prefixes {
+		if prefix.Contains(addr) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func parseCutoff(raw string) time.Time {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return time.Time{}
+	}
+
+	cutoff, err := time.Parse(time.RFC3339Nano, trimmed)
+	if err != nil {
+		return time.Time{}
+	}
+
+	return cutoff.UTC()
 }
 
 func firstNonEmpty(values ...string) string {

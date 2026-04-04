@@ -7,6 +7,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/grvtyai/tracer/scanner-core/internal/analysis"
 	"github.com/grvtyai/tracer/scanner-core/internal/classify"
@@ -120,7 +121,7 @@ func BuildFollowUpPlanWithOptions(template templates.Template, records []evidenc
 			ID:       "zeek-ingest",
 			Kind:     jobs.KindPassiveIngest,
 			Plugin:   "zeek",
-			Targets:  append([]string{}, template.Scope.Targets...),
+			Targets:  append(append([]string{}, template.Scope.Targets...), template.Scope.CIDRs...),
 			Metadata: metadata,
 		})
 	}
@@ -285,6 +286,7 @@ func ExecuteRunWithOptions(ctx context.Context, plugins []engine.Plugin, templat
 }
 
 func ExecuteRunWithPersistence(ctx context.Context, plugins []engine.Plugin, template templates.Template, resolved options.EffectiveOptions, persistentStore storage.EvidenceStore) ([]jobs.Job, []jobs.ExecutionResult, []evidence.Record, error) {
+	runStartedAt := time.Now().UTC()
 	seedPlan := BuildSeedPlanWithOptions(template, resolved)
 	seedEvidence, seedResults, err := RunPlanWithPersistence(ctx, plugins, seedPlan, resolved, persistentStore)
 	if err != nil {
@@ -298,6 +300,7 @@ func ExecuteRunWithPersistence(ctx context.Context, plugins []engine.Plugin, tem
 	allEvidence := append([]evidence.Record{}, seedEvidence...)
 
 	followUpPlan := BuildFollowUpPlanWithOptions(template, seedEvidence, resolved)
+	annotatePassivePlan(followUpPlan, runStartedAt)
 	if len(followUpPlan) == 0 {
 		return fullPlan, allResults, allEvidence, nil
 	}
@@ -439,6 +442,22 @@ func mergeMetadata(base map[string]string, extra map[string]string) map[string]s
 	}
 
 	return merged
+}
+
+func annotatePassivePlan(plan []jobs.Job, runStartedAt time.Time) {
+	if runStartedAt.IsZero() {
+		return
+	}
+
+	for i := range plan {
+		if plan[i].Kind != jobs.KindPassiveIngest {
+			continue
+		}
+
+		plan[i].Metadata = mergeMetadata(plan[i].Metadata, map[string]string{
+			"run_started_at": runStartedAt.Format(time.RFC3339Nano),
+		})
+	}
 }
 
 func zeekPassiveMetadata(template templates.Template, resolved options.EffectiveOptions) (map[string]string, bool) {

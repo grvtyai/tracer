@@ -228,6 +228,9 @@ func TestBuildFollowUpPlanIncludesZeekIngestWhenConfigured(t *testing.T) {
 	if plan[0].Plugin != "zeek" || plan[0].Kind != jobs.KindPassiveIngest {
 		t.Fatalf("unexpected zeek follow-up job: %#v", plan[0])
 	}
+	if !reflect.DeepEqual(plan[0].Targets, []string{"10.0.0.10"}) {
+		t.Fatalf("expected zeek targets to carry template scope, got %#v", plan[0].Targets)
+	}
 	if plan[0].Metadata["zeek_log_dir"] != "/var/log/zeek/current" {
 		t.Fatalf("expected zeek log dir metadata, got %#v", plan[0].Metadata)
 	}
@@ -236,6 +239,27 @@ func TestBuildFollowUpPlanIncludesZeekIngestWhenConfigured(t *testing.T) {
 	}
 	if plan[0].Metadata["zeek_auto_start"] != "true" {
 		t.Fatalf("expected zeek auto start metadata, got %#v", plan[0].Metadata)
+	}
+}
+
+func TestBuildFollowUpPlanIncludesZeekCIDRsWhenNoExplicitTargetsExist(t *testing.T) {
+	template := templates.Template{
+		Name: "test",
+		Scope: ingest.Scope{
+			CIDRs: []string{"192.168.178.0/24"},
+		},
+		Profile: ingest.RunProfile{
+			EnablePassiveIngest: true,
+			ZeekLogDir:          "/var/log/zeek/current",
+		},
+	}
+
+	plan := BuildFollowUpPlan(template, nil)
+	if len(plan) != 1 {
+		t.Fatalf("expected 1 follow-up job, got %d", len(plan))
+	}
+	if !reflect.DeepEqual(plan[0].Targets, []string{"192.168.178.0/24"}) {
+		t.Fatalf("expected zeek CIDR targets, got %#v", plan[0].Targets)
 	}
 }
 

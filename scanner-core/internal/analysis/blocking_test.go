@@ -108,10 +108,10 @@ func TestClassifyBlockingReturnsFirstSortedAssessment(t *testing.T) {
 	got := ClassifyBlocking(records)
 	want := BlockingAssessment{
 		Target:       "10.0.0.10",
-		Port:         22,
+		Port:         0,
 		Verdict:      evidence.VerdictReachable,
 		Confidence:   evidence.ConfidenceConfirmed,
-		Reasons:      []string{"port responded to active probing"},
+		Reasons:      []string{"active probing confirmed the target is reachable"},
 		EvidenceRefs: []string{"open-1"},
 	}
 
@@ -156,5 +156,39 @@ func TestBuildBlockingAssessmentsReachableFromPassiveEvidence(t *testing.T) {
 	}
 	if got[1].Reasons[0] != "passive telemetry observed a response on the port" {
 		t.Fatalf("unexpected port reason: %#v", got[1])
+	}
+}
+
+func TestBuildBlockingAssessmentsActiveReachabilityOverridesRouteFailureAtTargetLevel(t *testing.T) {
+	records := []evidence.Record{
+		{
+			ID:       "route-1",
+			Source:   "scamper",
+			Kind:     "route_trace",
+			Target:   "192.168.178.30",
+			Protocol: "ip",
+			Attributes: map[string]string{
+				"stop_reason": "GAPLIMIT",
+			},
+		},
+		{
+			ID:       "open-1",
+			Source:   "naabu",
+			Kind:     "open_port",
+			Target:   "192.168.178.30",
+			Port:     8888,
+			Protocol: "tcp",
+		},
+	}
+
+	got := BuildBlockingAssessments(records)
+	if len(got) != 2 {
+		t.Fatalf("expected 2 assessments, got %d", len(got))
+	}
+	if got[0].Target != "192.168.178.30" || got[0].Port != 0 || got[0].Verdict != evidence.VerdictReachable {
+		t.Fatalf("expected target-level reachable assessment, got %#v", got[0])
+	}
+	if got[0].Reasons[0] != "active probing confirmed the target is reachable" {
+		t.Fatalf("unexpected target-level reason: %#v", got[0])
 	}
 }

@@ -167,6 +167,48 @@ func TestPluginRunAutoStartsZeekDeployWhenRequested(t *testing.T) {
 	}
 }
 
+func TestPluginRunFiltersByCIDRAndRunStartTime(t *testing.T) {
+	dir := t.TempDir()
+
+	connLog := `#separator \x09
+#set_separator	,
+#empty_field	(empty)
+#unset_field	-
+#path	conn
+#fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	proto	service	duration	orig_bytes	resp_bytes	conn_state
+1712218700.000000	Cold	10.0.0.5	51514	192.168.178.1	80	tcp	http	0.123	123	456	SF
+1712218800.123456	Cgood	10.0.0.5	51515	192.168.178.1	80	tcp	http	0.123	123	456	SF
+1712218801.123456	Cskip	10.0.0.5	51516	224.0.0.251	5353	udp	dns	0.123	123	0	S0
+`
+
+	if err := os.WriteFile(filepath.Join(dir, "conn.log"), []byte(connLog), 0o600); err != nil {
+		t.Fatalf("WriteFile conn.log returned error: %v", err)
+	}
+
+	plugin := New()
+	records, err := plugin.Run(context.Background(), jobs.Job{
+		ID:      "zeek-ingest",
+		Kind:    jobs.KindPassiveIngest,
+		Plugin:  "zeek",
+		Targets: []string{"192.168.178.0/24"},
+		Metadata: map[string]string{
+			"zeek_log_dir":   dir,
+			"zeek_mode":      "always",
+			"run_started_at": "2024-04-04T08:19:00Z",
+		},
+	})
+	if err != nil {
+		t.Fatalf("Run returned error: %v", err)
+	}
+
+	if len(records) != 1 {
+		t.Fatalf("expected only 1 filtered record, got %d", len(records))
+	}
+	if records[0].Target != "192.168.178.1" {
+		t.Fatalf("unexpected target after filtering: %#v", records[0])
+	}
+}
+
 type fakeRunner struct {
 	run func(ctx context.Context, name string, args []string) ([]byte, error)
 }

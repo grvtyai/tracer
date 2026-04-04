@@ -113,6 +113,14 @@ func classifyTarget(target string, records []evidence.Record) (BlockingAssessmen
 		return result, true
 	}
 
+	if record, ok := findActiveReachableTarget(records); ok {
+		result.Verdict = evidence.VerdictReachable
+		result.Confidence = evidence.ConfidenceConfirmed
+		result.Reasons = []string{activeReachableTargetReason(record)}
+		result.EvidenceRefs = []string{record.ID}
+		return result, true
+	}
+
 	if record, ok := findPassiveReachable(records); ok {
 		result.Verdict = evidence.VerdictReachable
 		result.Confidence = evidence.ConfidenceConfirmed
@@ -280,6 +288,17 @@ func findPassiveReachable(records []evidence.Record) (evidence.Record, bool) {
 	return evidence.Record{}, false
 }
 
+func findActiveReachableTarget(records []evidence.Record) (evidence.Record, bool) {
+	for _, record := range records {
+		switch record.Kind {
+		case "open_port", "service_fingerprint", "http_probe", "l7_grab":
+			return record, true
+		}
+	}
+
+	return evidence.Record{}, false
+}
+
 func timeoutRecords(records []evidence.Record) []evidence.Record {
 	timeoutLike := make([]evidence.Record, 0)
 	for _, record := range records {
@@ -329,6 +348,19 @@ func reachableReason(record evidence.Record) string {
 		return "passive telemetry observed a response on the port"
 	default:
 		return "port responded to active probing"
+	}
+}
+
+func activeReachableTargetReason(record evidence.Record) string {
+	switch record.Kind {
+	case "service_fingerprint":
+		return "active service fingerprinting confirmed the target is reachable"
+	case "http_probe":
+		return "active HTTP probing confirmed the target is reachable"
+	case "l7_grab":
+		return "application grab confirmed the target is reachable"
+	default:
+		return "active probing confirmed the target is reachable"
 	}
 }
 
