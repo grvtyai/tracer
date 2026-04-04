@@ -1,0 +1,31 @@
+{{define "settings.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Current Runtime</h2>
+        </div>
+        <div class="kv-grid">
+            <div class="kv-key">Data directory</div>
+            <div class="kv-value mono">{{.DataDir}}</div>
+            <div class="kv-key">SQLite database</div>
+            <div class="kv-value mono">{{.DBPath}}</div>
+            <div class="kv-key">Rendering mode</div>
+            <div class="kv-value">Server-rendered HTML with progressive enhancement</div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Operator Options Next</h2>
+        </div>
+        <ul class="bullet-list">
+            <li>Project creation and scan launch from the browser</li>
+            <li>Shared CLI and GUI option profiles</li>
+            <li>Import and export around the same SQLite-backed model</li>
+            <li>Later packaging as local web app or desktop shell</li>
+        </ul>
+    </article>
+</section>
+{{end}}

@@ -1,0 +1,104 @@
+{{define "run.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="hero-grid">
+    <article class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Project</div>
+            <div class="stat-value">{{.Run.Run.ProjectName}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Status</div>
+            <div class="stat-value">{{.Run.Run.Status}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Jobs</div>
+            <div class="stat-value">{{.Run.Run.JobCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Evidence</div>
+            <div class="stat-value">{{.Run.Run.EvidenceCount}}</div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Run Metadata</h2>
+        </div>
+        <div class="kv-grid">
+            <div class="kv-key">Run ID</div>
+            <div class="kv-value mono">{{.Run.Run.ID}}</div>
+            <div class="kv-key">Template</div>
+            <div class="kv-value">{{.Run.Run.TemplateName}}</div>
+            <div class="kv-key">Started</div>
+            <div class="kv-value">{{.Run.Run.StartedAt.Format "2006-01-02 15:04:05"}}</div>
+            <div class="kv-key">Finished</div>
+            <div class="kv-value">{{if .Run.Run.FinishedAt.IsZero}}-{{else}}{{.Run.Run.FinishedAt.Format "2006-01-02 15:04:05"}}{{end}}</div>
+        </div>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel wide">
+        <div class="panel-head">
+            <h2>Hosts</h2>
+            <span class="pill">{{len .Hosts}} targets</span>
+        </div>
+        {{if .Hosts}}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Target</th>
+                    <th>Verdict</th>
+                    <th>Confidence</th>
+                    <th>Open Ports</th>
+                    <th>Evidence</th>
+                    <th>Last Observed</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Hosts}}
+                <tr>
+                    <td class="mono">{{.Target}}</td>
+                    <td>{{.Verdict}}</td>
+                    <td>{{.Confidence}}</td>
+                    <td>{{if .OpenPorts}}{{range $index, $port := .OpenPorts}}{{if $index}}, {{end}}{{$port}}{{end}}{{else}}-{{end}}</td>
+                    <td>{{.EvidenceCount}}</td>
+                    <td>{{if .LastObserved.IsZero}}-{{else}}{{.LastObserved.Format "2006-01-02 15:04:05"}}{{end}}</td>
+                </tr>
+                {{if .BlockingReasons}}
+                <tr>
+                    <td colspan="6" class="reason-row">{{range $index, $reason := .BlockingReasons}}{{if $index}} | {{end}}{{$reason}}{{end}}</td>
+                </tr>
+                {{end}}
+                {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <p class="empty-note">No host-level evidence is stored for this run yet.</p>
+        {{end}}
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Reevaluation</h2>
+            <span class="pill">{{len .Run.Reevaluation}}</span>
+        </div>
+        {{if .Run.Reevaluation}}
+        <div class="list">
+            {{range .Run.Reevaluation}}
+            <div class="list-item static">
+                <div>
+                    <div class="list-title">{{.Target}}</div>
+                    <div class="list-meta">{{.Reason}}</div>
+                </div>
+                <span class="pill subtle">{{.SuggestedAfter}}</span>
+            </div>
+            {{end}}
+        </div>
+        {{else}}
+        <p class="empty-note">No reevaluation hints for this run.</p>
+        {{end}}
+    </article>
+</section>
+{{end}}

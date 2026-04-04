@@ -1,0 +1,57 @@
+{{define "projects.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel-grid">
+    <article class="panel wide">
+        <div class="panel-head">
+            <h2>Projects</h2>
+            <span class="pill">{{len .Projects}} total</span>
+        </div>
+        {{if .Projects}}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Runs</th>
+                    <th>Last Run</th>
+                    <th>ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Projects}}
+                <tr>
+                    <td><a class="table-link" href="/projects/{{.ID}}">{{.Name}}</a></td>
+                    <td>{{.RunCount}}</td>
+                    <td>{{if .LastRunAt.IsZero}}-{{else}}{{.LastRunAt.Format "2006-01-02 15:04"}}{{end}}</td>
+                    <td class="mono">{{.ID}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <p class="empty-note">No projects in the store yet.</p>
+        {{end}}
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Latest Runs</h2>
+        </div>
+        {{if .RecentRuns}}
+        <div class="list">
+            {{range .RecentRuns}}
+            <a class="list-item" href="/runs/{{.ID}}">
+                <div>
+                    <div class="list-title">{{.ProjectName}}</div>
+                    <div class="list-meta">{{.TemplateName}} • {{.Status}}</div>
+                </div>
+                <span class="pill">{{.StartedAt.Format "15:04"}}</span>
+            </a>
+            {{end}}
+        </div>
+        {{else}}
+        <p class="empty-note">No run history yet.</p>
+        {{end}}
+    </article>
+</section>
+{{end}}

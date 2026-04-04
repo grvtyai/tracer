@@ -1,0 +1,67 @@
+{{define "project.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>{{.Project.Name}}</h2>
+            <span class="pill">{{len .Runs}} runs</span>
+        </div>
+        <div class="kv-grid">
+            <div class="kv-key">Project ID</div>
+            <div class="kv-value mono">{{.Project.ID}}</div>
+            <div class="kv-key">Created</div>
+            <div class="kv-value">{{.Project.CreatedAt.Format "2006-01-02 15:04"}}</div>
+            <div class="kv-key">Updated</div>
+            <div class="kv-value">{{.Project.UpdatedAt.Format "2006-01-02 15:04"}}</div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Planned GUI Flow</h2>
+        </div>
+        <ul class="bullet-list">
+            <li>Project-centric scan configuration</li>
+            <li>Run history with evidence diffs</li>
+            <li>Host drilldowns and reevaluation queues</li>
+            <li>Later browser-triggered scans on top of scanner-core</li>
+        </ul>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Run History</h2>
+        <span class="pill subtle">Diff API: {{.DiffAPI}}</span>
+    </div>
+    {{if .Runs}}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Started</th>
+                <th>Status</th>
+                <th>Template</th>
+                <th>Jobs</th>
+                <th>Evidence</th>
+                <th>Open</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Runs}}
+            <tr>
+                <td><a class="table-link" href="/runs/{{.ID}}">{{.StartedAt.Format "2006-01-02 15:04"}}</a></td>
+                <td>{{.Status}}</td>
+                <td>{{.TemplateName}}</td>
+                <td>{{.JobCount}}</td>
+                <td>{{.EvidenceCount}}</td>
+                <td class="mono">{{.ID}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="empty-note">No runs stored for this project yet.</p>
+    {{end}}
+</section>
+{{end}}

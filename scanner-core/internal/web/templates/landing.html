@@ -1,0 +1,80 @@
+{{define "landing.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="hero-grid">
+    <article class="hero-card">
+        <div class="hero-kicker">Foundation</div>
+        <p class="hero-text">
+            This is the first Go-hosted Startrace surface running directly on top of the persisted tracer model.
+            It is intentionally project-first and read-heavy so we can stabilize the operator flows before scan control moves into the browser.
+        </p>
+        <div class="hero-actions">
+            <a class="button button-primary" href="/projects">Open Projects</a>
+            <a class="button button-secondary" href="/settings">Inspect Settings</a>
+        </div>
+    </article>
+
+    <article class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Projects</div>
+            <div class="stat-value">{{.Stats.ProjectCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Runs</div>
+            <div class="stat-value">{{.Stats.RunCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Known Hosts</div>
+            <div class="stat-value">{{.Stats.HostCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Evidence</div>
+            <div class="stat-value">{{.Stats.EvidenceCount}}</div>
+        </div>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Recent Projects</h2>
+        </div>
+        {{if .Projects}}
+        <div class="list">
+            {{range .Projects}}
+            <a class="list-item" href="/projects/{{.ID}}">
+                <div>
+                    <div class="list-title">{{.Name}}</div>
+                    <div class="list-meta">{{.RunCount}} runs{{if not .LastRunAt.IsZero}} • last {{.LastRunAt.Format "2006-01-02 15:04"}}{{end}}</div>
+                </div>
+                <span class="pill subtle">{{.ID}}</span>
+            </a>
+            {{end}}
+        </div>
+        {{else}}
+        <p class="empty-note">No persisted projects yet. Run `tracer` in `-mode run` first and this page will populate automatically.</p>
+        {{end}}
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Recent Runs</h2>
+        </div>
+        {{if .RecentRuns}}
+        <div class="list">
+            {{range .RecentRuns}}
+            <a class="list-item" href="/runs/{{.ID}}">
+                <div>
+                    <div class="list-title">{{.ProjectName}}</div>
+                    <div class="list-meta">{{.Status}} • {{.TemplateName}} • {{.StartedAt.Format "2006-01-02 15:04"}}</div>
+                </div>
+                <span class="pill">{{.EvidenceCount}} ev</span>
+            </a>
+            {{end}}
+        </div>
+        {{else}}
+        <p class="empty-note">No runs available yet.</p>
+        {{end}}
+    </article>
+</section>
+{{end}}

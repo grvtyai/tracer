@@ -1,0 +1,50 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body class="{{.BodyClass}}">
+    <div class="shell">
+        <aside class="sidebar">
+            <div class="brand-block">
+                <div class="brand-mark">ST</div>
+                <div>
+                    <div class="brand-name">{{.AppName}}</div>
+                    <div class="brand-sub">Powered by tracer scanner-core</div>
+                </div>
+            </div>
+
+            <nav class="nav">
+                <a class="nav-link {{if eq .ActiveNav "landing"}}active{{end}}" href="/">Overview</a>
+                <a class="nav-link {{if eq .ActiveNav "projects"}}active{{end}}" href="/projects">Projects</a>
+                <a class="nav-link {{if eq .ActiveNav "runs"}}active{{end}}" href="/projects">Runs</a>
+                <a class="nav-link {{if eq .ActiveNav "settings"}}active{{end}}" href="/settings">Settings</a>
+            </nav>
+
+            <div class="sidebar-foot">
+                <div class="foot-label">Store</div>
+                <div class="foot-value">{{.DBPath}}</div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <header class="topbar">
+                <div>
+                    <div class="eyebrow">{{.HeroNote}}</div>
+                    <h1>{{.Title}}</h1>
+                </div>
+                <div class="topbar-meta">
+                    <span class="pill">Generated {{.Generated.Format "2006-01-02 15:04:05 UTC"}}</span>
+                </div>
+            </header>
+
+            {{template "page" .}}
+        </main>
+    </div>
+</body>
+</html>
+{{end}}
