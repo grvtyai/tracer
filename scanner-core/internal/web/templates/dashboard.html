@@ -77,7 +77,7 @@
                     <div class="list-title">{{.Run.TemplateName}}</div>
                     <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts | {{.SubnetCount}} subnet{{if ne .SubnetCount 1}}s{{end}}</div>
                 </div>
-                <span class="pill {{if eq .Run.Status "running"}}running-pill{{end}}">{{if eq .Run.Status "running"}}<span class="spinner tiny"></span>{{end}}{{.StatusLabel}}</span>
+                <span class="pill {{if eq .Run.Status "running"}}running-pill{{end}} {{.StatusClass}}">{{if eq .Run.Status "running"}}<span class="spinner tiny"></span>{{end}}{{.StatusLabel}}</span>
             </{{if .Clickable}}a{{else}}div{{end}}>
             {{end}}
         </div>

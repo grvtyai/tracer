@@ -905,6 +905,19 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 			FOREIGN KEY(asset_id) REFERENCES assets(id),
 			FOREIGN KEY(run_id) REFERENCES runs(id)
 		);`,
+		`CREATE TABLE IF NOT EXISTS scheduled_scans (
+			id TEXT PRIMARY KEY,
+			project_id TEXT NOT NULL,
+			source_run_id TEXT NOT NULL DEFAULT '',
+			source_asset_id TEXT NOT NULL DEFAULT '',
+			name TEXT NOT NULL,
+			kind TEXT NOT NULL DEFAULT '',
+			scope_input TEXT NOT NULL DEFAULT '',
+			execute_at TEXT NOT NULL,
+			status TEXT NOT NULL DEFAULT 'pending',
+			created_at TEXT NOT NULL,
+			FOREIGN KEY(project_id) REFERENCES projects(id)
+		);`,
 		`CREATE INDEX IF NOT EXISTS idx_runs_project_id ON runs(project_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_job_results_run_id ON job_results(run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_evidence_run_id ON evidence(run_id);`,
@@ -914,6 +927,8 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 		`CREATE INDEX IF NOT EXISTS idx_assets_project_last_seen ON assets(project_id, last_seen_at);`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_asset_observations_asset_run ON asset_observations(asset_id, run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_asset_observations_run_id ON asset_observations(run_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_scheduled_scans_run ON scheduled_scans(source_run_id, execute_at);`,
+		`CREATE INDEX IF NOT EXISTS idx_scheduled_scans_asset ON scheduled_scans(source_asset_id, execute_at);`,
 	}
 
 	for _, statement := range statements {

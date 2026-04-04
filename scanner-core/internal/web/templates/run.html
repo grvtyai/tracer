@@ -1,6 +1,13 @@
 {{define "run.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
+{{if .RunStatus.Message}}
+<section class="notice {{.RunStatus.Class}}">
+    <strong>{{.RunStatus.Title}}</strong><br />
+    {{.RunStatus.Message}}
+</section>
+{{end}}
+
 <section class="hero-grid">
     <article class="stats-grid">
         <div class="stat-card">
@@ -9,7 +16,7 @@
         </div>
         <div class="stat-card">
             <div class="stat-label">Status</div>
-            <div class="stat-value">{{if eq .Run.Run.Status "running"}}<span class="status-label running-label"><span class="spinner"></span>Running</span>{{else if eq .Run.Run.Status "partial"}}Needs attention{{else if eq .Run.Run.Status "completed"}}Completed{{else}}{{.Run.Run.Status}}{{end}}</div>
+            <div class="stat-value"><span class="status-pill {{.RunStatus.Class}}">{{if eq .Run.Run.Status "running"}}<span class="spinner"></span>{{end}}{{.RunStatus.Label}}</span></div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Hosts</div>
@@ -88,6 +95,21 @@
             <h2>Reevaluation</h2>
             <span class="pill">{{len .Run.Reevaluation}}</span>
         </div>
+        {{if ne .Run.Run.Status "running"}}
+        <div class="hero-actions">
+            <a class="button button-primary" href="{{.RunReevaluateURL}}">Reevaluate all Hosts</a>
+            <details class="schedule-disclosure">
+                <summary class="button button-secondary">Timebased Reevaluation</summary>
+                <form method="post" action="/runs/{{.Run.Run.ID}}/schedule-reevaluation" class="asset-form schedule-form">
+                    <label class="form-row">
+                        <span class="form-label">Run again at</span>
+                        <input class="input" type="datetime-local" name="execute_at" />
+                    </label>
+                    <button class="button button-primary" type="submit">Save timebased reevaluation</button>
+                </form>
+            </details>
+        </div>
+        {{end}}
         {{if .Run.Reevaluation}}
         <div class="list">
             {{range .Run.Reevaluation}}
@@ -102,6 +124,23 @@
         </div>
         {{else}}
         <p class="empty-note">No reevaluation hints for this run.</p>
+        {{end}}
+        {{if .ScheduledScans}}
+        <div class="panel-head compact-head">
+            <h2>Scheduled Reevaluations</h2>
+            <span class="pill subtle">{{len .ScheduledScans}}</span>
+        </div>
+        <div class="list">
+            {{range .ScheduledScans}}
+            <div class="list-item static">
+                <div>
+                    <div class="list-title">{{.Name}}</div>
+                    <div class="list-meta">{{.ExecuteAt.Format "2006-01-02 15:04"}} | {{.Status}}</div>
+                </div>
+                <span class="pill subtle">{{.Kind}}</span>
+            </div>
+            {{end}}
+        </div>
         {{end}}
     </article>
 </section>

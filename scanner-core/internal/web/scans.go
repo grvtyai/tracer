@@ -1,8 +1,10 @@
 package web
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -32,6 +34,7 @@ type scanFormData struct {
 	PortTemplate          string
 	ActiveInterface       string
 	PassiveInterface      string
+	DetectedActiveInterface string
 	StartTimeDisplay      string
 	PassiveMode           string
 	ZeekAutoStart         bool
@@ -39,7 +42,9 @@ type scanFormData struct {
 	ContinueOnError       bool
 	RetainPartialResults  bool
 	ReevaluateAmbiguous   bool
+	ReevaluatePreset      string
 	ReevaluateAfter       string
+	ReevaluateCustom      string
 	EnableRouteSampling   bool
 	EnableServiceScan     bool
 	EnablePassiveIngest   bool
@@ -75,6 +80,13 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 	form := defaultScanForm(currentProject)
 	if value := strings.TrimSpace(r.URL.Query().Get("scope")); value != "" {
 		form.ScopeInput = value
+	}
+	if value := strings.TrimSpace(r.URL.Query().Get("scan_name")); value != "" {
+		form.ScanName = value
+	}
+	if value := strings.TrimSpace(r.URL.Query().Get("reevaluate_after")); value != "" {
+		form.ReevaluatePreset, form.ReevaluateCustom, form.ReevaluateAmbiguous = reevaluatePreset(value)
+		form.ReevaluateAfter = value
 	}
 
 	preflightChecks := collectPreflightChecks(s.options.DBPath)
@@ -125,11 +137,9 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 		PassiveInterface:      strings.TrimSpace(r.FormValue("passive_interface")),
 		PassiveMode:           firstNonEmptyWeb(strings.TrimSpace(r.FormValue("passive_mode")), "auto"),
 		ZeekLogDir:            strings.TrimSpace(r.FormValue("zeek_log_dir")),
-		ReevaluateAfter:       firstNonEmptyWeb(strings.TrimSpace(r.FormValue("reevaluate_after")), "30m"),
 		ScanTag:               firstNonEmptyWeb(strings.TrimSpace(r.FormValue("scan_tag")), "internal"),
 		ContinueOnError:       isChecked(r.FormValue("continue_on_error")),
 		RetainPartialResults:  isChecked(r.FormValue("retain_partial_results")),
-		ReevaluateAmbiguous:   isChecked(r.FormValue("reevaluate_ambiguous")),
 		EnableRouteSampling:   isChecked(r.FormValue("enable_route_sampling")),
 		EnableServiceScan:     isChecked(r.FormValue("enable_service_scan")),
 		EnablePassiveIngest:   isChecked(r.FormValue("enable_passive_ingest")),
@@ -138,6 +148,10 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 		UseLargeRangeStrategy: isChecked(r.FormValue("use_large_range_strategy")),
 		ZeekAutoStart:         isChecked(r.FormValue("zeek_auto_start")),
 	}
+	form.ReevaluatePreset = firstNonEmptyWeb(strings.TrimSpace(r.FormValue("reevaluate_after_preset")), "off")
+	form.ReevaluateCustom = strings.TrimSpace(r.FormValue("reevaluate_after_custom"))
+	form.ReevaluateAmbiguous = form.ReevaluatePreset != "off"
+	form.ReevaluateAfter = resolveReevaluateAfter(form.ReevaluatePreset, form.ReevaluateCustom)
 
 	template, effectiveOptions, err := buildTemplateFromForm(form, project, s.options)
 	if err != nil {
@@ -275,6 +289,8 @@ func defaultScanForm(project *storage.ProjectSummary) scanFormData {
 		ScanName:             "Quick Sweep",
 		ScopeInput:           scope,
 		PortTemplate:         "all-default-ports",
+		ActiveInterface:      detectActiveInterface(),
+		DetectedActiveInterface: detectActiveInterface(),
 		StartTimeDisplay:     time.Now().Format("2006-01-02 15:04"),
 		PassiveMode:          "auto",
 		ZeekAutoStart:        true,
@@ -282,7 +298,9 @@ func defaultScanForm(project *storage.ProjectSummary) scanFormData {
 		ContinueOnError:      true,
 		RetainPartialResults: true,
 		ReevaluateAmbiguous:  false,
-		ReevaluateAfter:      "30m",
+		ReevaluatePreset:     "off",
+		ReevaluateAfter:      "",
+		ReevaluateCustom:     "",
 		EnableRouteSampling:  true,
 		EnableServiceScan:    true,
 		EnablePassiveIngest:  true,
@@ -329,7 +347,7 @@ func buildTemplateFromForm(form scanFormData, project storage.ProjectSummary, se
 				ContinueOnError:      boolPtr(form.ContinueOnError),
 				RetainPartialResults: boolPtr(form.RetainPartialResults),
 				ReevaluateAmbiguous:  boolPtr(form.ReevaluateAmbiguous),
-				ReevaluateAfter:      form.ReevaluateAfter,
+				ReevaluateAfter:      resolveReevaluateAfter(form.ReevaluatePreset, form.ReevaluateCustom),
 			},
 			Network: options.NetworkOptions{
 				ActiveInterface:  form.ActiveInterface,
@@ -402,6 +420,85 @@ func summarizeRunStatusWeb(results []jobs.ExecutionResult) string {
 		}
 	}
 	return "completed"
+}
+
+func resolveReevaluateAfter(preset string, custom string) string {
+	switch strings.ToLower(strings.TrimSpace(preset)) {
+	case "", "off":
+		return ""
+	case "15m":
+		return "15m"
+	case "30m":
+		return "30m"
+	case "1h":
+		return "1h"
+	case "custom":
+		return strings.TrimSpace(custom)
+	default:
+		return strings.TrimSpace(preset)
+	}
+}
+
+func reevaluatePreset(value string) (string, string, bool) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", "off":
+		return "off", "", false
+	case "15m":
+		return "15m", "", true
+	case "30m":
+		return "30m", "", true
+	case "1h":
+		return "1h", "", true
+	default:
+		return "custom", strings.TrimSpace(value), true
+	}
+}
+
+func detectActiveInterface() string {
+	if runtimeValue := detectLinuxDefaultRouteInterface(); runtimeValue != "" {
+		return runtimeValue
+	}
+
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+	for _, iface := range interfaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil || len(addrs) == 0 {
+			continue
+		}
+		return iface.Name
+	}
+	return ""
+}
+
+func detectLinuxDefaultRouteInterface() string {
+	file, err := os.Open("/proc/net/route")
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	firstLine := true
+	for scanner.Scan() {
+		if firstLine {
+			firstLine = false
+			continue
+		}
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 2 {
+			continue
+		}
+		if fields[1] == "00000000" {
+			return strings.TrimSpace(fields[0])
+		}
+	}
+	return ""
 }
 
 func boolPtr(value bool) *bool {

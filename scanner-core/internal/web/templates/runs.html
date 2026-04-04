@@ -32,7 +32,7 @@
                     {{end}}
                 </td>
                 <td>
-                    <span class="status-label {{if eq .Run.Status "running"}}running-label{{end}}">
+                    <span class="status-label {{.StatusClass}}">
                         {{if eq .Run.Status "running"}}<span class="spinner"></span>{{end}}
                         {{.StatusLabel}}
                     </span>

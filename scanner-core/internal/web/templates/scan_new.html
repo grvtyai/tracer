@@ -65,7 +65,7 @@
             <label class="form-row">
                 <span class="form-label">Active interface</span>
                 <input class="input" type="text" name="active_interface" value="{{.ScanForm.ActiveInterface}}" />
-                <span class="form-hint">Interface used for active probing such as naabu, scamper, nmap, httpx and zgrab2.</span>
+                <span class="form-hint">Interface used for active probing such as naabu, scamper, nmap, httpx and zgrab2. {{if .ScanForm.DetectedActiveInterface}}Auto-detected default interface: <span class="mono">{{.ScanForm.DetectedActiveInterface}}</span>.{{end}}</span>
             </label>
             <label class="form-row">
                 <span class="form-label">Passive interface (optional)</span>
@@ -101,13 +101,24 @@
             <label class="check-row"><input type="checkbox" name="zeek_auto_start" {{if .ScanForm.ZeekAutoStart}}checked{{end}} /> <span>Zeek auto start (optional)<small class="check-hint">Lets the runner try to start Zeek when passive mode expects it.</small></span></label>
             <label class="check-row"><input type="checkbox" name="continue_on_error" {{if .ScanForm.ContinueOnError}}checked{{end}} /> <span>Continue on error (optional)<small class="check-hint">Keeps the run going even when a plugin or stage fails.</small></span></label>
             <label class="check-row"><input type="checkbox" name="retain_partial_results" {{if .ScanForm.RetainPartialResults}}checked{{end}} /> <span>Retain partial results (optional)<small class="check-hint">Stores successful evidence even when the overall run ends with warnings.</small></span></label>
-            <label class="check-row"><input type="checkbox" name="reevaluate_ambiguous" {{if .ScanForm.ReevaluateAmbiguous}}checked{{end}} /> <span>Reevaluate ambiguous (optional)<small class="check-hint">Off by default. Turn this on when uncertain outcomes should be flagged for later verification.</small></span></label>
         </div>
 
         <label class="form-row">
             <span class="form-label">Reevaluate after (optional)</span>
-            <input class="input" type="text" name="reevaluate_after" value="{{.ScanForm.ReevaluateAfter}}" />
-            <span class="form-hint">Delay before a flagged host should be checked again, for example <span class="mono">30m</span>. Only relevant when reevaluate is enabled.</span>
+            <select class="input" name="reevaluate_after_preset">
+                <option value="off" {{if eq .ScanForm.ReevaluatePreset "off"}}selected{{end}}>Off</option>
+                <option value="15m" {{if eq .ScanForm.ReevaluatePreset "15m"}}selected{{end}}>15 Min</option>
+                <option value="30m" {{if eq .ScanForm.ReevaluatePreset "30m"}}selected{{end}}>30 Min</option>
+                <option value="1h" {{if eq .ScanForm.ReevaluatePreset "1h"}}selected{{end}}>1 Stunde</option>
+                <option value="custom" {{if eq .ScanForm.ReevaluatePreset "custom"}}selected{{end}}>Custom</option>
+            </select>
+            <span class="form-hint">Controls whether ambiguous findings should be revisited later. Off keeps reevaluation disabled for this run.</span>
+        </label>
+
+        <label class="form-row">
+            <span class="form-label">Custom reevaluate delay (optional)</span>
+            <input class="input" type="text" name="reevaluate_after_custom" value="{{.ScanForm.ReevaluateCustom}}" placeholder="e.g. 2h" />
+            <span class="form-hint">Only needed when the dropdown is set to Custom.</span>
         </label>
 
         <div class="hero-actions">

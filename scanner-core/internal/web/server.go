@@ -57,10 +57,14 @@ type pageData struct {
 	Runs              []storage.RunSummary
 	RunItems          []runListItem
 	Run               *storage.RunDetails
+	RunReevaluateURL  string
 	Assets            []storage.AssetSummary
 	Asset             *storage.AssetDetails
+	AssetReevaluateURL string
 	AssetGroups       []assetGroup
 	Hosts             []hostSummary
+	RunStatus         statusInfo
+	ScheduledScans    []storage.ScheduledScan
 	Stats             dashboardStats
 	DeviceTypeStats   []labelCount
 	ConnectionStats   []labelCount
@@ -98,11 +102,19 @@ type labelCount struct {
 	Count int
 }
 
+type statusInfo struct {
+	Label   string
+	Class   string
+	Title   string
+	Message string
+}
+
 type runListItem struct {
 	Run         storage.RunSummary
 	HostCount   int
 	SubnetCount int
 	StatusLabel string
+	StatusClass string
 	Clickable   bool
 }
 
@@ -378,8 +390,18 @@ func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
-	runID := strings.Trim(strings.TrimPrefix(r.URL.Path, "/runs/"), "/")
-	if runID == "" {
+	trimmed := strings.Trim(strings.TrimPrefix(r.URL.Path, "/runs/"), "/")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) == 0 || parts[0] == "" {
+		http.NotFound(w, r)
+		return
+	}
+	runID := parts[0]
+	if len(parts) == 2 && parts[1] == "schedule-reevaluation" && r.Method == http.MethodPost {
+		s.handleScheduleReevaluation(w, r, runID)
+		return
+	}
+	if len(parts) != 1 {
 		http.NotFound(w, r)
 		return
 	}
@@ -399,6 +421,12 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	scheduledScans, err := s.repo.ListScheduledScansByRun(r.Context(), runID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	projectAssets := mustListAssets(r.Context(), s.repo, project.ID)
 
 	data := pageData{
 		Title:             "Run " + run.Run.ID,
@@ -412,10 +440,63 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		ProjectSwitchPath: "/runs",
 		Project:           &project,
 		Run:               &run,
-		Hosts:             buildHostSummaries(run, mustListAssets(r.Context(), s.repo, project.ID)),
+		Hosts:             buildHostSummaries(run, projectAssets),
+		RunStatus:         describeRunStatus(run),
+		ScheduledScans:    scheduledScans,
+		RunReevaluateURL:  buildReevaluationURL(project.ID, "Reevaluate "+run.Run.ID, runScopeInput(run), "30m"),
 		Settings:          appSettings,
 	}
 	s.render(w, "run.html", data)
+}
+
+func (s *Server) handleScheduleReevaluation(w http.ResponseWriter, r *http.Request, runID string) {
+	if err := r.ParseForm(); err != nil {
+		s.writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	run, err := s.repo.GetRun(r.Context(), runID)
+	if err != nil {
+		s.writeError(w, http.StatusNotFound, err)
+		return
+	}
+
+	executeAtRaw := strings.TrimSpace(r.FormValue("execute_at"))
+	if executeAtRaw == "" {
+		http.Redirect(w, r, "/runs/"+runID+"?notice=reevaluation-schedule-failed", http.StatusSeeOther)
+		return
+	}
+
+	executeAt, err := time.Parse("2006-01-02T15:04", executeAtRaw)
+	if err != nil {
+		http.Redirect(w, r, "/runs/"+runID+"?notice=reevaluation-schedule-failed", http.StatusSeeOther)
+		return
+	}
+
+	scopeInput := strings.TrimSpace(strings.Join(run.Scope.Targets, "\n"))
+	if len(run.Scope.CIDRs) > 0 {
+		cidrs := strings.TrimSpace(strings.Join(run.Scope.CIDRs, "\n"))
+		if scopeInput == "" {
+			scopeInput = cidrs
+		} else {
+			scopeInput += "\n" + cidrs
+		}
+	}
+
+	_, err = s.repo.CreateScheduledScan(r.Context(), storage.ScheduledScanInput{
+		ProjectID:   run.Run.ProjectID,
+		SourceRunID: run.Run.ID,
+		Name:        "Timebased Reevaluation " + run.Run.ID,
+		Kind:        "timebased-reevaluation",
+		ScopeInput:  scopeInput,
+		ExecuteAt:   executeAt,
+	})
+	if err != nil {
+		http.Redirect(w, r, "/runs/"+runID+"?notice=reevaluation-schedule-failed", http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/runs/"+runID+"?notice=reevaluation-scheduled", http.StatusSeeOther)
 }
 
 func (s *Server) handleAssets(w http.ResponseWriter, r *http.Request) {
@@ -507,6 +588,7 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 		ProjectSwitchPath: "/assets",
 		Project:           &project,
 		Asset:             &asset,
+		AssetReevaluateURL: buildReevaluationURL(project.ID, "Reevaluate "+asset.Asset.DisplayName, asset.Asset.PrimaryTarget, "30m"),
 		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Settings:          appSettings,
 	}
@@ -1017,6 +1099,7 @@ func buildRunListItems(ctx context.Context, repo *storage.SQLiteRepository, runs
 		item := runListItem{
 			Run:         run,
 			StatusLabel: runStatusLabel(run.Status),
+			StatusClass: runStatusClass(run.Status),
 			Clickable:   strings.TrimSpace(strings.ToLower(run.Status)) != "running",
 		}
 		details, err := repo.GetRun(ctx, run.ID)
@@ -1145,12 +1228,114 @@ func runStatusLabel(status string) string {
 	}
 }
 
+func runStatusClass(status string) string {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "completed":
+		return "status-success"
+	case "partial":
+		return "status-warning"
+	case "running":
+		return "status-info"
+	case "failed":
+		return "status-danger"
+	default:
+		return "status-neutral"
+	}
+}
+
+func describeRunStatus(run storage.RunDetails) statusInfo {
+	info := statusInfo{
+		Label: runStatusLabel(run.Run.Status),
+		Class: runStatusClass(run.Run.Status),
+	}
+
+	switch strings.ToLower(strings.TrimSpace(run.Run.Status)) {
+	case "completed":
+		info.Title = "Run completed successfully"
+		info.Message = "All planned jobs finished without a recorded failure. The stored evidence is ready to review."
+	case "running":
+		info.Title = "Run is still in progress"
+		info.Message = "This run is still collecting results. Open it again after completion to inspect full details."
+	case "partial":
+		info.Title = "Run needs attention"
+		info.Message = buildNeedsAttentionMessage(run)
+	case "failed":
+		info.Title = "Run failed"
+		info.Message = "The run stopped before completion. Review missing tools, plugin errors or the selected scan configuration and then launch it again."
+	default:
+		info.Title = "Run status"
+		info.Message = "This run finished with a custom state. Inspect the stored jobs and evidence for details."
+	}
+
+	return info
+}
+
+func buildNeedsAttentionMessage(run storage.RunDetails) string {
+	failedJobs := 0
+	for _, result := range run.JobResults {
+		if result.Status == "failed" {
+			failedJobs++
+		}
+	}
+	switch {
+	case failedJobs > 0 && len(run.Reevaluation) > 0:
+		return fmt.Sprintf("%d job(s) failed and %d host(s) were marked for reevaluation. Fix the failing tool or scan step, then rerun or reevaluate the affected hosts to move future runs to Completed.", failedJobs, len(run.Reevaluation))
+	case failedJobs > 0:
+		return fmt.Sprintf("%d job(s) failed during this run. Check plugin availability, network reachability or scan settings, then rerun to reach Completed.", failedJobs)
+	case len(run.Reevaluation) > 0:
+		return fmt.Sprintf("%d host(s) were marked as uncertain and should be checked again. Use Reevaluate all Hosts or a host-specific reevaluation once you are ready.", len(run.Reevaluation))
+	default:
+		return "This run kept partial results but at least one stage did not finish cleanly. Review the recorded jobs and then rerun the scan to reach Completed."
+	}
+}
+
 func mustListAssets(ctx context.Context, repo *storage.SQLiteRepository, projectID string) []storage.AssetSummary {
 	assets, err := repo.ListAssets(ctx, projectID)
 	if err != nil {
 		return nil
 	}
 	return assets
+}
+
+func runScopeInput(run storage.RunDetails) string {
+	parts := make([]string, 0, len(run.Scope.Targets)+len(run.Scope.CIDRs))
+	parts = append(parts, run.Scope.Targets...)
+	parts = append(parts, run.Scope.CIDRs...)
+	return strings.Join(parts, "\n")
+}
+
+func buildReevaluationURL(projectID string, scanName string, scope string, reevaluateAfter string) string {
+	values := make([]string, 0, 4)
+	if trimmed := strings.TrimSpace(projectID); trimmed != "" {
+		values = append(values, "project="+urlQueryEscape(trimmed))
+	}
+	if trimmed := strings.TrimSpace(scanName); trimmed != "" {
+		values = append(values, "scan_name="+urlQueryEscape(trimmed))
+	}
+	if trimmed := strings.TrimSpace(scope); trimmed != "" {
+		values = append(values, "scope="+urlQueryEscape(trimmed))
+	}
+	if trimmed := strings.TrimSpace(reevaluateAfter); trimmed != "" {
+		values = append(values, "reevaluate_after="+urlQueryEscape(trimmed))
+	}
+	if len(values) == 0 {
+		return "/scans/new"
+	}
+	return "/scans/new?" + strings.Join(values, "&")
+}
+
+func urlQueryEscape(value string) string {
+	replacer := strings.NewReplacer(
+		"%", "%25",
+		" ", "%20",
+		"\n", "%0A",
+		"+", "%2B",
+		"&", "%26",
+		"=", "%3D",
+		"?", "%3F",
+		"#", "%23",
+	)
+	return replacer.Replace(value)
 }
 
 func mapToLabelCounts(values map[string]int) []labelCount {
@@ -1228,6 +1413,10 @@ func noticeMessage(code string) string {
 		return "Project creation failed. Check the submitted paths and name."
 	case "asset-updated":
 		return "Asset successfully updated."
+	case "reevaluation-scheduled":
+		return "Timebased reevaluation saved successfully."
+	case "reevaluation-schedule-failed":
+		return "Timebased reevaluation could not be saved. Check the selected time and try again."
 	case "settings-saved":
 		return "Settings updated successfully."
 	default:
