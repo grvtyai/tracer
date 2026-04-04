@@ -1,124 +1,123 @@
 # tracer
 
-`tracer` wird als orchestrierendes Scan-Framework aufgebaut, nicht als Sammlung lose verklebter Wrapper.
-Das Ziel ist ein normalisiertes JSON/Evidence-Modell ueber mehreren Discovery-, Routing-, Fingerprint- und AD-Audit-Werkzeugen.
+`tracer` wird als orchestrierendes Netzwerk-Scan- und Analyse-System aufgebaut.
+Im Kern soll daraus kein loser Wrapper-Stapel werden, sondern eine gemeinsame Laufzeit mit normalisiertem Evidence-Modell, persistenter Historie und spaeter einer GUI fuer Projekte, Dashboards und wiederholbare Scans.
 
-## Zielbild
+## Vision
 
-Die angestrebte Vollversion soll sich per Einzeiler auf Ubuntu installieren lassen und danach in zwei Modi funktionieren:
+Die Zielversion soll sich per Einzeiler auf Ubuntu installieren lassen und danach in zwei Betriebsarten funktionieren:
 
-- als GUI-gestuetztes System fuer Projekte wie `Standort A`, inklusive Dashboards, Projektverwaltung, Scan-Historie und spaeteren Reevals
-- als CLI-Variante fuer headless Systeme, die in dasselbe Datenmodell schreibt oder exportierbare Ergebnisse fuer die GUI erzeugt
+- als GUI-gestuetztes System fuer Projekte wie `Standort A`, `Heimnetz` oder spaeter reale Kundenstandorte
+- als CLI-Variante fuer headless Systeme, die in dasselbe Datenmodell schreibt oder exportierbare Runs fuer die GUI erzeugt
 
 Ein Projekt soll spaeter:
 
-- Scopes und erlaubte Netze definieren
+- Scopes, Netze und Profile verwalten
 - wiederholbare Scans ausfuehren
 - Host- und Service-Inventar aufbauen
-- Erreichbarkeit, Filterung und wahrscheinliche Firewall-Effekte bewerten
-- Ergebnisse ueber mehrere Runs hinweg vergleichen
+- Erreichbarkeit, Blockierung und wahrscheinliche Firewall-Effekte bewerten
+- Unterschiede zwischen Runs sichtbar machen
+- spaetere Reevals und Dashboards ermoeglichen
 
-## Aktueller Fokus
+## Was Heute Schon Da Ist
 
-Die erste Ausbaustufe lebt unter `scanner-core/` und deckt das Grundgeruest fuer diese Pipeline ab:
+Die aktuelle Ausbaustufe lebt vor allem unter `scanner-core/` und bringt bereits einen belastbaren Kern mit:
 
-1. Scope vorbereiten
-2. L2-Discovery mit `arp-scan`, wenn lokal moeglich
-3. L4-Port-Discovery mit `naabu` als Default
-4. Selektives Routing mit `scamper`
-5. Service- und OS-Erkennung mit `nmap`
-6. Einheitliche JSON-Normalisierung und Evidence-Speicherung
+- modulare Scan-Orchestrierung mit klaren Job-Typen
+- aktive Discovery und Verifikation ueber `naabu`, `scamper`, `nmap`, `httpx` und `zgrab2`
+- passiver Ingest ueber `Zeek`
+- normalisierte JSON-/Evidence-Ausgabe statt tool-spezifischer Rohdaten
+- `fail-soft`-Verhalten, damit Teilfehler einzelner Hosts oder Plugins den restlichen Run nicht abbrechen
+- Reeval-Hinweise fuer unklare oder spaeter erneut zu pruefende Ergebnisse
+- lokale Persistenz ueber `SQLite`
+- CLI-Abfragen fuer Projekte, Runs, einzelne Runs und evidence-basierte Diffs
 
-## Architekturprinzipien
+## Aktuelle Features
 
-- Orchestrierung und Tool-Adapter sind getrennt.
-- Externe Tools bleiben Source of Truth fuer ihre Spezialdomaine.
-- Blockierungsdiagnostik bewertet Evidence in `confirmed`, `probable` und `ambiguous`.
-- Teure Schritte laufen nur auf bereits bestaetigten Kandidaten weiter.
-- Der Scanner arbeitet jetzt bewusst `fail-soft`: Teilfehler einzelner Hosts oder Plugins sollen den restlichen Run nicht abbrechen.
-- Operator-Optionen werden in einem gemeinsamen `options`-Modell gehalten, damit dieselben Einstellungen spaeter sowohl per CLI als auch per GUI steuerbar sind.
-- Persistenz wird lokal zunaechst ueber `SQLite` aufgebaut, damit GUI und CLI dieselbe Datenbasis nutzen koennen.
+### Scan-Pipeline
 
-## Resilienz Und Optionen
+- Scope-Vorbereitung fuer Targets und CIDRs
+- optionale L2-Erweiterung mit `arp-scan`, wenn lokal sinnvoll
+- Port-Discovery mit `naabu`
+- Pfadmessung mit `scamper`
+- Service- und OS-Fingerprinting mit `nmap`
+- Web-Pruefung mit `httpx`
+- Layer-7-Grabs mit `zgrab2`
 
-- Ein Run liefert jetzt neben Evidence auch Job-Status fuer erfolgreiche und fehlgeschlagene Schritte.
-- Bereits gefundene Evidence bleibt erhalten, auch wenn spaetere Jobs fuer einzelne Hosts fehlschlagen.
-- Fehlgeschlagene oder zweifelhafte Ergebnisse koennen als Reeval-Hinweise fuer spaetere Wiederholungen markiert werden.
-- Typische Operator-Einstellungen wie `active_interface`, `passive_interface`, `port_template`, `continue_on_error` oder `reevaluate_after` sind als eigene Optionen modelliert.
-- Passive Sensorik wird jetzt bewusst als eigener Optionsraum modelliert, damit spaeter dieselben Einstellungen in GUI und CLI als Dropdowns/Schalter erscheinen koennen.
+### Passive Sensorik
 
-## Persistenzmodell
+- `Zeek` laeuft nicht mehr blind immer mit, sondern ueber `passive_mode`
+- `off`, `auto` und `always` sind als gemeinsame Operator-Optionen modelliert
+- optionales `auto_start_zeek`
+- Zeek-Ingest ist jetzt auf den aktuellen Run-Zeitpunkt und den aktuellen Scope begrenzt
+- alte, fachfremde oder ausserhalb des Scopes liegende Logeintraege sollen nicht mehr einfach in aktuelle Runs hineinlaufen
 
-Die lokale Standardpersistenz ist jetzt bewusst auf `SQLite` ausgerichtet.
-Das ist die Basis fuer:
+### Resilienz
 
-- Projekte
-- Runs
-- Job-Ergebnisse
-- normalisierte Evidence
-- Blocking-Bewertungen
-- Reeval-Hinweise
+- Job-Ergebnisse werden pro Schritt gespeichert
+- bereits gefundene Evidence bleibt auch bei spaeteren Teilfehlern erhalten
+- zweifelhafte Ergebnisse werden als Reeval-Hinweise markiert statt den gesamten Run zu invalidieren
+- Blocking-Korrelation beruecksichtigt jetzt bestaetigte aktive Evidence, damit ein Host nicht gleichzeitig praktisch erreichbar und trotzdem pauschal als geblockt gewertet wird
 
-Der Speicherort soll spaeter sowohl in der GUI als auch per CLI anpassbar sein.
+### Persistenz Und Abfragen
 
-Wenn `tracer` unter `sudo` gestartet wird, versucht der Default-Pfad jetzt bewusst, den Datenordner des aufrufenden Operators zu verwenden statt stillschweigend nach `/root/.local/share/...` zu schreiben.
-Ein explizites `--db-path` oder `--data-dir` ueberschreibt dieses Verhalten weiterhin.
-
-## Erste SQLite-Abfragen
-
-Die CLI kann jetzt nicht nur Runs schreiben, sondern auch gespeicherte Projekte, Runs und Unterschiede zwischen Runs als JSON ausgeben:
+- `SQLite` ist das aktuelle Standard-Backend fuer lokale Installationen
+- gespeichert werden bereits:
+  - Projekte
+  - Runs
+  - Job-Ergebnisse
+  - normalisierte Evidence
+  - Blocking-Bewertungen
+  - Reeval-Hinweise
+- die CLI kann denselben Store lesen:
 
 ```bash
 ./bin/tracer -mode projects
-./bin/tracer -mode runs --project "Standort A"
+./bin/tracer -mode runs --project "Heimnetz"
 ./bin/tracer -mode show-run --run-id <run-id>
 ./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
 ```
 
-Der Diff ist bewusst semantisch und evidence-basiert:
+Der Default-Store versucht unter `sudo` bewusst den Datenpfad des eigentlichen Operators zu verwenden, statt still nach `/root/.local/share/...` zu schreiben.
 
-- `new_evidence`: im neueren Run neu aufgetaucht
-- `missing_evidence`: im neueren Run nicht mehr vorhanden
-- `changed_evidence`: semantisch dasselbe Artefakt, aber mit geaenderten Details wie Versionen oder HTTP-Merkmalen
+## Optionen Als Gemeinsame Grundlage Fuer CLI Und GUI
 
-## Zeek Als Bedarfssensor
+Ein zentrales Ziel ist, dass spaetere GUI-Optionen nicht separat neu erfunden werden muessen.
+Darum laufen typische Operator-Einstellungen bereits heute ueber ein gemeinsames `options`-Modell, das sowohl Templates als auch CLI-Overrides tragen kann.
 
-`Zeek` soll nicht blind immer laufen, aber auch nicht pauschal ausgeschaltet werden.
-Deshalb gibt es jetzt einen sensororientierten Modus:
+Beispiele:
 
-- `passive_mode=off`: kein passiver Zeek-Pfad
-- `passive_mode=auto`: Zeek wird nur genutzt, wenn passive Ingests sinnvoll oder konfiguriert sind; fehlende Logs brechen den Run nicht
-- `passive_mode=always`: Zeek wird strikt erwartet und Fehler werden sichtbar
+- `active_interface`
+- `passive_interface`
+- `port_template`
+- `passive_mode`
+- `auto_start_zeek`
+- `zeek_log_dir`
+- `project`
+- `data_dir`
+- `db_path`
+- `continue_on_error`
+- `retain_partial_results`
+- `reevaluate_ambiguous`
+- `reevaluate_after`
 
-Zusatzoptionen:
+## Roadmap
 
-- `auto_start_zeek=true|false`
-- `zeek_log_dir=/pfad/zu/logs`
+Die naechsten groesseren Ausbaustufen sind:
 
-CLI-Beispiele:
-
-```bash
-./bin/tracer -mode run -template examples/tracer-smoke-zeek-lab.json --passive-mode auto --auto-start-zeek true
-./bin/tracer -mode run -template examples/tracer-smoke-zeek-lab.json --passive-mode off
-./bin/tracer -mode run -template examples/tracer-smoke-zeek-lab.json --passive-mode always --zeek-log-dir /opt/zeek/logs/current
-```
-
-## Wohin Es Geht
-
-Die naechsten groesseren Baustellen auf dem Weg zur Vollversion sind:
-
-1. Persistenz ueber mehrere Runs mit Diffs, Verlauf und spaeterem Re-Scheduling
-2. Ausbau des Blocking-/Confidence-Modells ueber aktive und passive Evidence
-3. weitere passive und Protokoll-Ingests, z. B. `ssl.log`
-4. GUI-Schicht fuer Projekte, Runs, Ansichten und Dashboards
-5. saubere Import-/Export-Pfade zwischen CLI und GUI
+1. Dashboard- und GUI-Schicht fuer Projekte, Runs, Filter, Ansichten und spaeter Operator-Workflows
+2. weitere Persistenzfunktionen fuer Verlauf, Vergleich und spaeteres Re-Scheduling
+3. mehr passive Ingests und Protokolle, z. B. `ssl.log` und weitere Zeek-Quellen
+4. bessere Import-/Export-Pfade zwischen CLI, GUI und spaeteren Deployments
+5. mehr Scan-Profile, Templates und Operator-Voreinstellungen fuer unterschiedliche Netztypen
+6. Installations- und Setup-Pfade fuer eine moeglichst einfache Ubuntu-Vollinstallation
 
 ## Ubuntu Tooling
 
-Fuer die Linux-Test-VM gibt es jetzt einen Einzeiler-Installer fuer die benoetigten Werkzeuge:
+Fuer die Linux-Test-VM gibt es bereits einen Einzeiler-Installer fuer benoetigte Werkzeuge:
 
 ```bash
 bash scripts/install-ubuntu-tools.sh
 ```
 
-Details und Hinweise stehen in [docs/INSTALL-UBUNTU.md](docs/INSTALL-UBUNTU.md).
+Mehr dazu steht in [docs/INSTALL-UBUNTU.md](docs/INSTALL-UBUNTU.md).

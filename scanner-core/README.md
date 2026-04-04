@@ -12,12 +12,15 @@ Hier liegen das Scan-Domaenenmodell, die Job-Planung und die Plugin-Vertraege fu
 
 Die Standardpersistenz dafuer ist zunaechst `SQLite`.
 
-## Bisheriger Kern
+## Aktueller Kern
 
 - `arp-scan` fuer L2-Ground-Truth im lokalen Segment
 - `naabu` als guenstige Standard-Port-Discovery
 - `scamper` fuer selektive Pfadmessung
 - `nmap` fuer Service- und OS-Erkennung auf bereits offenen Zielen
+- `httpx` fuer Web-Verifikation
+- `zgrab2` fuer Layer-7-Grabs
+- `zeek` als passiver Ingest-Pfad
 - JSON-Normalisierung in ein einheitliches Evidence-Modell
 
 ## Resilienz Als Grundlage
@@ -55,6 +58,7 @@ Die Standardpersistenz dafuer ist zunaechst `SQLite`.
 - `always`: Zeek explizit erwarten und Fehler offen melden
 
 Wenn `auto_start_zeek=true` gesetzt ist, darf der Zeek-Pfad bei Bedarf `zeekctl deploy` versuchen, bevor er auf vorhandene Logs faellt.
+Der Ingest wird ausserdem auf den aktuellen Run und den aktuellen Scope begrenzt, damit alte oder fachfremde Logeintraege nicht in einen neuen Scan hineingezogen werden.
 
 ## Persistenz
 
@@ -84,6 +88,12 @@ Der aktuelle Diff ist bewusst semantisch und dashboardfreundlich:
 - verschwundene Evidence
 - geaenderte Evidence mit Baseline/Kandidat nebeneinander
 
+## Blocking Und Confidence
+
+- Ziel- und Port-Erreichbarkeit werden aus normalisierter Evidence korreliert.
+- Route-basierte Unsicherheit darf bestaetigte aktive Erreichbarkeit nicht mehr schlicht ueberschreiben.
+- `probable` und Reeval-Hinweise bleiben erhalten, wenn Datenlage unsicher ist.
+
 ## Warum so starten?
 
 Der teuerste Fehler waere, alle Werkzeuge sofort miteinander zu verheiraten und danach festzustellen, dass Ergebnisse nicht sauber korreliert werden koennen.
@@ -96,7 +106,8 @@ Dieses Geruest priorisiert deshalb:
 
 ## Was als Naechstes kommt
 
-1. weitere SQLite-basierte Persistenzfunktionen fuer Verlauf, Diffs und Abfragen
-2. Bessere Korrelation aktiver und passiver Evidence im Blocking-/Confidence-Modell
+1. Dashboard- und GUI-Schicht auf Basis desselben Persistenzmodells
+2. weitere SQLite-basierte Verlaufsauswertung, Vergleichslogik und spaeteres Re-Scheduling
 3. Erweiterung des Zeek-Ingests um weitere Logs wie `ssl.log`
 4. Ausbau der Operator-Optionen zu vollstaendigen CLI-/GUI-Profilen
+5. mehr Scan-Templates und Profile fuer Heimnetz-, Lab- und spaetere Standort-Scans
