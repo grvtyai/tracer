@@ -6,8 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
+	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -64,28 +68,75 @@ type SQLiteRunStore struct {
 	runID string
 }
 
+type ProjectSummary struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	RunCount    int       `json:"run_count"`
+	LastRunAt   time.Time `json:"last_run_at,omitempty"`
+}
+
+type RunSummary struct {
+	ID            string    `json:"id"`
+	ProjectID     string    `json:"project_id"`
+	ProjectName   string    `json:"project_name,omitempty"`
+	TemplateName  string    `json:"template_name,omitempty"`
+	TemplatePath  string    `json:"template_path,omitempty"`
+	Mode          string    `json:"mode"`
+	Status        string    `json:"status"`
+	StartedAt     time.Time `json:"started_at"`
+	FinishedAt    time.Time `json:"finished_at,omitempty"`
+	JobCount      int       `json:"job_count"`
+	EvidenceCount int       `json:"evidence_count"`
+}
+
+type RunDetails struct {
+	Run          RunSummary                    `json:"run"`
+	Scope        ingest.Scope                  `json:"scope"`
+	Profile      ingest.RunProfile             `json:"profile"`
+	Options      options.EffectiveOptions      `json:"options"`
+	Plan         []jobs.Job                    `json:"plan,omitempty"`
+	JobResults   []jobs.ExecutionResult        `json:"job_results,omitempty"`
+	Evidence     []evidence.Record             `json:"evidence,omitempty"`
+	Blocking     []analysis.BlockingAssessment `json:"blocking,omitempty"`
+	Reevaluation []analysis.ReevaluationHint   `json:"reevaluation,omitempty"`
+}
+
+type ChangedEvidence struct {
+	Identity  string          `json:"identity"`
+	Baseline  evidence.Record `json:"baseline"`
+	Candidate evidence.Record `json:"candidate"`
+}
+
+type RunDiff struct {
+	Baseline        RunSummary        `json:"baseline"`
+	Candidate       RunSummary        `json:"candidate"`
+	NewEvidence     []evidence.Record `json:"new_evidence,omitempty"`
+	MissingEvidence []evidence.Record `json:"missing_evidence,omitempty"`
+	ChangedEvidence []ChangedEvidence `json:"changed_evidence,omitempty"`
+	NewCount        int               `json:"new_count"`
+	MissingCount    int               `json:"missing_count"`
+	ChangedCount    int               `json:"changed_count"`
+}
+
 func DefaultDataDir() string {
-	if runtime.GOOS == "windows" {
-		if localAppData := os.Getenv("LOCALAPPDATA"); localAppData != "" {
-			return filepath.Join(localAppData, "tracer")
-		}
-	}
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil || homeDir == "" {
-		return "data"
-	}
-
-	switch runtime.GOOS {
-	case "windows":
-		return filepath.Join(homeDir, "AppData", "Local", "tracer")
-	default:
-		return filepath.Join(homeDir, ".local", "share", "tracer")
-	}
+	return defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir)
 }
 
 func DefaultDBPath() string {
 	return filepath.Join(DefaultDataDir(), "tracer.db")
+}
+
+func ResolveDBPath(dataDir string, dbPath string) string {
+	if strings.TrimSpace(dbPath) != "" {
+		return dbPath
+	}
+	if strings.TrimSpace(dataDir) != "" {
+		return filepath.Join(dataDir, "tracer.db")
+	}
+	return DefaultDBPath()
 }
 
 func OpenSQLite(path string) (*SQLiteRepository, error) {
@@ -281,6 +332,257 @@ func (r *SQLiteRepository) CompleteRun(ctx context.Context, runID string, comple
 	return nil
 }
 
+func (r *SQLiteRepository) ListProjects(ctx context.Context) ([]ProjectSummary, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT
+			p.id,
+			p.name,
+			p.description,
+			p.created_at,
+			p.updated_at,
+			COUNT(run.id) AS run_count,
+			COALESCE(MAX(run.started_at), '')
+		FROM projects p
+		LEFT JOIN runs run ON run.project_id = p.id
+		GROUP BY p.id, p.name, p.description, p.created_at, p.updated_at
+		ORDER BY p.name ASC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("list projects: %w", err)
+	}
+	defer rows.Close()
+
+	projects := make([]ProjectSummary, 0)
+	for rows.Next() {
+		var project ProjectSummary
+		var createdAt string
+		var updatedAt string
+		var lastRunAt string
+		if err := rows.Scan(&project.ID, &project.Name, &project.Description, &createdAt, &updatedAt, &project.RunCount, &lastRunAt); err != nil {
+			return nil, fmt.Errorf("scan project summary: %w", err)
+		}
+
+		project.CreatedAt = mustParseTime(createdAt)
+		project.UpdatedAt = mustParseTime(updatedAt)
+		project.LastRunAt = mustParseTime(lastRunAt)
+		projects = append(projects, project)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate projects: %w", err)
+	}
+
+	return projects, nil
+}
+
+func (r *SQLiteRepository) ListRuns(ctx context.Context, projectRef string) ([]RunSummary, error) {
+	query := `
+		SELECT
+			run.id,
+			run.project_id,
+			project.name,
+			run.template_name,
+			run.template_path,
+			run.mode,
+			run.status,
+			run.started_at,
+			run.finished_at,
+			COUNT(DISTINCT jr.id) AS job_count,
+			COUNT(DISTINCT ev.id) AS evidence_count
+		FROM runs run
+		INNER JOIN projects project ON project.id = run.project_id
+		LEFT JOIN job_results jr ON jr.run_id = run.id
+		LEFT JOIN evidence ev ON ev.run_id = run.id
+	`
+	args := make([]any, 0, 2)
+	if trimmed := strings.TrimSpace(projectRef); trimmed != "" {
+		query += ` WHERE run.project_id = ? OR project.name = ?`
+		args = append(args, trimmed, trimmed)
+	}
+	query += `
+		GROUP BY run.id, run.project_id, project.name, run.template_name, run.template_path, run.mode, run.status, run.started_at, run.finished_at
+		ORDER BY run.started_at DESC
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list runs: %w", err)
+	}
+	defer rows.Close()
+
+	runs := make([]RunSummary, 0)
+	for rows.Next() {
+		var run RunSummary
+		var startedAt string
+		var finishedAt string
+		if err := rows.Scan(&run.ID, &run.ProjectID, &run.ProjectName, &run.TemplateName, &run.TemplatePath, &run.Mode, &run.Status, &startedAt, &finishedAt, &run.JobCount, &run.EvidenceCount); err != nil {
+			return nil, fmt.Errorf("scan run summary: %w", err)
+		}
+
+		run.StartedAt = mustParseTime(startedAt)
+		run.FinishedAt = mustParseTime(finishedAt)
+		runs = append(runs, run)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate runs: %w", err)
+	}
+
+	return runs, nil
+}
+
+func (r *SQLiteRepository) GetRun(ctx context.Context, runID string) (RunDetails, error) {
+	var details RunDetails
+	row := r.db.QueryRowContext(ctx, `
+		SELECT
+			run.id,
+			run.project_id,
+			project.name,
+			run.template_name,
+			run.template_path,
+			run.mode,
+			run.status,
+			run.started_at,
+			run.finished_at,
+			run.scope_json,
+			run.profile_json,
+			run.options_json,
+			run.plan_json
+		FROM runs run
+		INNER JOIN projects project ON project.id = run.project_id
+		WHERE run.id = ?
+	`, runID)
+
+	var startedAt string
+	var finishedAt string
+	var scopeJSON string
+	var profileJSON string
+	var optionsJSON string
+	var planJSON string
+	if err := row.Scan(
+		&details.Run.ID,
+		&details.Run.ProjectID,
+		&details.Run.ProjectName,
+		&details.Run.TemplateName,
+		&details.Run.TemplatePath,
+		&details.Run.Mode,
+		&details.Run.Status,
+		&startedAt,
+		&finishedAt,
+		&scopeJSON,
+		&profileJSON,
+		&optionsJSON,
+		&planJSON,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return RunDetails{}, fmt.Errorf("run %q not found", runID)
+		}
+		return RunDetails{}, fmt.Errorf("query run: %w", err)
+	}
+
+	details.Run.StartedAt = mustParseTime(startedAt)
+	details.Run.FinishedAt = mustParseTime(finishedAt)
+	if err := unmarshalJSON(scopeJSON, &details.Scope); err != nil {
+		return RunDetails{}, err
+	}
+	if err := unmarshalJSON(profileJSON, &details.Profile); err != nil {
+		return RunDetails{}, err
+	}
+	if err := unmarshalJSON(optionsJSON, &details.Options); err != nil {
+		return RunDetails{}, err
+	}
+	if err := unmarshalJSON(planJSON, &details.Plan); err != nil {
+		return RunDetails{}, err
+	}
+
+	jobResults, err := r.loadJobResults(ctx, runID)
+	if err != nil {
+		return RunDetails{}, err
+	}
+	evidenceRecords, err := r.loadEvidence(ctx, runID)
+	if err != nil {
+		return RunDetails{}, err
+	}
+	blockingAssessments, err := r.loadBlockingAssessments(ctx, runID)
+	if err != nil {
+		return RunDetails{}, err
+	}
+	reevaluationHints, err := r.loadReevaluationHints(ctx, runID)
+	if err != nil {
+		return RunDetails{}, err
+	}
+
+	details.JobResults = jobResults
+	details.Evidence = evidenceRecords
+	details.Blocking = blockingAssessments
+	details.Reevaluation = reevaluationHints
+	details.Run.JobCount = len(jobResults)
+	details.Run.EvidenceCount = len(evidenceRecords)
+
+	return details, nil
+}
+
+func (r *SQLiteRepository) DiffRuns(ctx context.Context, baselineRunID string, candidateRunID string) (RunDiff, error) {
+	baseline, err := r.GetRun(ctx, baselineRunID)
+	if err != nil {
+		return RunDiff{}, err
+	}
+	candidate, err := r.GetRun(ctx, candidateRunID)
+	if err != nil {
+		return RunDiff{}, err
+	}
+
+	baselineByIdentity := make(map[string]evidence.Record)
+	for _, record := range baseline.Evidence {
+		baselineByIdentity[evidenceIdentity(record)] = record
+	}
+	candidateByIdentity := make(map[string]evidence.Record)
+	for _, record := range candidate.Evidence {
+		candidateByIdentity[evidenceIdentity(record)] = record
+	}
+
+	diff := RunDiff{
+		Baseline:        baseline.Run,
+		Candidate:       candidate.Run,
+		NewEvidence:     make([]evidence.Record, 0),
+		MissingEvidence: make([]evidence.Record, 0),
+		ChangedEvidence: make([]ChangedEvidence, 0),
+	}
+
+	for identity, baselineRecord := range baselineByIdentity {
+		candidateRecord, ok := candidateByIdentity[identity]
+		if !ok {
+			diff.MissingEvidence = append(diff.MissingEvidence, baselineRecord)
+			continue
+		}
+		if evidenceDetailFingerprint(baselineRecord) != evidenceDetailFingerprint(candidateRecord) {
+			diff.ChangedEvidence = append(diff.ChangedEvidence, ChangedEvidence{
+				Identity:  identity,
+				Baseline:  baselineRecord,
+				Candidate: candidateRecord,
+			})
+		}
+	}
+
+	for identity, candidateRecord := range candidateByIdentity {
+		if _, ok := baselineByIdentity[identity]; ok {
+			continue
+		}
+		diff.NewEvidence = append(diff.NewEvidence, candidateRecord)
+	}
+
+	sortEvidence(diff.NewEvidence)
+	sortEvidence(diff.MissingEvidence)
+	slices.SortFunc(diff.ChangedEvidence, func(a, b ChangedEvidence) int {
+		return strings.Compare(a.Identity, b.Identity)
+	})
+
+	diff.NewCount = len(diff.NewEvidence)
+	diff.MissingCount = len(diff.MissingEvidence)
+	diff.ChangedCount = len(diff.ChangedEvidence)
+	return diff, nil
+}
+
 func (s *SQLiteRunStore) WriteEvidence(ctx context.Context, records []evidence.Record) error {
 	if len(records) == 0 {
 		return nil
@@ -461,6 +763,47 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 	return nil
 }
 
+func defaultDataDir(goos string, getenv func(string) string, userHomeDir func() (string, error), lookupUserHome func(string) (string, error)) string {
+	if goos == "windows" {
+		if localAppData := strings.TrimSpace(getenv("LOCALAPPDATA")); localAppData != "" {
+			return filepath.Join(localAppData, "tracer")
+		}
+	}
+
+	if goos != "windows" {
+		if xdgDataHome := strings.TrimSpace(getenv("XDG_DATA_HOME")); xdgDataHome != "" {
+			return filepath.Join(xdgDataHome, "tracer")
+		}
+		if sudoUser := strings.TrimSpace(getenv("SUDO_USER")); sudoUser != "" && sudoUser != "root" {
+			if sudoHome, err := lookupUserHome(sudoUser); err == nil && strings.TrimSpace(sudoHome) != "" {
+				return filepath.Join(sudoHome, ".local", "share", "tracer")
+			}
+		}
+	}
+
+	homeDir, err := userHomeDir()
+	if err != nil || strings.TrimSpace(homeDir) == "" {
+		return "data"
+	}
+
+	switch goos {
+	case "windows":
+		return filepath.Join(homeDir, "AppData", "Local", "tracer")
+	case "darwin":
+		return filepath.Join(homeDir, "Library", "Application Support", "tracer")
+	default:
+		return filepath.Join(homeDir, ".local", "share", "tracer")
+	}
+}
+
+func lookupUserHomeDir(username string) (string, error) {
+	lookup, err := user.Lookup(username)
+	if err != nil {
+		return "", err
+	}
+	return lookup.HomeDir, nil
+}
+
 func marshalJSON(value any) (string, error) {
 	data, err := json.Marshal(value)
 	if err != nil {
@@ -469,7 +812,20 @@ func marshalJSON(value any) (string, error) {
 	return string(data), nil
 }
 
+func unmarshalJSON[T any](value string, dst *T) error {
+	if strings.TrimSpace(value) == "" {
+		return nil
+	}
+	if err := json.Unmarshal([]byte(value), dst); err != nil {
+		return fmt.Errorf("unmarshal json: %w", err)
+	}
+	return nil
+}
+
 func mustParseTime(value string) time.Time {
+	if strings.TrimSpace(value) == "" {
+		return time.Time{}
+	}
 	parsed, err := time.Parse(time.RFC3339Nano, value)
 	if err != nil {
 		return time.Time{}
@@ -482,4 +838,223 @@ func boolToInt(value bool) int {
 		return 1
 	}
 	return 0
+}
+
+func (r *SQLiteRepository) loadJobResults(ctx context.Context, runID string) ([]jobs.ExecutionResult, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT raw_json
+		FROM job_results
+		WHERE run_id = ?
+		ORDER BY started_at ASC, id ASC
+	`, runID)
+	if err != nil {
+		return nil, fmt.Errorf("query job results: %w", err)
+	}
+	defer rows.Close()
+
+	results := make([]jobs.ExecutionResult, 0)
+	for rows.Next() {
+		var rawJSON string
+		if err := rows.Scan(&rawJSON); err != nil {
+			return nil, fmt.Errorf("scan job result: %w", err)
+		}
+
+		var result jobs.ExecutionResult
+		if err := unmarshalJSON(rawJSON, &result); err != nil {
+			return nil, err
+		}
+		results = append(results, result)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate job results: %w", err)
+	}
+
+	return results, nil
+}
+
+func (r *SQLiteRepository) loadEvidence(ctx context.Context, runID string) ([]evidence.Record, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT raw_json
+		FROM evidence
+		WHERE run_id = ?
+		ORDER BY observed_at ASC, id ASC
+	`, runID)
+	if err != nil {
+		return nil, fmt.Errorf("query evidence: %w", err)
+	}
+	defer rows.Close()
+
+	records := make([]evidence.Record, 0)
+	for rows.Next() {
+		var rawJSON string
+		if err := rows.Scan(&rawJSON); err != nil {
+			return nil, fmt.Errorf("scan evidence: %w", err)
+		}
+
+		var record evidence.Record
+		if err := unmarshalJSON(rawJSON, &record); err != nil {
+			return nil, err
+		}
+		records = append(records, record)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate evidence: %w", err)
+	}
+
+	return records, nil
+}
+
+func (r *SQLiteRepository) loadBlockingAssessments(ctx context.Context, runID string) ([]analysis.BlockingAssessment, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT raw_json
+		FROM blocking_assessments
+		WHERE run_id = ?
+		ORDER BY target ASC, port ASC, id ASC
+	`, runID)
+	if err != nil {
+		return nil, fmt.Errorf("query blocking assessments: %w", err)
+	}
+	defer rows.Close()
+
+	assessments := make([]analysis.BlockingAssessment, 0)
+	for rows.Next() {
+		var rawJSON string
+		if err := rows.Scan(&rawJSON); err != nil {
+			return nil, fmt.Errorf("scan blocking assessment: %w", err)
+		}
+
+		var assessment analysis.BlockingAssessment
+		if err := unmarshalJSON(rawJSON, &assessment); err != nil {
+			return nil, err
+		}
+		assessments = append(assessments, assessment)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate blocking assessments: %w", err)
+	}
+
+	return assessments, nil
+}
+
+func (r *SQLiteRepository) loadReevaluationHints(ctx context.Context, runID string) ([]analysis.ReevaluationHint, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT raw_json
+		FROM reevaluation_hints
+		WHERE run_id = ?
+		ORDER BY target ASC, port ASC, id ASC
+	`, runID)
+	if err != nil {
+		return nil, fmt.Errorf("query reevaluation hints: %w", err)
+	}
+	defer rows.Close()
+
+	hints := make([]analysis.ReevaluationHint, 0)
+	for rows.Next() {
+		var rawJSON string
+		if err := rows.Scan(&rawJSON); err != nil {
+			return nil, fmt.Errorf("scan reevaluation hint: %w", err)
+		}
+
+		var hint analysis.ReevaluationHint
+		if err := unmarshalJSON(rawJSON, &hint); err != nil {
+			return nil, err
+		}
+		hints = append(hints, hint)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate reevaluation hints: %w", err)
+	}
+
+	return hints, nil
+}
+
+func evidenceIdentity(record evidence.Record) string {
+	parts := []string{
+		record.Source,
+		record.Kind,
+		record.Target,
+		strconv.Itoa(record.Port),
+		record.Protocol,
+	}
+
+	for _, key := range evidenceIdentityAttributeKeys {
+		if value := strings.TrimSpace(record.Attributes[key]); value != "" {
+			parts = append(parts, key+"="+value)
+		}
+	}
+
+	return strings.Join(parts, "|")
+}
+
+func evidenceDetailFingerprint(record evidence.Record) string {
+	parts := []string{
+		record.Summary,
+		string(record.Confidence),
+	}
+
+	keys := make([]string, 0, len(record.Attributes))
+	for key := range record.Attributes {
+		if evidenceVolatileAttributeKeys[key] {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+
+	for _, key := range keys {
+		parts = append(parts, key+"="+record.Attributes[key])
+	}
+
+	return strings.Join(parts, "|")
+}
+
+func sortEvidence(records []evidence.Record) {
+	slices.SortFunc(records, func(a, b evidence.Record) int {
+		if a.Target != b.Target {
+			return strings.Compare(a.Target, b.Target)
+		}
+		if a.Port != b.Port {
+			return a.Port - b.Port
+		}
+		if a.Kind != b.Kind {
+			return strings.Compare(a.Kind, b.Kind)
+		}
+		return strings.Compare(a.Summary, b.Summary)
+	})
+}
+
+var evidenceIdentityAttributeKeys = []string{
+	"url",
+	"uri",
+	"host",
+	"domain",
+	"ip",
+	"method",
+	"service_name",
+	"module",
+	"os_name",
+}
+
+var evidenceVolatileAttributeKeys = map[string]bool{
+	"job_id":                     true,
+	"job_kind":                   true,
+	"plugin":                     true,
+	"host_primary_service_class": true,
+	"host_service_classes":       true,
+	"uid":                        true,
+	"orig_p":                     true,
+	"resp_p":                     true,
+	"orig_bytes":                 true,
+	"resp_bytes":                 true,
+	"duration":                   true,
+	"input":                      true,
+	"reply_size":                 true,
+	"reply_ttl":                  true,
+	"rtt_ms":                     true,
+	"probe_id":                   true,
+	"probe_ttl":                  true,
 }

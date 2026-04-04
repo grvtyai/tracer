@@ -54,6 +54,22 @@ Die Standardpersistenz dafuer ist zunaechst `SQLite`.
   - Blocking-Bewertungen
   - Reeval-Hinweise
 - Das Modell ist darauf ausgelegt, spaeter von GUI und CLI gemeinsam genutzt zu werden.
+- Unter `sudo` versucht der Default-Store jetzt, den Datenpfad des eigentlichen Operators zu verwenden. Wer es exakt steuern will, nutzt `--data-dir` oder `--db-path`.
+
+## Abfragen Und Diffs
+
+Die CLI kann jetzt auf derselben SQLite-Datei lesen:
+
+- `-mode projects` listet bekannte Projekte
+- `-mode runs --project "Standort A"` listet Runs optional gefiltert nach Projekt
+- `-mode show-run --run-id <id>` laedt einen vollstaendigen Run mit Plan, Job-Ergebnissen, Evidence, Blocking und Reeval-Hinweisen
+- `-mode diff --baseline-run <id> --candidate-run <id>` vergleicht zwei Runs evidence-basiert
+
+Der aktuelle Diff ist bewusst semantisch und dashboardfreundlich:
+
+- neue Evidence
+- verschwundene Evidence
+- geaenderte Evidence mit Baseline/Kandidat nebeneinander
 
 ## Warum so starten?
 

@@ -60,6 +60,26 @@ Das ist die Basis fuer:
 
 Der Speicherort soll spaeter sowohl in der GUI als auch per CLI anpassbar sein.
 
+Wenn `tracer` unter `sudo` gestartet wird, versucht der Default-Pfad jetzt bewusst, den Datenordner des aufrufenden Operators zu verwenden statt stillschweigend nach `/root/.local/share/...` zu schreiben.
+Ein explizites `--db-path` oder `--data-dir` ueberschreibt dieses Verhalten weiterhin.
+
+## Erste SQLite-Abfragen
+
+Die CLI kann jetzt nicht nur Runs schreiben, sondern auch gespeicherte Projekte, Runs und Unterschiede zwischen Runs als JSON ausgeben:
+
+```bash
+./bin/tracer -mode projects
+./bin/tracer -mode runs --project "Standort A"
+./bin/tracer -mode show-run --run-id <run-id>
+./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
+```
+
+Der Diff ist bewusst semantisch und evidence-basiert:
+
+- `new_evidence`: im neueren Run neu aufgetaucht
+- `missing_evidence`: im neueren Run nicht mehr vorhanden
+- `changed_evidence`: semantisch dasselbe Artefakt, aber mit geaenderten Details wie Versionen oder HTTP-Merkmalen
+
 ## Wohin Es Geht
 
 Die naechsten groesseren Baustellen auf dem Weg zur Vollversion sind:

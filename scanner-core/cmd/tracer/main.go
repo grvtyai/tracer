@@ -6,19 +6,22 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/grvtyai/tracer/scanner-core/internal/app"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
 	"github.com/grvtyai/tracer/scanner-core/internal/storage"
+	"github.com/grvtyai/tracer/scanner-core/internal/templates"
 )
 
 func main() {
 	var (
 		mode                string
 		template            string
+		runID               string
+		baselineRunID       string
+		candidateRunID      string
 		activeInterface     string
 		passiveInterface    string
 		portTemplate        string
@@ -31,8 +34,11 @@ func main() {
 		reevaluateFlag      optionalBool
 	)
 
-	flag.StringVar(&mode, "mode", "plan", "execution mode: plan or run")
+	flag.StringVar(&mode, "mode", "plan", "execution mode: plan, run, projects, runs, show-run, or diff")
 	flag.StringVar(&template, "template", "examples/phase1-template.json", "path to a JSON template file")
+	flag.StringVar(&runID, "run-id", "", "run identifier for show-run")
+	flag.StringVar(&baselineRunID, "baseline-run", "", "baseline run identifier for diff mode")
+	flag.StringVar(&candidateRunID, "candidate-run", "", "candidate run identifier for diff mode")
 	flag.StringVar(&activeInterface, "active-interface", "", "preferred active scan interface")
 	flag.StringVar(&passiveInterface, "passive-interface", "", "preferred passive capture interface")
 	flag.StringVar(&portTemplate, "port-template", "", "named port selection/profile template")
@@ -45,34 +51,97 @@ func main() {
 	flag.Var(&reevaluateFlag, "reevaluate-ambiguous", "emit reevaluation hints for ambiguous or partial results (true/false)")
 	flag.Parse()
 
-	loadedTemplate, err := app.LoadTemplate(template)
-	if err != nil {
-		fail(err)
-	}
-
-	overrides := buildOptionOverrides(activeInterface, passiveInterface, portTemplate, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag)
-	effectiveOptions := app.ResolveOptions(loadedTemplate, overrides)
-	if effectiveOptions.Project == "" {
-		effectiveOptions.Project = loadedTemplate.Name
-	}
-	if effectiveOptions.DBPath == "" {
-		if effectiveOptions.DataDir != "" {
-			effectiveOptions.DBPath = filepath.Join(effectiveOptions.DataDir, "tracer.db")
-		} else {
-			effectiveOptions.DBPath = storage.DefaultDBPath()
-		}
-	}
-	plan := app.BuildSeedPlanWithOptions(loadedTemplate, effectiveOptions)
-	output := app.Output{
-		Mode:     mode,
-		Template: template,
-		Options:  effectiveOptions,
-		Plan:     plan,
-	}
+	queryDBPath := storage.ResolveDBPath(dataDir, dbPath)
 
 	switch mode {
+	case "projects":
+		repository, err := storage.OpenSQLite(queryDBPath)
+		if err != nil {
+			fail(err)
+		}
+		defer repository.Close()
+
+		projects, err := repository.ListProjects(context.Background())
+		if err != nil {
+			fail(err)
+		}
+
+		emitJSON(queryOutput{
+			Mode:        mode,
+			Persistence: &app.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
+			Projects:    projects,
+		})
+		return
+	case "runs":
+		repository, err := storage.OpenSQLite(queryDBPath)
+		if err != nil {
+			fail(err)
+		}
+		defer repository.Close()
+
+		runs, err := repository.ListRuns(context.Background(), projectName)
+		if err != nil {
+			fail(err)
+		}
+
+		emitJSON(queryOutput{
+			Mode:          mode,
+			ProjectFilter: projectName,
+			Persistence:   &app.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
+			Runs:          runs,
+		})
+		return
+	case "show-run":
+		if runID == "" {
+			fail(fmt.Errorf("show-run mode requires --run-id"))
+		}
+
+		repository, err := storage.OpenSQLite(queryDBPath)
+		if err != nil {
+			fail(err)
+		}
+		defer repository.Close()
+
+		run, err := repository.GetRun(context.Background(), runID)
+		if err != nil {
+			fail(err)
+		}
+
+		emitJSON(queryOutput{
+			Mode:        mode,
+			Persistence: &app.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path(), ProjectID: run.Run.ProjectID, ProjectName: run.Run.ProjectName, RunID: run.Run.ID},
+			Run:         &run,
+		})
+		return
+	case "diff":
+		if baselineRunID == "" || candidateRunID == "" {
+			fail(fmt.Errorf("diff mode requires --baseline-run and --candidate-run"))
+		}
+
+		repository, err := storage.OpenSQLite(queryDBPath)
+		if err != nil {
+			fail(err)
+		}
+		defer repository.Close()
+
+		diff, err := repository.DiffRuns(context.Background(), baselineRunID, candidateRunID)
+		if err != nil {
+			fail(err)
+		}
+
+		emitJSON(queryOutput{
+			Mode:        mode,
+			Persistence: &app.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
+			Diff:        &diff,
+		})
+		return
 	case "plan":
+		loadedTemplate, _, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag)
+		_ = loadedTemplate
+		emitJSON(output)
+		return
 	case "run":
+		loadedTemplate, effectiveOptions, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag)
 		repository, err := storage.OpenSQLite(effectiveOptions.DBPath)
 		if err != nil {
 			fail(err)
@@ -121,14 +190,10 @@ func main() {
 		}); err != nil {
 			fail(err)
 		}
+		emitJSON(output)
+		return
 	default:
 		fail(fmt.Errorf("unsupported mode %q", mode))
-	}
-
-	encoder := json.NewEncoder(os.Stdout)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(output); err != nil {
-		fail(err)
 	}
 }
 
@@ -197,6 +262,48 @@ func buildOptionOverrides(activeInterface string, passiveInterface string, portT
 	}
 
 	return overrides
+}
+
+type queryOutput struct {
+	Mode          string                   `json:"mode"`
+	ProjectFilter string                   `json:"project_filter,omitempty"`
+	Persistence   *app.PersistenceInfo     `json:"persistence,omitempty"`
+	Projects      []storage.ProjectSummary `json:"projects,omitempty"`
+	Runs          []storage.RunSummary     `json:"runs,omitempty"`
+	Run           *storage.RunDetails      `json:"run,omitempty"`
+	Diff          *storage.RunDiff         `json:"diff,omitempty"`
+}
+
+func buildScanOutput(mode string, template string, activeInterface string, passiveInterface string, portTemplate string, projectName string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool) (templates.Template, options.EffectiveOptions, app.Output) {
+	loadedTemplate, err := app.LoadTemplate(template)
+	if err != nil {
+		fail(err)
+	}
+
+	overrides := buildOptionOverrides(activeInterface, passiveInterface, portTemplate, projectName, dataDir, dbPath, reevaluateAfter, continueOnError, retainPartial, reevaluate)
+	effectiveOptions := app.ResolveOptions(loadedTemplate, overrides)
+	if effectiveOptions.Project == "" {
+		effectiveOptions.Project = loadedTemplate.Name
+	}
+	effectiveOptions.DBPath = storage.ResolveDBPath(effectiveOptions.DataDir, effectiveOptions.DBPath)
+
+	plan := app.BuildSeedPlanWithOptions(loadedTemplate, effectiveOptions)
+	output := app.Output{
+		Mode:     mode,
+		Template: template,
+		Options:  effectiveOptions,
+		Plan:     plan,
+	}
+
+	return loadedTemplate, effectiveOptions, output
+}
+
+func emitJSON(value any) {
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(value); err != nil {
+		fail(err)
+	}
 }
 
 func summarizeRunStatus(results []jobs.ExecutionResult) string {
