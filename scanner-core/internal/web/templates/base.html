@@ -24,6 +24,7 @@
                 <a class="nav-link {{if eq .ActiveNav "assets"}}active{{end}}" href="{{if .CurrentProject}}/assets?project={{.CurrentProject.ID}}{{else}}/assets{{end}}">Assets</a>
                 <a class="nav-link {{if eq .ActiveNav "analytics"}}active{{end}}" href="{{if .CurrentProject}}/analytics?project={{.CurrentProject.ID}}{{else}}/analytics{{end}}">Analytics</a>
                 <a class="nav-link {{if eq .ActiveNav "settings"}}active{{end}}" href="{{if .CurrentProject}}/settings?project={{.CurrentProject.ID}}{{else}}/settings{{end}}">Settings</a>
+                <a class="nav-link {{if eq .ActiveNav "help"}}active{{end}}" href="{{if .CurrentProject}}/help?project={{.CurrentProject.ID}}{{else}}/help{{end}}">Help</a>
             </nav>
 
             <div class="sidebar-foot">

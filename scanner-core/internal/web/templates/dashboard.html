@@ -43,26 +43,22 @@
     </article>
 </section>
 
+{{if not .RecentRunItems}}
 <section class="panel-grid">
     <article class="panel">
         <div class="panel-head">
             <h2>Next Step</h2>
         </div>
-        {{if .RecentRuns}}
-        <p class="empty-note">
-            This project already has run history. You can open past runs or launch another scan from the browser.
-        </p>
-        {{else}}
         <p class="empty-note">
             No scan has been started for this project yet. Start your first scan from the GUI to populate runs, assets and analytics.
         </p>
-        {{end}}
         <div class="hero-actions">
             <a class="button button-primary" href="/scans/new?project={{.CurrentProject.ID}}">Start Scan</a>
             <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Open Runs</a>
         </div>
     </article>
 </section>
+{{end}}
 
 <section class="panel-grid">
     <article class="panel">
@@ -72,13 +68,23 @@
         {{if .RecentRunItems}}
         <div class="list">
             {{range .RecentRunItems}}
-            <{{if .Clickable}}a href="/runs/{{.Run.ID}}"{{else}}div{{end}} class="list-item {{if not .Clickable}}disabled{{end}}">
+            {{if .Clickable}}
+            <a href="/runs/{{.Run.ID}}" class="list-item">
                 <div>
                     <div class="list-title">{{.Run.TemplateName}}</div>
                     <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts | {{.SubnetCount}} subnet{{if ne .SubnetCount 1}}s{{end}}</div>
                 </div>
                 <span class="pill {{if eq .Run.Status "running"}}running-pill{{end}} {{.StatusClass}}">{{if eq .Run.Status "running"}}<span class="spinner tiny"></span>{{end}}{{.StatusLabel}}</span>
-            </{{if .Clickable}}a{{else}}div{{end}}>
+            </a>
+            {{else}}
+            <div class="list-item disabled">
+                <div>
+                    <div class="list-title">{{.Run.TemplateName}}</div>
+                    <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts | {{.SubnetCount}} subnet{{if ne .SubnetCount 1}}s{{end}}</div>
+                </div>
+                <span class="pill {{if eq .Run.Status "running"}}running-pill{{end}} {{.StatusClass}}">{{if eq .Run.Status "running"}}<span class="spinner tiny"></span>{{end}}{{.StatusLabel}}</span>
+            </div>
+            {{end}}
             {{end}}
         </div>
         {{else}}

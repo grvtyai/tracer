@@ -32,6 +32,33 @@ type ScheduledScanInput struct {
 	ExecuteAt     time.Time
 }
 
+func (r *SQLiteRepository) AcknowledgeRunWarnings(ctx context.Context, runID string, note string) error {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	trimmedNote := strings.TrimSpace(note)
+
+	_, err := r.db.ExecContext(ctx, `
+		INSERT INTO run_acknowledgements (run_id, acknowledged_at, note)
+		VALUES (?, ?, ?)
+		ON CONFLICT(run_id) DO UPDATE SET
+			acknowledged_at = excluded.acknowledged_at,
+			note = excluded.note
+	`, runID, now, trimmedNote)
+	if err != nil {
+		return fmt.Errorf("acknowledge run warnings: %w", err)
+	}
+
+	_, err = r.db.ExecContext(ctx, `
+		UPDATE runs
+		SET status = ?
+		WHERE id = ?
+	`, "completed", runID)
+	if err != nil {
+		return fmt.Errorf("update acknowledged run status: %w", err)
+	}
+
+	return nil
+}
+
 func (r *SQLiteRepository) CreateScheduledScan(ctx context.Context, input ScheduledScanInput) (ScheduledScan, error) {
 	if strings.TrimSpace(input.ProjectID) == "" {
 		return ScheduledScan{}, fmt.Errorf("project_id is required")

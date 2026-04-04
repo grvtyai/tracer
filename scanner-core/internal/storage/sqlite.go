@@ -918,6 +918,12 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 			created_at TEXT NOT NULL,
 			FOREIGN KEY(project_id) REFERENCES projects(id)
 		);`,
+		`CREATE TABLE IF NOT EXISTS run_acknowledgements (
+			run_id TEXT PRIMARY KEY,
+			acknowledged_at TEXT NOT NULL,
+			note TEXT NOT NULL DEFAULT '',
+			FOREIGN KEY(run_id) REFERENCES runs(id)
+		);`,
 		`CREATE INDEX IF NOT EXISTS idx_runs_project_id ON runs(project_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_job_results_run_id ON job_results(run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_evidence_run_id ON evidence(run_id);`,

@@ -65,6 +65,8 @@ type pageData struct {
 	Hosts             []hostSummary
 	RunStatus         statusInfo
 	ScheduledScans    []storage.ScheduledScan
+	WarningDetails    []warningDetail
+	HelpLink          string
 	Stats             dashboardStats
 	DeviceTypeStats   []labelCount
 	ConnectionStats   []labelCount
@@ -107,6 +109,14 @@ type statusInfo struct {
 	Class   string
 	Title   string
 	Message string
+}
+
+type warningDetail struct {
+	Plugin string
+	Host   string
+	JobID  string
+	Error  string
+	Kind   string
 }
 
 type runListItem struct {
@@ -172,6 +182,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/assets/", s.handleAsset)
 	s.mux.HandleFunc("/analytics", s.handleAnalytics)
 	s.mux.HandleFunc("/settings", s.handleSettings)
+	s.mux.HandleFunc("/help", s.handleHelp)
 
 	s.mux.HandleFunc("/api/health", s.handleHealthAPI)
 	s.mux.HandleFunc("/api/options", s.handleOptionsAPI)
@@ -229,6 +240,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		RecentRuns:        takeRuns(runs, 8),
 		RecentRunItems:    buildRunListItems(ctx, s.repo, takeRuns(runs, 8)),
 		Assets:            takeAssets(projectAssets, 8),
+		HelpLink:          "/help",
 		Stats: dashboardStats{
 			RunCount:      len(runs),
 			AssetCount:    len(projectAssets),
@@ -384,6 +396,7 @@ func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 		Runs:              runs,
 		RunItems:          buildRunListItems(ctx, s.repo, runs),
 		DiffAPI:           "/api/diff",
+		HelpLink:          "/help#run-status",
 		Settings:          appSettings,
 	}
 	s.render(w, "runs.html", data)
@@ -399,6 +412,10 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	runID := parts[0]
 	if len(parts) == 2 && parts[1] == "schedule-reevaluation" && r.Method == http.MethodPost {
 		s.handleScheduleReevaluation(w, r, runID)
+		return
+	}
+	if len(parts) == 2 && parts[1] == "acknowledge" && r.Method == http.MethodPost {
+		s.handleRunAcknowledge(w, r, runID)
 		return
 	}
 	if len(parts) != 1 {
@@ -429,7 +446,7 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	projectAssets := mustListAssets(r.Context(), s.repo, project.ID)
 
 	data := pageData{
-		Title:             "Run " + run.Run.ID,
+		Title:             run.Run.TemplateName,
 		AppName:           s.options.AppName,
 		ActiveNav:         "runs",
 		BasePath:          s.options.BasePath,
@@ -443,7 +460,9 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		Hosts:             buildHostSummaries(run, projectAssets),
 		RunStatus:         describeRunStatus(run),
 		ScheduledScans:    scheduledScans,
-		RunReevaluateURL:  buildReevaluationURL(project.ID, "Reevaluate "+run.Run.ID, runScopeInput(run), "30m"),
+		RunReevaluateURL:  buildReevaluationURL(project.ID, "Reevaluate "+run.Run.TemplateName, runScopeInput(run), "30m"),
+		WarningDetails:    buildWarningDetails(run),
+		HelpLink:          "/help#run-status-needs-attention",
 		Settings:          appSettings,
 	}
 	s.render(w, "run.html", data)
@@ -497,6 +516,14 @@ func (s *Server) handleScheduleReevaluation(w http.ResponseWriter, r *http.Reque
 	}
 
 	http.Redirect(w, r, "/runs/"+runID+"?notice=reevaluation-scheduled", http.StatusSeeOther)
+}
+
+func (s *Server) handleRunAcknowledge(w http.ResponseWriter, r *http.Request, runID string) {
+	if err := s.repo.AcknowledgeRunWarnings(r.Context(), runID, "accepted from web ui"); err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	http.Redirect(w, r, "/runs/"+runID+"?notice=run-acknowledged", http.StatusSeeOther)
 }
 
 func (s *Server) handleAssets(w http.ResponseWriter, r *http.Request) {
@@ -589,6 +616,7 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 		Project:           &project,
 		Asset:             &asset,
 		AssetReevaluateURL: buildReevaluationURL(project.ID, "Reevaluate "+asset.Asset.DisplayName, asset.Asset.PrimaryTarget, "30m"),
+		HelpLink:          "/help#asset-overrides",
 		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Settings:          appSettings,
 	}
@@ -667,6 +695,7 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request) {
 		DeviceTypeStats: countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveDeviceType }),
 		ConnectionStats: countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveConnectionType }),
 		StatusStats:     countRunStatuses(runs),
+		HelpLink:        "/help#analytics",
 		Settings:        appSettings,
 	}
 	s.render(w, "analytics.html", data)
@@ -704,9 +733,36 @@ func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request) {
 		CurrentProject:    currentProject,
 		ProjectSwitchPath: "/settings",
 		Project:           currentProject,
+		HelpLink:          "/help",
 		Settings:          appSettings,
 	}
 	s.render(w, "settings.html", data)
+}
+
+func (s *Server) handleHelp(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	data := pageData{
+		Title:             "Help",
+		AppName:           s.options.AppName,
+		ActiveNav:         "help",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Operator guide for troubleshooting, reevaluation and host workflows",
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/help",
+		Project:           currentProject,
+		HelpLink:          "/help",
+		Settings:          appSettings,
+	}
+	s.render(w, "help.html", data)
 }
 
 func (s *Server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
@@ -1112,6 +1168,27 @@ func buildRunListItems(ctx context.Context, repo *storage.SQLiteRepository, runs
 	return items
 }
 
+func buildWarningDetails(run storage.RunDetails) []warningDetail {
+	details := make([]warningDetail, 0)
+	for _, result := range run.JobResults {
+		if result.Status != "failed" {
+			continue
+		}
+		host := "-"
+		if len(result.Targets) > 0 {
+			host = strings.Join(result.Targets, ", ")
+		}
+		details = append(details, warningDetail{
+			Plugin: firstNonEmptyWeb(result.Plugin, "unknown"),
+			Host:   host,
+			JobID:  result.JobID,
+			Error:  firstNonEmptyWeb(result.Error, "No detailed error text was stored."),
+			Kind:   string(result.Kind),
+		})
+	}
+	return details
+}
+
 func countEvidence(runs []storage.RunSummary) int {
 	total := 0
 	for _, run := range runs {
@@ -1417,6 +1494,8 @@ func noticeMessage(code string) string {
 		return "Timebased reevaluation saved successfully."
 	case "reevaluation-schedule-failed":
 		return "Timebased reevaluation could not be saved. Check the selected time and try again."
+	case "run-acknowledged":
+		return "Run warnings were accepted and the run now appears as completed."
 	case "settings-saved":
 		return "Settings updated successfully."
 	default:

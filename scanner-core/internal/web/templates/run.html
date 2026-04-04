@@ -5,6 +5,14 @@
 <section class="notice {{.RunStatus.Class}}">
     <strong>{{.RunStatus.Title}}</strong><br />
     {{.RunStatus.Message}}
+    <div class="hero-actions">
+        <a class="button button-secondary" href="{{.HelpLink}}">Info</a>
+        {{if eq .Run.Run.Status "partial"}}
+        <form method="post" action="/runs/{{.Run.Run.ID}}/acknowledge">
+            <button class="button button-primary" type="submit">Accept warnings and complete</button>
+        </form>
+        {{end}}
+    </div>
 </section>
 {{end}}
 
@@ -73,7 +81,7 @@
                     <td>{{.Confidence}}</td>
                     <td>{{if .OpenPorts}}{{range $index, $port := .OpenPorts}}{{if $index}}, {{end}}{{$port}}{{end}}{{else}}-{{end}}</td>
                     <td>{{.EvidenceCount}}</td>
-                    <td>{{if .AssetID}}<a class="table-link" href="/assets/{{.AssetID}}">Open asset</a>{{else}}-{{end}}</td>
+                    <td>{{if .AssetID}}<a class="table-link" href="/assets/{{.AssetID}}">Asset details</a>{{else}}-{{end}}</td>
                     <td>{{if .Reevaluate}}enabled{{else}}off{{end}}</td>
                     <td>{{if .LastObserved.IsZero}}-{{else}}{{.LastObserved.Format "2006-01-02 15:04:05"}}{{end}}</td>
                 </tr>
@@ -124,6 +132,23 @@
         </div>
         {{else}}
         <p class="empty-note">No reevaluation hints for this run.</p>
+        {{end}}
+        {{if .WarningDetails}}
+        <div class="panel-head compact-head">
+            <h2>Failed Jobs</h2>
+            <span class="pill subtle">{{len .WarningDetails}}</span>
+        </div>
+        <div class="list">
+            {{range .WarningDetails}}
+            <div class="list-item static">
+                <div>
+                    <div class="list-title">{{.Plugin}} on {{.Host}}</div>
+                    <div class="list-meta">{{.Kind}} | {{.JobID}}</div>
+                    <div class="list-meta">{{.Error}}</div>
+                </div>
+            </div>
+            {{end}}
+        </div>
         {{end}}
         {{if .ScheduledScans}}
         <div class="panel-head compact-head">
