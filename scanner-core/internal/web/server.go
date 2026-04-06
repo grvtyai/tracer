@@ -37,6 +37,9 @@ type pageData struct {
 	Title              string
 	AppName            string
 	ActiveNav          string
+	ActiveSection      string
+	SuiteModules       []suiteModule
+	ModuleNav          []moduleNavItem
 	BasePath           string
 	DBPath             string
 	DataDir            string
@@ -73,6 +76,12 @@ type pageData struct {
 	DeviceTypeStats    []labelCount
 	ConnectionStats    []labelCount
 	StatusStats        []labelCount
+	SuiteCards         []suiteCard
+	OverviewText       string
+	CurrentStateItems  []string
+	RoadmapItems       []string
+	PrimaryAction      *pageAction
+	SecondaryAction    *pageAction
 	DiffAPI            string
 }
 
@@ -190,6 +199,12 @@ func (s *Server) routes() {
 	s.mux.Handle("/static/", http.StripPrefix("/", fileServer))
 
 	s.mux.HandleFunc("/", s.handleDashboard)
+	s.mux.HandleFunc("/inventory", s.handleInventory)
+	s.mux.HandleFunc("/discovery/assets", s.handleDiscoveryAssets)
+	s.mux.HandleFunc("/discovery", s.handleDiscovery)
+	s.mux.HandleFunc("/security", s.handleSecurity)
+	s.mux.HandleFunc("/workbench", s.handleWorkbench)
+	s.mux.HandleFunc("/automation", s.handleAutomation)
 	s.mux.HandleFunc("/projects", s.handleProjectsIndex)
 	s.mux.HandleFunc("/projects/new", s.handleProjectNew)
 	s.mux.HandleFunc("/projects/", s.handleProject)
@@ -246,10 +261,11 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		Title:             "Dashboard",
 		AppName:           s.options.AppName,
 		ActiveNav:         "dashboard",
+		ActiveSection:     "dashboard-overview",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
-		HeroNote:          "Project-first network inventory and scan history",
+		HeroNote:          "Shared command surface for the Startrace operator suite",
 		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Projects:          projects,
 		CurrentProject:    currentProject,
@@ -266,9 +282,166 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 			EvidenceCount: countEvidence(runs),
 			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
 		},
+		SuiteCards: []suiteCard{
+			{
+				Title:       "Discovery",
+				Summary:     "Scanner-driven discovery, run history, preflight checks and the first scheduled task workflows live here.",
+				URL:         buildProjectPath("/discovery", currentProject),
+				StatusLabel: "Live",
+				StatusClass: moduleStatusClass("Live"),
+			},
+			{
+				Title:       "Inventory",
+				Summary:     "Shared asset inventory with persistent observations, operator overrides and cross-module context.",
+				URL:         buildProjectPath("/inventory", currentProject),
+				StatusLabel: "Live",
+				StatusClass: moduleStatusClass("Live"),
+			},
+			{
+				Title:       "Security",
+				Summary:     "Reserved for findings, security workflows and higher-level checks that reuse the same shared project data.",
+				URL:         buildProjectPath("/security", currentProject),
+				StatusLabel: "Foundation",
+				StatusClass: moduleStatusClass("Foundation"),
+			},
+			{
+				Title:       "Workbench",
+				Summary:     "Reserved for operator-driven tooling such as an HTTP repeater, request crafting and future test utilities.",
+				URL:         buildProjectPath("/workbench", currentProject),
+				StatusLabel: "Foundation",
+				StatusClass: moduleStatusClass("Foundation"),
+			},
+			{
+				Title:       "Automation",
+				Summary:     "Reserved for the generic scheduler and module-triggered tasks that will sit above individual tools.",
+				URL:         buildProjectPath("/automation", currentProject),
+				StatusLabel: "Foundation",
+				StatusClass: moduleStatusClass("Foundation"),
+			},
+		},
 		Settings: appSettings,
 	}
 	s.render(w, "dashboard.html", data)
+}
+
+func (s *Server) handleDiscovery(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/discovery" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	runs, err := s.repo.ListRuns(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	projectAssets, err := s.repo.ListAssets(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	data := pageData{
+		Title:             "Discovery",
+		AppName:           s.options.AppName,
+		ActiveNav:         "discovery",
+		ActiveSection:     "discovery-overview",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Discovery is now one module inside the wider Startrace suite",
+		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/discovery",
+		Project:           currentProject,
+		RecentRunItems:    buildRunListItems(ctx, s.repo, takeRuns(runs, 6)),
+		Stats: dashboardStats{
+			RunCount:      len(runs),
+			AssetCount:    len(projectAssets),
+			HostCount:     len(projectAssets),
+			EvidenceCount: countEvidence(runs),
+			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
+		},
+		OverviewText: "This module is the home for network discovery, scanner orchestration, run review and the first scheduled scan workflows. The important shift is that Discovery now feeds shared suite data instead of defining the whole product.",
+		CurrentStateItems: []string{
+			"GUI-started scans already persist runs, evidence and asset observations into the shared project store.",
+			"Run history, host review, acknowledgements and time-based reevaluation records already exist and stay visible here.",
+			"Preflight checks still validate discovery dependencies such as naabu, nmap, httpx and zgrab2 before you launch a run.",
+		},
+		RoadmapItems: []string{
+			"Promote scheduled scans from stored records to a generic automation executor.",
+			"Split discovery-specific orchestration further away from the global suite shell.",
+			"Keep extending the scanner, but only as one module consuming shared suite services.",
+		},
+		PrimaryAction: &pageAction{
+			Label:   "Start Discovery Run",
+			URL:     buildProjectPath("/scans/new", currentProject),
+			Variant: "button-primary",
+		},
+		SecondaryAction: &pageAction{
+			Label:   "Open Run History",
+			URL:     buildProjectPath("/runs", currentProject),
+			Variant: "button-secondary",
+		},
+		Settings: appSettings,
+	}
+	s.render(w, "discovery.html", data)
+}
+
+func (s *Server) handleDiscoveryAssets(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/discovery/assets" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	projectAssets, err := s.repo.ListAssets(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	data := pageData{
+		Title:             "Discovery Assets",
+		AppName:           s.options.AppName,
+		ActiveNav:         "discovery",
+		ActiveSection:     "discovery-assets",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Discovery-facing asset view backed by the shared inventory model",
+		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/discovery/assets",
+		Project:           currentProject,
+		Assets:            projectAssets,
+		AssetGroups:       groupAssets(projectAssets),
+		Settings:          appSettings,
+	}
+	s.render(w, "assets.html", data)
 }
 
 func (s *Server) handleProjectsIndex(w http.ResponseWriter, r *http.Request) {
@@ -329,6 +502,7 @@ func (s *Server) renderProjectNew(w http.ResponseWriter, r *http.Request) {
 		Title:             "Create Project",
 		AppName:           s.options.AppName,
 		ActiveNav:         "dashboard",
+		ActiveSection:     "dashboard-projects",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
@@ -401,7 +575,8 @@ func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 	data := pageData{
 		Title:             "Runs",
 		AppName:           s.options.AppName,
-		ActiveNav:         "runs",
+		ActiveNav:         "discovery",
+		ActiveSection:     "discovery-runs",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
@@ -466,7 +641,8 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	data := pageData{
 		Title:             run.Run.TemplateName,
 		AppName:           s.options.AppName,
-		ActiveNav:         "runs",
+		ActiveNav:         "discovery",
+		ActiveSection:     "discovery-runs",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
@@ -544,11 +720,23 @@ func (s *Server) handleRunAcknowledge(w http.ResponseWriter, r *http.Request, ru
 	http.Redirect(w, r, "/runs/"+runID+"?notice=run-acknowledged", http.StatusSeeOther)
 }
 
+func (s *Server) handleInventory(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/inventory" {
+		http.NotFound(w, r)
+		return
+	}
+	s.renderInventory(w, r, "/inventory")
+}
+
 func (s *Server) handleAssets(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/assets" {
 		http.NotFound(w, r)
 		return
 	}
+	s.renderInventory(w, r, "/assets")
+}
+
+func (s *Server) renderInventory(w http.ResponseWriter, r *http.Request, switchPath string) {
 
 	ctx := r.Context()
 	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
@@ -568,17 +756,18 @@ func (s *Server) handleAssets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := pageData{
-		Title:             "Assets",
+		Title:             "Inventory",
 		AppName:           s.options.AppName,
-		ActiveNav:         "assets",
+		ActiveNav:         "inventory",
+		ActiveSection:     "inventory-overview",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
-		HeroNote:          "Persistent inventory with safe manual overrides",
+		HeroNote:          "Shared inventory for every suite module, not only discovery runs",
 		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Projects:          projects,
 		CurrentProject:    currentProject,
-		ProjectSwitchPath: "/assets",
+		ProjectSwitchPath: switchPath,
 		Project:           currentProject,
 		Assets:            projectAssets,
 		AssetGroups:       groupAssets(projectAssets),
@@ -631,13 +820,14 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 	data := pageData{
 		Title:              "Asset " + asset.Asset.DisplayName,
 		AppName:            s.options.AppName,
-		ActiveNav:          "assets",
+		ActiveNav:          "inventory",
+		ActiveSection:      "inventory-overview",
 		BasePath:           s.options.BasePath,
 		DBPath:             s.options.DBPath,
 		DataDir:            s.options.DataDir,
 		Projects:           projects,
 		CurrentProject:     &project,
-		ProjectSwitchPath:  "/assets",
+		ProjectSwitchPath:  "/inventory",
 		Project:            &project,
 		Asset:              &asset,
 		AssetReevaluateURL: buildReevaluationURL(project.ID, "Reevaluate "+asset.Asset.DisplayName, asset.Asset.PrimaryTarget, "30m"),
@@ -702,7 +892,8 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request) {
 	data := pageData{
 		Title:             "Analytics",
 		AppName:           s.options.AppName,
-		ActiveNav:         "analytics",
+		ActiveNav:         "dashboard",
+		ActiveSection:     "dashboard-analytics",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
@@ -738,6 +929,54 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleSecurity(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/security" {
+		http.NotFound(w, r)
+		return
+	}
+	s.renderSuitePlaceholder(w, r, "Security", "Shared findings, checks and security-focused workflows for every project.", []string{
+		"Security should consume the same assets, runs and future artifacts as the other modules.",
+		"Discovery output will become one source of findings here, not the whole story.",
+		"This area is the right home for lightweight checks before heavier scanners ever show up.",
+	}, []string{
+		"Introduce a shared findings model above raw scan evidence.",
+		"Add first security summaries that correlate assets, open services and future checks.",
+		"Prepare the UI for module-owned reports and remediation guidance.",
+	}, &pageAction{Label: "Open Discovery", URL: buildProjectPath("/discovery", nil), Variant: "button-secondary"})
+}
+
+func (s *Server) handleWorkbench(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/workbench" {
+		http.NotFound(w, r)
+		return
+	}
+	s.renderSuitePlaceholder(w, r, "Workbench", "Operator-driven tools such as an HTTP repeater or request lab belong here, while still sharing project context with the suite.", []string{
+		"Workbench is the best place for hands-on utilities that do not fit the scheduled scan model.",
+		"Artifacts from here should still be linkable to assets, hosts and later security findings.",
+		"Starting with a focused HTTP tool is a good architectural test because it forces the suite to support more than discovery.",
+	}, []string{
+		"Add a shared artifact model for requests, responses and notes.",
+		"Build a first HTTP workbench instead of a full Burp-style proxy stack.",
+		"Verify that non-scanner tools can live cleanly inside the same product shell.",
+	}, &pageAction{Label: "Open Inventory", URL: buildProjectPath("/inventory", nil), Variant: "button-secondary"})
+}
+
+func (s *Server) handleAutomation(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/automation" {
+		http.NotFound(w, r)
+		return
+	}
+	s.renderSuitePlaceholder(w, r, "Automation", "Automation will own scheduled and repeatable module tasks across the suite, not only discovery reevaluations.", []string{
+		"Stored reevaluation records already exist, but they still need a generic executor to become real platform automation.",
+		"Discovery is the first consumer, but the scheduler should be module-agnostic from the beginning.",
+		"Later notifications, recurring jobs and maintenance tasks should all land here.",
+	}, []string{
+		"Promote scheduled scans into a generic task scheduler and runner.",
+		"Track pending, running, completed and failed automation runs independently from discovery runs.",
+		"Expose a UI for module-owned schedules instead of special-case scanner forms.",
+	}, &pageAction{Label: "Open Discovery", URL: buildProjectPath("/discovery", nil), Variant: "button-secondary"})
+}
+
 func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
@@ -750,6 +989,7 @@ func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request) {
 		Title:             "Settings",
 		AppName:           s.options.AppName,
 		ActiveNav:         "settings",
+		ActiveSection:     "settings-overview",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
@@ -776,7 +1016,8 @@ func (s *Server) handleHelp(w http.ResponseWriter, r *http.Request) {
 	data := pageData{
 		Title:             "Help",
 		AppName:           s.options.AppName,
-		ActiveNav:         "help",
+		ActiveNav:         "settings",
+		ActiveSection:     "settings-help",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
@@ -1026,6 +1267,12 @@ func (s *Server) render(w http.ResponseWriter, name string, data pageData) {
 	}
 	data.PreflightHealthy = preflightHealthy(data.PreflightChecks)
 	data.PreflightState = preflightState(data.PreflightChecks)
+	if data.SuiteModules == nil {
+		data.SuiteModules = buildSuiteModules(data.ActiveNav, data.CurrentProject)
+	}
+	if data.ModuleNav == nil {
+		data.ModuleNav = buildModuleNav(data.ActiveNav, data.ActiveSection, data.CurrentProject)
+	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	templates, err := template.ParseFS(assets, "templates/base.html", "templates/"+name)
@@ -1036,6 +1283,49 @@ func (s *Server) render(w http.ResponseWriter, name string, data pageData) {
 	if err := templates.ExecuteTemplate(w, name, data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (s *Server) renderSuitePlaceholder(w http.ResponseWriter, r *http.Request, title string, overview string, currentState []string, roadmap []string, secondaryAction *pageAction) {
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	activeNav := strings.ToLower(strings.TrimSpace(title))
+	data := pageData{
+		Title:             title,
+		AppName:           s.options.AppName,
+		ActiveNav:         activeNav,
+		ActiveSection:     activeNav + "-overview",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Module foundation inside the wider Startrace suite",
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/" + activeNav,
+		Project:           currentProject,
+		OverviewText:      overview,
+		CurrentStateItems: currentState,
+		RoadmapItems:      roadmap,
+		PrimaryAction: &pageAction{
+			Label:   "Open Dashboard",
+			URL:     buildProjectPath("/", currentProject),
+			Variant: "button-primary",
+		},
+		SecondaryAction: secondaryAction,
+		Settings:        appSettings,
+	}
+	if data.SecondaryAction != nil && currentProject != nil {
+		data.SecondaryAction.URL = buildProjectPath(strings.Split(data.SecondaryAction.URL, "?")[0], currentProject)
+	}
+	s.render(w, "module.html", data)
 }
 
 func (s *Server) writeJSON(w http.ResponseWriter, status int, value any) {
@@ -1766,6 +2056,10 @@ func noticeMessage(code string) string {
 		return "Project created successfully."
 	case "project-create-failed":
 		return "Project creation failed. Check the submitted paths and name."
+	case "scan-started":
+		return "Discovery run started successfully."
+	case "scan-create-failed":
+		return "Discovery run could not be started. Check the submitted scope and settings."
 	case "asset-updated":
 		return "Asset successfully updated."
 	case "reevaluation-scheduled":

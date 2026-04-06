@@ -19,7 +19,7 @@
             <div class="kv-value">{{if .CurrentProject.Notes}}{{.CurrentProject.Notes}}{{else}}-{{end}}</div>
         </div>
         {{else}}
-        <p class="empty-note">Create your first project to start organizing runs, assets and analytics.</p>
+        <p class="empty-note">Create your first project to start organizing shared data across Discovery, Inventory and the next suite modules.</p>
         {{end}}
     </article>
 
@@ -50,17 +50,34 @@
             <h2>Next Step</h2>
         </div>
         <p class="empty-note">
-            No scan has been started for this project yet. Start your first scan from the GUI to populate runs, assets and analytics.
+            No discovery run has been started for this project yet. Start one from the suite to populate the shared inventory and dashboard.
         </p>
         <div class="hero-actions">
-            <a class="button button-primary" href="/scans/new?project={{.CurrentProject.ID}}">Start Scan</a>
-            <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Open Runs</a>
+            <a class="button button-primary" href="/scans/new?project={{.CurrentProject.ID}}">Start Discovery Run</a>
+            <a class="button button-secondary" href="/discovery?project={{.CurrentProject.ID}}">Open Discovery</a>
         </div>
     </article>
 </section>
 {{end}}
 
 <section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Suite Areas</h2>
+        </div>
+        <div class="list">
+            {{range .SuiteCards}}
+            <a class="list-item" href="{{.URL}}">
+                <div>
+                    <div class="list-title">{{.Title}}</div>
+                    <div class="list-meta">{{.Summary}}</div>
+                </div>
+                <span class="pill {{.StatusClass}}">{{.StatusLabel}}</span>
+            </a>
+            {{end}}
+        </div>
+    </article>
+
     <article class="panel">
         <div class="panel-head">
             <h2>Latest Runs</h2>
@@ -91,26 +108,27 @@
         <p class="empty-note">No runs stored for this project yet.</p>
         {{end}}
     </article>
+</section>
 
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Asset Snapshot</h2>
-        </div>
-        {{if .Assets}}
-        <div class="list">
-            {{range .Assets}}
-            <a class="list-item" href="/assets/{{.ID}}">
-                <div>
-                    <div class="list-title">{{.DisplayName}}</div>
-                    <div class="list-meta">{{.PrimaryTarget}} | {{.EffectiveDeviceType}} | {{.EffectiveConnectionType}}</div>
-                </div>
-                <span class="pill subtle">{{len .CurrentOpenPorts}} ports</span>
-            </a>
-            {{end}}
-        </div>
-        {{else}}
-        <p class="empty-note">No assets available for this project yet.</p>
+<section class="panel">
+    <div class="panel-head">
+        <h2>Inventory Snapshot</h2>
+        <a class="button button-secondary" href="/inventory?project={{.CurrentProject.ID}}">Open Inventory</a>
+    </div>
+    {{if .Assets}}
+    <div class="list">
+        {{range .Assets}}
+        <a class="list-item" href="/assets/{{.ID}}">
+            <div>
+                <div class="list-title">{{.DisplayName}}</div>
+                <div class="list-meta">{{.PrimaryTarget}} | {{.EffectiveDeviceType}} | {{.EffectiveConnectionType}}</div>
+            </div>
+            <span class="pill subtle">{{len .CurrentOpenPorts}} ports</span>
+        </a>
         {{end}}
-    </article>
+    </div>
+    {{else}}
+    <p class="empty-note">No assets available for this project yet.</p>
+    {{end}}
 </section>
 {{end}}

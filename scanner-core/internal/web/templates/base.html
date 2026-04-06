@@ -14,22 +14,21 @@
                 <div class="brand-mark">ST</div>
                 <div>
                     <div class="brand-name">{{.AppName}}</div>
-                    <div class="brand-sub">Powered by tracer scanner-core</div>
+                    <div class="brand-sub">Modular operator suite for local infrastructure</div>
                 </div>
             </div>
 
             <nav class="nav">
-                <a class="nav-link {{if eq .ActiveNav "dashboard"}}active{{end}}" href="{{if .CurrentProject}}/?project={{.CurrentProject.ID}}{{else}}/{{end}}">Dashboard</a>
-                <a class="nav-link {{if eq .ActiveNav "runs"}}active{{end}}" href="{{if .CurrentProject}}/runs?project={{.CurrentProject.ID}}{{else}}/runs{{end}}">Runs</a>
-                <a class="nav-link {{if eq .ActiveNav "assets"}}active{{end}}" href="{{if .CurrentProject}}/assets?project={{.CurrentProject.ID}}{{else}}/assets{{end}}">Assets</a>
-                <a class="nav-link {{if eq .ActiveNav "analytics"}}active{{end}}" href="{{if .CurrentProject}}/analytics?project={{.CurrentProject.ID}}{{else}}/analytics{{end}}">Analytics</a>
-                <a class="nav-link {{if eq .ActiveNav "settings"}}active{{end}}" href="{{if .CurrentProject}}/settings?project={{.CurrentProject.ID}}{{else}}/settings{{end}}">Settings</a>
-                <a class="nav-link {{if eq .ActiveNav "help"}}active{{end}}" href="{{if .CurrentProject}}/help?project={{.CurrentProject.ID}}{{else}}/help{{end}}">Help</a>
+                {{range .SuiteModules}}
+                <a class="nav-link {{if .Active}}active{{end}}" href="{{.URL}}">{{.Label}}</a>
+                {{end}}
             </nav>
 
             <div class="sidebar-foot">
                 <div class="foot-label">Store</div>
                 <div class="foot-value">{{.DBPath}}</div>
+                <div class="foot-label" style="margin-top: 16px;">Support</div>
+                <div class="foot-value"><a href="{{if .CurrentProject}}/help?project={{.CurrentProject.ID}}{{else}}/help{{end}}">Help and operator guide</a></div>
             </div>
         </aside>
 
@@ -78,6 +77,14 @@
 
             {{if .Notice}}
             <section class="notice success">{{.Notice}}</section>
+            {{end}}
+
+            {{if .ModuleNav}}
+            <nav class="module-nav" aria-label="Module Navigation">
+                {{range .ModuleNav}}
+                <a class="module-nav-link {{if .Active}}active{{end}}" href="{{.URL}}">{{.Label}}</a>
+                {{end}}
+            </nav>
             {{end}}
 
             {{template "page" .}}

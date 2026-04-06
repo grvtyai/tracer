@@ -1,0 +1,92 @@
+{{define "discovery.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="hero-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Discovery Module</h2>
+            <span class="pill status-success">Live</span>
+        </div>
+        <p class="empty-note">{{.OverviewText}}</p>
+        <div class="hero-actions">
+            {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
+            {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
+        </div>
+    </article>
+
+    <article class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Runs</div>
+            <div class="stat-value">{{.Stats.RunCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Assets</div>
+            <div class="stat-value">{{.Stats.AssetCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Evidence</div>
+            <div class="stat-value">{{.Stats.EvidenceCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Reevaluation</div>
+            <div class="stat-value">{{.Stats.ReevalCount}}</div>
+        </div>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Current State</h2>
+        </div>
+        <ul class="bullet-list">
+            {{range .CurrentStateItems}}
+            <li>{{.}}</li>
+            {{end}}
+        </ul>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Next Foundation Steps</h2>
+        </div>
+        <ul class="bullet-list">
+            {{range .RoadmapItems}}
+            <li>{{.}}</li>
+            {{end}}
+        </ul>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Latest Discovery Runs</h2>
+        <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Run History</a>
+    </div>
+    {{if .RecentRunItems}}
+    <div class="list">
+        {{range .RecentRunItems}}
+        {{if .Clickable}}
+        <a href="/runs/{{.Run.ID}}" class="list-item">
+            <div>
+                <div class="list-title">{{.Run.TemplateName}}</div>
+                <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts</div>
+            </div>
+            <span class="pill {{.StatusClass}}">{{.StatusLabel}}</span>
+        </a>
+        {{else}}
+        <div class="list-item disabled">
+            <div>
+                <div class="list-title">{{.Run.TemplateName}}</div>
+                <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts</div>
+            </div>
+            <span class="pill {{.StatusClass}}">{{.StatusLabel}}</span>
+        </div>
+        {{end}}
+        {{end}}
+    </div>
+    {{else}}
+    <p class="empty-note">No discovery runs are stored for this project yet.</p>
+    {{end}}
+</section>
+{{end}}

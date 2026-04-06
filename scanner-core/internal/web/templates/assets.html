@@ -3,14 +3,14 @@
 {{define "page"}}
 <section class="panel">
     <div class="panel-head">
-        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Asset Inventory</h2>
+        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Shared Inventory</h2>
         <span class="pill">{{len .Assets}} assets</span>
     </div>
     <p class="empty-note">
-        Assets are persistent entries above individual runs. Scanner observations stay intact, while manual names, tags and classifications can be added safely as operator overrides.
+        Inventory entries sit above individual tools and runs. Discovery observations already feed this view, while manual names, tags and classifications can be layered on top safely.
     </p>
     <p class="empty-note">
-        Grouping uses the effective device type. Connection type stays a best-effort guess unless it is confirmed manually.
+        Grouping uses the effective device type. Additional suite modules can later attach findings, artifacts and notes to the same shared objects.
     </p>
 </section>
 

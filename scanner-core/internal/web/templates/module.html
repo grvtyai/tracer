@@ -1,0 +1,50 @@
+{{define "module.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="hero-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>{{.Title}}</h2>
+            <span class="pill status-warning">Foundation</span>
+        </div>
+        <p class="empty-note">{{.OverviewText}}</p>
+        <div class="hero-actions">
+            {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
+            {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Why This Exists Now</h2>
+        </div>
+        <p class="empty-note">
+            This page is intentionally present before the module is feature-complete, so the suite structure stays honest while new tools are developed directly inside the real product shell.
+        </p>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Current State</h2>
+        </div>
+        <ul class="bullet-list">
+            {{range .CurrentStateItems}}
+            <li>{{.}}</li>
+            {{end}}
+        </ul>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Foundation Roadmap</h2>
+        </div>
+        <ul class="bullet-list">
+            {{range .RoadmapItems}}
+            <li>{{.}}</li>
+            {{end}}
+        </ul>
+    </article>
+</section>
+{{end}}
