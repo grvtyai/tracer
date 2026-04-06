@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -139,7 +140,6 @@ type labelCount struct {
 type dashboardChart struct {
 	Title        string
 	TotalValue   int
-	Style        string
 	Segments     []dashboardChartSegment
 	EmptyMessage string
 }
@@ -149,6 +149,8 @@ type dashboardChartSegment struct {
 	Count        int
 	PercentLabel string
 	Color        string
+	PathData     string
+	FullCircle   bool
 }
 
 type statusInfo struct {
@@ -1717,7 +1719,6 @@ func buildDashboardChart(title string, counts []labelCount, emptyMessage string)
 
 	palette := []string{"#5b8cff", "#2fd7ff", "#ff9f43", "#3fdc7a", "#ff6b6b", "#c792ea", "#8be9fd"}
 	segments := make([]dashboardChartSegment, 0, len(normalized))
-	gradientParts := make([]string, 0, len(normalized))
 	start := 0.0
 	for idx, entry := range normalized {
 		color := palette[idx%len(palette)]
@@ -1728,17 +1729,51 @@ func buildDashboardChart(title string, counts []labelCount, emptyMessage string)
 			Count:        entry.Count,
 			PercentLabel: fmt.Sprintf("%.1f%%", percent),
 			Color:        color,
+			PathData:     buildPieSlicePath(start, end),
+			FullCircle:   percent >= 99.999,
 		})
-		gradientParts = append(gradientParts, fmt.Sprintf("%s %.2f%% %.2f%%", color, start, end))
 		start = end
 	}
 
 	return dashboardChart{
 		Title:      title,
 		TotalValue: total,
-		Style:      "conic-gradient(" + strings.Join(gradientParts, ", ") + ")",
 		Segments:   segments,
 	}
+}
+
+func buildPieSlicePath(startPercent float64, endPercent float64) string {
+	if endPercent-startPercent >= 99.999 {
+		return ""
+	}
+
+	startAngle := startPercent / 100 * 2 * math.Pi
+	endAngle := endPercent / 100 * 2 * math.Pi
+	centerX := 50.0
+	centerY := 50.0
+	radius := 44.0
+
+	startX := centerX + radius*math.Cos(startAngle-math.Pi/2)
+	startY := centerY + radius*math.Sin(startAngle-math.Pi/2)
+	endX := centerX + radius*math.Cos(endAngle-math.Pi/2)
+	endY := centerY + radius*math.Sin(endAngle-math.Pi/2)
+	largeArc := 0
+	if endPercent-startPercent > 50 {
+		largeArc = 1
+	}
+
+	return fmt.Sprintf(
+		"M %.3f %.3f L %.3f %.3f A %.3f %.3f 0 %d 1 %.3f %.3f Z",
+		centerX,
+		centerY,
+		startX,
+		startY,
+		radius,
+		radius,
+		largeArc,
+		endX,
+		endY,
+	)
 }
 
 func normalizeChartCounts(counts []labelCount, maxSlices int) []labelCount {

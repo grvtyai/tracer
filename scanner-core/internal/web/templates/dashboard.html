@@ -58,27 +58,35 @@
 
 <section class="chart-grid">
     {{range .DashboardCharts}}
-    <article class="panel chart-panel">
-        <div class="panel-head chart-head">
-            <h2>{{.Title}}</h2>
-        </div>
+    <article class="chart-unit">
+        <h2 class="chart-title">{{.Title}}</h2>
         {{if .Segments}}
         <div class="chart-stack">
-            <div class="pie-chart" style="background: {{.Style}};">
-                <div class="pie-chart-hole">
-                    <span>{{.TotalValue}}</span>
-                </div>
+            <div class="pie-chart">
+                <svg class="pie-chart-svg" viewBox="0 0 100 100" aria-hidden="true">
+                    {{range .Segments}}
+                    {{if .FullCircle}}
+                    <circle cx="50" cy="50" r="44" fill="{{.Color}}"></circle>
+                    {{else}}
+                    <path d="{{.PathData}}" fill="{{.Color}}"></path>
+                    {{end}}
+                    {{end}}
+                </svg>
             </div>
-            <div class="chart-legend">
+            <div class="chart-legend-box">
+                <div class="chart-legend">
                 {{range .Segments}}
                 <div class="chart-legend-item">
-                    <span class="chart-swatch" style="background: {{.Color}};"></span>
+                    <svg class="chart-swatch" viewBox="0 0 14 14" aria-hidden="true">
+                        <circle cx="7" cy="7" r="6" fill="{{.Color}}"></circle>
+                    </svg>
                     <div>
                         <div class="list-title">{{.Label}}</div>
                         <div class="list-meta">{{.Count}} | {{.PercentLabel}}</div>
                     </div>
                 </div>
                 {{end}}
+                </div>
             </div>
         </div>
         {{else}}

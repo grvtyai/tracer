@@ -535,72 +535,73 @@ h2 { font-size: 20px; }
     margin-bottom: 18px;
 }
 
-.chart-panel {
-    min-height: 100%;
+.chart-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
 }
 
-.chart-head {
-    justify-content: center;
+.chart-title {
+    font-size: 18px;
     text-align: center;
 }
 
 .chart-stack {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     align-items: center;
+    width: 100%;
 }
 
 .pie-chart {
     position: relative;
-    width: min(180px, 100%);
+    width: min(170px, 100%);
     aspect-ratio: 1;
-    border-radius: 50%;
     margin: 0 auto;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
 }
 
-.pie-chart-hole {
-    position: absolute;
-    inset: 24%;
-    display: grid;
-    place-items: center;
-    gap: 4px;
-    text-align: center;
-    border-radius: 50%;
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.18);
-}
-
-.pie-chart-hole span {
-    font-size: 28px;
-    font-weight: 700;
+.pie-chart-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 14px 28px rgba(0,0,0,0.22));
 }
 
 .chart-legend {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
+}
+
+.chart-legend-box {
+    width: 100%;
+    max-width: 220px;
+    max-height: 170px;
+    overflow: auto;
+    padding: 8px;
+    border-radius: 14px;
+    background: rgba(18, 22, 31, 0.9);
+    border: 1px solid var(--border);
 }
 
 .chart-legend-item {
     display: grid;
     grid-template-columns: 14px 1fr;
-    gap: 10px;
+    gap: 8px;
     align-items: start;
-    padding: 10px 12px;
-    border-radius: 14px;
-    background: var(--panel-2);
-    border: 1px solid var(--border);
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
 }
 
 .chart-swatch {
-    display: inline-flex;
+    display: block;
     width: 14px;
     height: 14px;
-    border-radius: 999px;
     margin-top: 4px;
 }
 
