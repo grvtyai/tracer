@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/grvtyai/tracer/scanner-core/internal/platform"
 	"github.com/grvtyai/tracer/scanner-core/internal/storage"
 	"github.com/grvtyai/tracer/scanner-core/internal/web"
 )
@@ -22,6 +23,10 @@ func main() {
 	flag.StringVar(&dataDir, "data-dir", "", "directory for startrace/tracer persistent data")
 	flag.StringVar(&dbPath, "db-path", "", "path to the SQLite database file")
 	flag.Parse()
+
+	if err := platform.RequireRootOnLinux("startrace"); err != nil {
+		fail(err)
+	}
 
 	resolvedDBPath := storage.ResolveDBPath(dataDir, dbPath)
 	resolvedDataDir := dataDir

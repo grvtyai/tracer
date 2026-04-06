@@ -18,6 +18,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
+	"github.com/grvtyai/tracer/scanner-core/internal/platform"
 	"github.com/grvtyai/tracer/scanner-core/internal/storage"
 	"github.com/grvtyai/tracer/scanner-core/internal/templates"
 )
@@ -223,6 +224,7 @@ func (s *Server) handlePreflightAPI(w http.ResponseWriter, r *http.Request) {
 
 func collectPreflightChecks(dbPath string) []preflightCheck {
 	checks := []preflightCheck{
+		privilegeCheck(),
 		commandCheck("naabu", true),
 		commandCheck("nmap", true),
 		commandCheck("httpx", true),
@@ -233,6 +235,33 @@ func collectPreflightChecks(dbPath string) []preflightCheck {
 		dbPathCheck(dbPath),
 	}
 	return checks
+}
+
+func privilegeCheck() preflightCheck {
+	if runtime.GOOS != "linux" {
+		return preflightCheck{
+			Name:     "process-privileges",
+			Status:   "ok",
+			Detail:   "root enforcement is only required on Linux",
+			Required: true,
+		}
+	}
+
+	if platform.RunsAsRoot() {
+		return preflightCheck{
+			Name:     "process-privileges",
+			Status:   "ok",
+			Detail:   "running with root privileges",
+			Required: true,
+		}
+	}
+
+	return preflightCheck{
+		Name:     "process-privileges",
+		Status:   "error",
+		Detail:   "start startrace with sudo/root on Linux",
+		Required: true,
+	}
 }
 
 func commandCheck(name string, required bool) preflightCheck {
@@ -310,14 +339,11 @@ func buildScanWorkerCommand(runID string, projectName string, templatePath strin
 	}
 
 	var cmd *exec.Cmd
-	if runtime.GOOS == "linux" && !processRunsAsRoot() {
-		sudoArgs := []string{"-n", "env", "PATH=" + os.Getenv("PATH")}
-		sudoArgs = append(sudoArgs, args...)
-		cmd = exec.Command("sudo", sudoArgs...)
-	} else {
-		cmd = exec.Command(args[0], args[1:]...)
-		cmd.Env = os.Environ()
+	if runtime.GOOS == "linux" && !platform.RunsAsRoot() {
+		return nil, fmt.Errorf("startrace must already be running as sudo/root on Linux before Discovery runs can be launched")
 	}
+	cmd = exec.Command(args[0], args[1:]...)
+	cmd.Env = os.Environ()
 	return cmd, nil
 }
 
@@ -337,17 +363,6 @@ func resolveTracerBinaryPath() (string, error) {
 		return "", fmt.Errorf("locate tracer worker binary: %w", err)
 	}
 	return tracerBinary, nil
-}
-
-func processRunsAsRoot() bool {
-	if runtime.GOOS != "linux" {
-		return false
-	}
-	output, err := exec.Command("id", "-u").Output()
-	if err != nil {
-		return false
-	}
-	return strings.TrimSpace(string(output)) == "0"
 }
 
 func (s *Server) runStillRunning(ctx context.Context, runID string) (bool, error) {

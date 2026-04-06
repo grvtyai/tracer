@@ -11,6 +11,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/app"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
+	"github.com/grvtyai/tracer/scanner-core/internal/platform"
 	"github.com/grvtyai/tracer/scanner-core/internal/storage"
 	"github.com/grvtyai/tracer/scanner-core/internal/templates"
 )
@@ -56,6 +57,10 @@ func main() {
 	flag.Var(&reevaluateFlag, "reevaluate-ambiguous", "emit reevaluation hints for ambiguous or partial results (true/false)")
 	flag.Var(&autoStartZeekFlag, "auto-start-zeek", "allow tracer to start or deploy Zeek when passive ingest is requested (true/false)")
 	flag.Parse()
+
+	if err := platform.RequireRootOnLinux("tracer"); err != nil {
+		fail(err)
+	}
 
 	queryDBPath := storage.ResolveDBPath(dataDir, dbPath)
 

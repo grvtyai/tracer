@@ -126,10 +126,10 @@ go build -o ./bin/tracer ./cmd/tracer
 go build -o ./bin/startrace ./cmd/startrace
 ```
 
-Start the browser UI:
+Start the browser UI as `root` / via `sudo`:
 
 ```bash
-env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080
+sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080
 ```
 
 Then open the UI in your browser:
@@ -149,15 +149,16 @@ The normal workflow is now:
 ## CLI modes that already exist
 
 The CLI is still useful and writes into the same persistence model.
+On Linux it should also be started with `sudo` / as `root`.
 
 Examples:
 
 ```bash
-./bin/tracer -mode run -template examples/tracer-home-lab.json
-./bin/tracer -mode projects
-./bin/tracer -mode runs --project "Heimnetz"
-./bin/tracer -mode show-run --run-id <run-id>
-./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
+sudo ./bin/tracer -mode run -template examples/tracer-home-lab.json
+sudo ./bin/tracer -mode projects
+sudo ./bin/tracer -mode runs --project "Heimnetz"
+sudo ./bin/tracer -mode show-run --run-id <run-id>
+sudo ./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
 ```
 
 ## Repository layout
