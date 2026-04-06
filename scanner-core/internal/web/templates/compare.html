@@ -1,0 +1,236 @@
+{{define "compare.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel">
+    <div class="panel-head">
+        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Compare Runs</h2>
+        <span class="pill">{{len .Runs}} runs</span>
+    </div>
+    <div class="compare-form-grid">
+        <div class="form-row">
+            <label class="form-label" for="baseline-run">Left run</label>
+            <select id="baseline-run" class="input">
+                {{range .Runs}}
+                <option value="{{.ID}}" {{if eq $.CompareBaselineRunID .ID}}selected{{end}}>{{.StartedAt.Format "2006-01-02 15:04"}} | {{.TemplateName}} | {{.Status}}</option>
+                {{end}}
+            </select>
+        </div>
+        <div class="form-row">
+            <label class="form-label" for="candidate-run">Right run</label>
+            <select id="candidate-run" class="input">
+                {{range .Runs}}
+                <option value="{{.ID}}" {{if eq $.CompareCandidateRunID .ID}}selected{{end}}>{{.StartedAt.Format "2006-01-02 15:04"}} | {{.TemplateName}} | {{.Status}}</option>
+                {{end}}
+            </select>
+        </div>
+    </div>
+    <div class="hero-actions">
+        <button class="button button-primary" id="compare-submit" type="button">Compare Runs</button>
+    </div>
+</section>
+
+<section class="panel-grid">
+    <article class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">New On Right</div>
+            <div class="stat-value" id="compare-new-count">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Missing On Right</div>
+            <div class="stat-value" id="compare-missing-count">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Changed</div>
+            <div class="stat-value" id="compare-changed-count">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Pair</div>
+            <div class="stat-value compare-pair-label" id="compare-pair-label">-</div>
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Interpretation</h2>
+        </div>
+        <p class="empty-note">
+            Left is the baseline, right is the newer candidate. New means only on the right, missing means only on the left, changed means same identity with different details.
+        </p>
+    </article>
+</section>
+
+<section class="panel-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>New On Right</h2>
+        </div>
+        <div class="list" id="compare-new-list"></div>
+        <p class="empty-note" id="compare-new-empty">No new evidence in the right run.</p>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Missing On Right</h2>
+        </div>
+        <div class="list" id="compare-missing-list"></div>
+        <p class="empty-note" id="compare-missing-empty">No missing evidence in the right run.</p>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Changed Evidence</h2>
+    </div>
+    <div class="list" id="compare-changed-list"></div>
+    <p class="empty-note" id="compare-changed-empty">No changed evidence between the selected runs.</p>
+</section>
+
+<script>
+(() => {
+    const baseline = document.getElementById("baseline-run");
+    const candidate = document.getElementById("candidate-run");
+    const button = document.getElementById("compare-submit");
+    if (!baseline || !candidate || !button) {
+        return;
+    }
+
+    const diffAPI = {{printf "%q" .DiffAPI}};
+    const projectID = {{if .CurrentProject}}{{printf "%q" .CurrentProject.ID}}{{else}}""{{end}};
+    const params = new URLSearchParams(window.location.search);
+
+    const pairLabel = document.getElementById("compare-pair-label");
+    const newCount = document.getElementById("compare-new-count");
+    const missingCount = document.getElementById("compare-missing-count");
+    const changedCount = document.getElementById("compare-changed-count");
+    const newList = document.getElementById("compare-new-list");
+    const missingList = document.getElementById("compare-missing-list");
+    const changedList = document.getElementById("compare-changed-list");
+    const newEmpty = document.getElementById("compare-new-empty");
+    const missingEmpty = document.getElementById("compare-missing-empty");
+    const changedEmpty = document.getElementById("compare-changed-empty");
+
+    const labelForRecord = (record) => {
+        const parts = [];
+        if (record.target) parts.push(record.target);
+        if (record.kind) parts.push(record.kind);
+        if (record.port) parts.push(`${record.port}/${record.protocol || "tcp"}`);
+        return parts.join(" | ") || record.summary || "evidence";
+    };
+
+    const summaryForRecord = (record) => {
+        if (record.summary) {
+            return record.summary;
+        }
+        return record.raw_ref || "No summary";
+    };
+
+    const renderSimpleList = (container, emptyState, records) => {
+        container.innerHTML = "";
+        if (!Array.isArray(records) || records.length === 0) {
+            emptyState.hidden = false;
+            return;
+        }
+        emptyState.hidden = true;
+        records.forEach((record) => {
+            const item = document.createElement("div");
+            item.className = "list-item static";
+
+            const text = document.createElement("div");
+            const title = document.createElement("div");
+            title.className = "list-title";
+            title.textContent = labelForRecord(record);
+            const meta = document.createElement("div");
+            meta.className = "list-meta";
+            meta.textContent = summaryForRecord(record);
+            text.appendChild(title);
+            text.appendChild(meta);
+
+            item.appendChild(text);
+            container.appendChild(item);
+        });
+    };
+
+    const renderChangedList = (entries) => {
+        changedList.innerHTML = "";
+        if (!Array.isArray(entries) || entries.length === 0) {
+            changedEmpty.hidden = false;
+            return;
+        }
+        changedEmpty.hidden = true;
+        entries.forEach((entry) => {
+            const item = document.createElement("div");
+            item.className = "list-item static compare-change-item";
+
+            const baselineBox = document.createElement("div");
+            baselineBox.className = "compare-change-column";
+            const baselineTitle = document.createElement("div");
+            baselineTitle.className = "list-title";
+            baselineTitle.textContent = `Left: ${labelForRecord(entry.baseline || {})}`;
+            const baselineMeta = document.createElement("div");
+            baselineMeta.className = "list-meta";
+            baselineMeta.textContent = summaryForRecord(entry.baseline || {});
+            baselineBox.appendChild(baselineTitle);
+            baselineBox.appendChild(baselineMeta);
+
+            const candidateBox = document.createElement("div");
+            candidateBox.className = "compare-change-column";
+            const candidateTitle = document.createElement("div");
+            candidateTitle.className = "list-title";
+            candidateTitle.textContent = `Right: ${labelForRecord(entry.candidate || {})}`;
+            const candidateMeta = document.createElement("div");
+            candidateMeta.className = "list-meta";
+            candidateMeta.textContent = summaryForRecord(entry.candidate || {});
+            candidateBox.appendChild(candidateTitle);
+            candidateBox.appendChild(candidateMeta);
+
+            item.appendChild(baselineBox);
+            item.appendChild(candidateBox);
+            changedList.appendChild(item);
+        });
+    };
+
+    const updateURL = () => {
+        const next = new URL(window.location.href);
+        next.searchParams.set("project", projectID);
+        next.searchParams.set("baseline_run", baseline.value);
+        next.searchParams.set("candidate_run", candidate.value);
+        window.history.replaceState({}, "", next.toString());
+    };
+
+    const runCompare = async () => {
+        if (!baseline.value || !candidate.value || baseline.value === candidate.value) {
+            return;
+        }
+
+        button.disabled = true;
+        try {
+            const response = await fetch(`${diffAPI}?baseline_run=${encodeURIComponent(baseline.value)}&candidate_run=${encodeURIComponent(candidate.value)}`, {
+                headers: {"Accept": "application/json"},
+                cache: "no-store",
+            });
+            if (!response.ok) {
+                return;
+            }
+
+            const diff = await response.json();
+            newCount.textContent = `${diff.new_count || 0}`;
+            missingCount.textContent = `${diff.missing_count || 0}`;
+            changedCount.textContent = `${diff.changed_count || 0}`;
+            pairLabel.textContent = `${diff.baseline?.template_name || "Left"} -> ${diff.candidate?.template_name || "Right"}`;
+
+            renderSimpleList(newList, newEmpty, diff.new_evidence || []);
+            renderSimpleList(missingList, missingEmpty, diff.missing_evidence || []);
+            renderChangedList(diff.changed_evidence || []);
+            updateURL();
+        } finally {
+            button.disabled = false;
+        }
+    };
+
+    button.addEventListener("click", runCompare);
+    if (baseline.value && candidate.value && baseline.value !== candidate.value) {
+        runCompare();
+    }
+})();
+</script>
+{{end}}

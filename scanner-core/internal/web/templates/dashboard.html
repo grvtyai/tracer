@@ -1,38 +1,42 @@
 {{define "dashboard.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-<section class="panel">
-    <div class="panel-head">
-        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{else}}No Project{{end}}</h2>
-        {{if .CurrentProject}}<span class="pill">{{.CurrentProject.PublicID}}</span>{{end}}
-    </div>
-    {{if .CurrentProject}}
-    <div class="kv-grid">
-        <div class="kv-key">Owner</div>
-        <div class="kv-value">{{if .CurrentProject.OwnerUsername}}{{.CurrentProject.OwnerUsername}}{{else}}-{{end}}</div>
-        <div class="kv-key">Storage path</div>
-        <div class="kv-value mono">{{.CurrentProject.StoragePath}}</div>
-        <div class="kv-key">Target database</div>
-        <div class="kv-value mono">{{.CurrentProject.TargetDBPath}}</div>
-        <div class="kv-key">Created</div>
-        <div class="kv-value">{{if .CurrentProject.CreatedAt.IsZero}}-{{else}}{{.CurrentProject.CreatedAt.Format "2006-01-02 15:04"}}{{end}}</div>
-        <div class="kv-key">Updated</div>
-        <div class="kv-value">{{if .CurrentProject.UpdatedAt.IsZero}}-{{else}}{{.CurrentProject.UpdatedAt.Format "2006-01-02 15:04"}}{{end}}</div>
-        <div class="kv-key">Runs</div>
-        <div class="kv-value">{{.CurrentProject.RunCount}}</div>
-        <div class="kv-key">Last run</div>
-        <div class="kv-value">{{if .CurrentProject.LastRunAt.IsZero}}-{{else}}{{.CurrentProject.LastRunAt.Format "2006-01-02 15:04"}}{{end}}</div>
-        <div class="kv-key">Notes</div>
-        <div class="kv-value">{{if .CurrentProject.Notes}}{{.CurrentProject.Notes}}{{else}}-{{end}}</div>
-    </div>
-    <div class="tag-row">
-        <span class="tag">Assets {{.Stats.AssetCount}}</span>
-        <span class="tag">Evidence {{.Stats.EvidenceCount}}</span>
-        <span class="tag">Reevaluation {{.Stats.ReevalCount}}</span>
-    </div>
-    {{else}}
-    <p class="empty-note">Create your first project to start organizing shared data across Discovery, Inventory and the next suite modules.</p>
-    {{end}}
+<section class="panel project-summary-panel">
+    <details class="panel-disclosure">
+        <summary class="panel-disclosure-summary">
+            <div class="panel-head compact-head">
+                <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{else}}No Project{{end}}</h2>
+                {{if .CurrentProject}}<span class="pill">{{.CurrentProject.PublicID}}</span>{{end}}
+            </div>
+        </summary>
+        {{if .CurrentProject}}
+        <div class="kv-grid disclosure-body">
+            <div class="kv-key">Owner</div>
+            <div class="kv-value">{{if .CurrentProject.OwnerUsername}}{{.CurrentProject.OwnerUsername}}{{else}}-{{end}}</div>
+            <div class="kv-key">Storage path</div>
+            <div class="kv-value mono">{{.CurrentProject.StoragePath}}</div>
+            <div class="kv-key">Target database</div>
+            <div class="kv-value mono">{{.CurrentProject.TargetDBPath}}</div>
+            <div class="kv-key">Created</div>
+            <div class="kv-value">{{if .CurrentProject.CreatedAt.IsZero}}-{{else}}{{.CurrentProject.CreatedAt.Format "2006-01-02 15:04"}}{{end}}</div>
+            <div class="kv-key">Updated</div>
+            <div class="kv-value">{{if .CurrentProject.UpdatedAt.IsZero}}-{{else}}{{.CurrentProject.UpdatedAt.Format "2006-01-02 15:04"}}{{end}}</div>
+            <div class="kv-key">Runs</div>
+            <div class="kv-value">{{.CurrentProject.RunCount}}</div>
+            <div class="kv-key">Last run</div>
+            <div class="kv-value">{{if .CurrentProject.LastRunAt.IsZero}}-{{else}}{{.CurrentProject.LastRunAt.Format "2006-01-02 15:04"}}{{end}}</div>
+            <div class="kv-key">Notes</div>
+            <div class="kv-value">{{if .CurrentProject.Notes}}{{.CurrentProject.Notes}}{{else}}-{{end}}</div>
+        </div>
+        <div class="tag-row">
+            <span class="tag">Assets {{.Stats.AssetCount}}</span>
+            <span class="tag">Evidence {{.Stats.EvidenceCount}}</span>
+            <span class="tag">Reevaluation {{.Stats.ReevalCount}}</span>
+        </div>
+        {{else}}
+        <p class="empty-note disclosure-body">Create your first project to start organizing shared data across Discovery, Inventory and the next suite modules.</p>
+        {{end}}
+    </details>
 </section>
 
 {{if not .RecentRunItems}}
@@ -52,22 +56,17 @@
 </section>
 {{end}}
 
-<section class="panel-grid">
+<section class="chart-grid">
     {{range .DashboardCharts}}
     <article class="panel chart-panel">
-        <div class="panel-head">
-            <div>
-                <h2>{{.Title}}</h2>
-                <div class="list-meta">{{.Subtitle}}</div>
-            </div>
-            {{if gt .TotalValue 0}}<span class="pill">{{.TotalValue}} {{.TotalLabel}}</span>{{end}}
+        <div class="panel-head chart-head">
+            <h2>{{.Title}}</h2>
         </div>
         {{if .Segments}}
-        <div class="chart-layout">
+        <div class="chart-stack">
             <div class="pie-chart" style="background: {{.Style}};">
                 <div class="pie-chart-hole">
                     <span>{{.TotalValue}}</span>
-                    <small>{{.TotalLabel}}</small>
                 </div>
             </div>
             <div class="chart-legend">

@@ -35,57 +35,59 @@ type Server struct {
 }
 
 type pageData struct {
-	Title              string
-	AppName            string
-	ActiveNav          string
-	ActiveSection      string
-	SuiteModules       []suiteModule
-	ModuleNav          []moduleNavItem
-	BasePath           string
-	DBPath             string
-	DataDir            string
-	BodyClass          string
-	HeroNote           string
-	Notice             string
-	Project            *storage.ProjectSummary
-	Projects           []storage.ProjectSummary
-	CurrentProject     *storage.ProjectSummary
-	ProjectSwitchPath  string
-	ProjectForm        projectFormData
-	Settings           storage.AppSettings
-	PreflightChecks    []preflightCheck
-	PreflightHealthy   bool
-	PreflightState     string
-	ScanForm           scanFormData
-	RecentRuns         []storage.RunSummary
-	RecentRunItems     []runListItem
-	Runs               []storage.RunSummary
-	RunItems           []runListItem
-	Run                *storage.RunDetails
-	RunReevaluateURL   string
-	Assets             []storage.AssetSummary
-	Asset              *storage.AssetDetails
-	AssetReevaluateURL string
-	PortSections       []portSection
-	AssetGroups        []assetGroup
-	Hosts              []hostSummary
-	RunStatus          statusInfo
-	ScheduledScans     []storage.ScheduledScan
-	WarningDetails     []warningDetail
-	HelpLink           string
-	Stats              dashboardStats
-	DashboardCharts    []dashboardChart
-	DeviceTypeStats    []labelCount
-	ConnectionStats    []labelCount
-	StatusStats        []labelCount
-	SuiteCards         []suiteCard
-	OverviewText       string
-	CurrentStateItems  []string
-	RoadmapItems       []string
-	PrimaryAction      *pageAction
-	SecondaryAction    *pageAction
-	ModuleImageURL     string
-	DiffAPI            string
+	Title                 string
+	AppName               string
+	ActiveNav             string
+	ActiveSection         string
+	SuiteModules          []suiteModule
+	ModuleNav             []moduleNavItem
+	BasePath              string
+	DBPath                string
+	DataDir               string
+	BodyClass             string
+	HeroNote              string
+	Notice                string
+	Project               *storage.ProjectSummary
+	Projects              []storage.ProjectSummary
+	CurrentProject        *storage.ProjectSummary
+	ProjectSwitchPath     string
+	ProjectForm           projectFormData
+	Settings              storage.AppSettings
+	PreflightChecks       []preflightCheck
+	PreflightHealthy      bool
+	PreflightState        string
+	ScanForm              scanFormData
+	RecentRuns            []storage.RunSummary
+	CompareBaselineRunID  string
+	CompareCandidateRunID string
+	RecentRunItems        []runListItem
+	Runs                  []storage.RunSummary
+	RunItems              []runListItem
+	Run                   *storage.RunDetails
+	RunReevaluateURL      string
+	Assets                []storage.AssetSummary
+	Asset                 *storage.AssetDetails
+	AssetReevaluateURL    string
+	PortSections          []portSection
+	AssetGroups           []assetGroup
+	Hosts                 []hostSummary
+	RunStatus             statusInfo
+	ScheduledScans        []storage.ScheduledScan
+	WarningDetails        []warningDetail
+	HelpLink              string
+	Stats                 dashboardStats
+	DashboardCharts       []dashboardChart
+	DeviceTypeStats       []labelCount
+	ConnectionStats       []labelCount
+	StatusStats           []labelCount
+	SuiteCards            []suiteCard
+	OverviewText          string
+	CurrentStateItems     []string
+	RoadmapItems          []string
+	PrimaryAction         *pageAction
+	SecondaryAction       *pageAction
+	ModuleImageURL        string
+	DiffAPI               string
 }
 
 type dashboardStats struct {
@@ -136,8 +138,6 @@ type labelCount struct {
 
 type dashboardChart struct {
 	Title        string
-	Subtitle     string
-	TotalLabel   string
 	TotalValue   int
 	Style        string
 	Segments     []dashboardChartSegment
@@ -221,6 +221,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/", s.handleDashboard)
 	s.mux.HandleFunc("/inventory", s.handleInventory)
 	s.mux.HandleFunc("/discovery/assets", s.handleDiscoveryAssets)
+	s.mux.HandleFunc("/discovery/compare", s.handleDiscoveryCompare)
 	s.mux.HandleFunc("/discovery", s.handleDiscovery)
 	s.mux.HandleFunc("/security", s.handleSecurity)
 	s.mux.HandleFunc("/workbench", s.handleWorkbench)
@@ -303,7 +304,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 			EvidenceCount: countEvidence(runs),
 			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
 		},
-		DashboardCharts: buildDashboardCharts(projectAssets, runs),
+		DashboardCharts: buildDashboardCharts(projectAssets),
 		Settings:        appSettings,
 	}
 	s.render(w, "dashboard.html", data)
@@ -412,6 +413,61 @@ func (s *Server) handleDiscoveryAssets(w http.ResponseWriter, r *http.Request) {
 		Settings:          appSettings,
 	}
 	s.render(w, "assets.html", data)
+}
+
+func (s *Server) handleDiscoveryCompare(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/discovery/compare" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	runs, err := s.repo.ListRuns(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	baselineRunID := strings.TrimSpace(r.URL.Query().Get("baseline_run"))
+	candidateRunID := strings.TrimSpace(r.URL.Query().Get("candidate_run"))
+	if baselineRunID == "" && len(runs) >= 2 {
+		baselineRunID = runs[1].ID
+	}
+	if candidateRunID == "" && len(runs) >= 1 {
+		candidateRunID = runs[0].ID
+	}
+
+	data := pageData{
+		Title:                 "Compare Runs",
+		AppName:               s.options.AppName,
+		ActiveNav:             "discovery",
+		ActiveSection:         "discovery-compare",
+		BasePath:              s.options.BasePath,
+		DBPath:                s.options.DBPath,
+		DataDir:               s.options.DataDir,
+		HeroNote:              "Left-versus-right discovery run comparison",
+		Notice:                noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:              projects,
+		CurrentProject:        currentProject,
+		ProjectSwitchPath:     "/discovery/compare",
+		Project:               currentProject,
+		Runs:                  runs,
+		DiffAPI:               "/api/diff",
+		CompareBaselineRunID:  baselineRunID,
+		CompareCandidateRunID: candidateRunID,
+		Settings:              appSettings,
+	}
+	s.render(w, "compare.html", data)
 }
 
 func (s *Server) handleProjectsIndex(w http.ResponseWriter, r *http.Request) {
@@ -1620,40 +1676,32 @@ func countRunStatuses(runs []storage.RunSummary) []labelCount {
 	return mapToLabelCounts(counts)
 }
 
-func buildDashboardCharts(projectAssets []storage.AssetSummary, runs []storage.RunSummary) []dashboardChart {
+func buildDashboardCharts(projectAssets []storage.AssetSummary) []dashboardChart {
 	return []dashboardChart{
 		buildDashboardChart(
 			"Assets",
-			"Inventory grouped by current classification",
-			"assets",
 			countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveDeviceType }),
 			"No assets are available for this project yet.",
 		),
 		buildDashboardChart(
 			"Ports",
-			"All currently observed open ports across the shared inventory",
-			"port observations",
 			countPortUsage(projectAssets),
 			"No open ports have been stored yet.",
 		),
 		buildDashboardChart(
 			"Operating Systems",
-			"Detected platform families based on the latest asset observations",
-			"platform signals",
 			countOSFamilies(projectAssets),
 			"No operating system data has been stored yet.",
 		),
 		buildDashboardChart(
 			"Connections",
-			"Current connection assumptions across shared assets",
-			"connection hints",
 			countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveConnectionType }),
 			"No connection type data is available yet.",
 		),
 	}
 }
 
-func buildDashboardChart(title string, subtitle string, totalLabel string, counts []labelCount, emptyMessage string) dashboardChart {
+func buildDashboardChart(title string, counts []labelCount, emptyMessage string) dashboardChart {
 	normalized := normalizeChartCounts(counts, 6)
 	total := 0
 	for _, entry := range normalized {
@@ -1663,8 +1711,6 @@ func buildDashboardChart(title string, subtitle string, totalLabel string, count
 	if total == 0 {
 		return dashboardChart{
 			Title:        title,
-			Subtitle:     subtitle,
-			TotalLabel:   totalLabel,
 			EmptyMessage: emptyMessage,
 		}
 	}
@@ -1689,8 +1735,6 @@ func buildDashboardChart(title string, subtitle string, totalLabel string, count
 
 	return dashboardChart{
 		Title:      title,
-		Subtitle:   subtitle,
-		TotalLabel: totalLabel,
 		TotalValue: total,
 		Style:      "conic-gradient(" + strings.Join(gradientParts, ", ") + ")",
 		Segments:   segments,
