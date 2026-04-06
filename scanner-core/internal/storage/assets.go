@@ -98,6 +98,12 @@ type observedAsset struct {
 	ConnectionTypeConfidence string
 }
 
+type scoredClassification struct {
+	label  string
+	score  int
+	margin int
+}
+
 func (r *SQLiteRepository) ListAssets(ctx context.Context, projectRef string) ([]AssetSummary, error) {
 	assets, err := r.queryAssets(ctx, projectRef)
 	if err != nil {
@@ -691,42 +697,150 @@ func inferDeviceType(item observedAsset) (string, string) {
 		item.Vendor,
 		item.Product,
 	}, " "))
-	osSignal := strings.ToLower(strings.TrimSpace(item.OSName))
+	classification := scoreDeviceType(item, joined)
+	if classification.label == "" || classification.score < 4 {
+		return "unknown", string(evidence.ConfidenceAmbiguous)
+	}
+	return classification.label, scoreToConfidence(classification.score, classification.margin)
+}
 
+func inferConnectionType(item observedAsset) (string, string) {
+	classification := scoreConnectionType(item)
+	if classification.label == "" || classification.score < 3 {
+		return "unknown", string(evidence.ConfidenceAmbiguous)
+	}
+	return classification.label, scoreToConfidence(classification.score, classification.margin)
+}
+
+func scoreDeviceType(item observedAsset, joined string) scoredClassification {
+	scores := map[string]int{
+		"smartphone":  0,
+		"tablet":      0,
+		"workstation": 0,
+		"printer":     0,
+		"iot":         0,
+		"router":      0,
+		"server":      0,
+	}
+	osSignal := strings.ToLower(strings.TrimSpace(item.OSName))
+	hasPort := func(port int) bool {
+		return slices.Contains(item.OpenPorts, port)
+	}
+	hasPorts := func(ports ...int) bool {
+		for _, port := range ports {
+			if !hasPort(port) {
+				return false
+			}
+		}
+		return true
+	}
+	add := func(label string, points int, condition bool) {
+		if condition {
+			scores[label] += points
+		}
+	}
+
+	add("smartphone", 8, containsAny(joined, "iphone", "android", "pixel", "galaxy", "smartphone", "mobile"))
+	add("smartphone", 3, containsAny(joined, "samsung", "oneplus", "xiaomi"))
+
+	add("tablet", 8, containsAny(joined, "ipad", "tablet"))
+	add("tablet", 3, containsAny(joined, "tab s", "kindle"))
+
+	add("workstation", 9, containsAny(osSignal, "windows", "macos", "os x"))
+	add("workstation", 5, containsAny(joined, "laptop", "desktop", "workstation", "surface", "thinkpad", "macbook", "imac"))
+	add("workstation", 3, hasPort(3389) || hasPort(5900) || hasPort(445) || hasPort(139))
+
+	add("printer", 8, containsAny(joined, "printer", "epson", "brother", "hp laser", "laserjet", "xerox", "canon"))
+	add("printer", 9, hasPort(631) || hasPort(9100) || hasPort(515))
+
+	add("iot", 6, containsAny(joined, "camera", "chromecast", "sonos", "smart tv", "alexa", "echo", "nest", "iot", "roku", "ring"))
+	add("iot", 4, hasPort(554) || hasPort(8008) || hasPort(8009))
+
+	add("router", 7, containsAny(joined, "fritz", "router", "gateway", "access point", "mikrotik", "ubiquiti", "opnsense", "pfsense", "tp-link"))
+	add("router", 6, containsAny(joined, "avm", "cisco", "juniper", "meraki"))
+	add("router", 6, hasPorts(53, 80, 443))
+	add("router", 3, hasPort(67) || hasPort(68) || hasPort(123))
+	add("router", -6, containsAny(osSignal, "windows", "macos", "os x"))
+
+	add("server", 8, containsAny(osSignal, "ubuntu", "debian", "linux", "centos", "fedora", "red hat", "unix", "freebsd", "openbsd"))
+	add("server", 6, containsAny(joined, "server", "nas", "synology", "qnap", "proxmox", "docker"))
+	add("server", 5, hasPort(22) || hasPort(25))
+	add("server", 4, hasPort(3306) || hasPort(5432) || hasPort(6379) || hasPort(8080))
+
+	return bestClassification(scores)
+}
+
+func scoreConnectionType(item observedAsset) scoredClassification {
+	scores := map[string]int{"wifi": 0, "wired": 0}
+	deviceType, _ := inferDeviceType(item)
+	joined := strings.ToLower(strings.Join([]string{item.Hostname, item.OSName, item.Vendor, item.Product}, " "))
 	hasPort := func(port int) bool {
 		return slices.Contains(item.OpenPorts, port)
 	}
 
+	switch deviceType {
+	case "smartphone", "tablet":
+		scores["wifi"] += 8
+	case "iot":
+		scores["wifi"] += 5
+		scores["wired"] += 2
+	case "router", "server", "printer":
+		scores["wired"] += 7
+	case "workstation":
+		scores["wired"] += 4
+	}
+
+	if containsAny(joined, "wifi", "wlan", "wireless") {
+		scores["wifi"] += 4
+	}
+	if containsAny(joined, "ethernet", "lan", "docking") {
+		scores["wired"] += 4
+	}
+	if hasPort(53) || hasPort(67) || hasPort(68) || hasPort(22) {
+		scores["wired"] += 2
+	}
+
+	return bestClassification(scores)
+}
+
+func bestClassification(scores map[string]int) scoredClassification {
+	var topLabel string
+	topScore := -1
+	secondScore := -1
+	for label, score := range scores {
+		if score > topScore || (score == topScore && label < topLabel) {
+			secondScore = topScore
+			topScore = score
+			topLabel = label
+			continue
+		}
+		if score > secondScore {
+			secondScore = score
+		}
+	}
+	if topScore < 0 {
+		return scoredClassification{}
+	}
+	margin := topScore - greatestInt(secondScore, 0)
+	return scoredClassification{label: topLabel, score: topScore, margin: margin}
+}
+
+func scoreToConfidence(score int, margin int) string {
 	switch {
-	case containsAny(joined, "iphone", "android", "pixel", "galaxy", "smartphone", "mobile"):
-		return "smartphone", string(evidence.ConfidenceProbable)
-	case containsAny(joined, "ipad", "tablet"):
-		return "tablet", string(evidence.ConfidenceProbable)
-	case containsAny(osSignal, "windows", "macos", "os x") || containsAny(joined, "laptop", "desktop", "workstation", "surface", "thinkpad", "macbook", "imac"):
-		return "workstation", string(evidence.ConfidenceConfirmed)
-	case containsAny(joined, "printer", "epson", "brother", "hp laser", "laserjet") || hasPort(631) || hasPort(9100) || hasPort(515):
-		return "printer", string(evidence.ConfidenceProbable)
-	case containsAny(joined, "camera", "chromecast", "sonos", "smart tv", "alexa", "echo", "nest", "iot", "roku"):
-		return "iot", string(evidence.ConfidenceProbable)
-	case containsAny(joined, "fritz", "router", "gateway", "access point") || (hasPort(53) && hasPort(80) && hasPort(443) && !containsAny(osSignal, "windows", "macos", "os x")):
-		return "router", string(evidence.ConfidenceConfirmed)
-	case containsAny(osSignal, "ubuntu", "debian", "linux", "centos", "fedora", "red hat", "unix") || containsAny(joined, "server", "nas") || hasPort(22) || hasPort(25):
-		return "server", string(evidence.ConfidenceProbable)
+	case score >= 9 && margin >= 4:
+		return string(evidence.ConfidenceConfirmed)
+	case score >= 6 && margin >= 2:
+		return string(evidence.ConfidenceProbable)
 	default:
-		return "unknown", string(evidence.ConfidenceAmbiguous)
+		return string(evidence.ConfidenceAmbiguous)
 	}
 }
 
-func inferConnectionType(item observedAsset) (string, string) {
-	deviceType, _ := inferDeviceType(item)
-	switch deviceType {
-	case "smartphone", "tablet":
-		return "wifi", string(evidence.ConfidenceProbable)
-	case "server", "router", "printer":
-		return "wired", string(evidence.ConfidenceProbable)
-	default:
-		return "unknown", string(evidence.ConfidenceAmbiguous)
+func greatestInt(a int, b int) int {
+	if a > b {
+		return a
 	}
+	return b
 }
 
 func normalizeAssetTarget(target string) string {

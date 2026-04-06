@@ -99,6 +99,7 @@ func buildModuleNav(activeNav string, activeSection string, currentProject *stor
 	case "inventory":
 		candidates = []candidate{
 			{section: "inventory-overview", label: "Overview", url: "/inventory"},
+			{section: "inventory-network", label: "Netzwerkansicht", url: "/inventory/network"},
 		}
 	case "security":
 		candidates = []candidate{

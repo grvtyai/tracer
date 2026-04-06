@@ -33,3 +33,33 @@ func TestInferDeviceTypeStillDetectsRouterFromNetworkSignals(t *testing.T) {
 		t.Fatalf("expected confidence to be set")
 	}
 }
+
+func TestInferDeviceTypeDetectsPrinterFromPorts(t *testing.T) {
+	item := observedAsset{
+		Hostname:  "office-printer",
+		OpenPorts: []int{631, 9100},
+	}
+
+	deviceType, confidence := inferDeviceType(item)
+	if deviceType != "printer" {
+		t.Fatalf("expected printer, got %q", deviceType)
+	}
+	if confidence != "probable" && confidence != "confirmed" {
+		t.Fatalf("expected stronger confidence, got %q", confidence)
+	}
+}
+
+func TestInferConnectionTypePrefersWifiForPhones(t *testing.T) {
+	item := observedAsset{
+		Hostname: "pixel-8",
+		OSName:   "Android 15",
+	}
+
+	connectionType, confidence := inferConnectionType(item)
+	if connectionType != "wifi" {
+		t.Fatalf("expected wifi, got %q", connectionType)
+	}
+	if confidence == "" {
+		t.Fatalf("expected confidence to be set")
+	}
+}

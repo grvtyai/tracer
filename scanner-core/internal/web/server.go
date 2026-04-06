@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"math"
 	"net/http"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"sort"
@@ -38,6 +39,7 @@ type Server struct {
 type pageData struct {
 	Title                 string
 	AppName               string
+	BrandLogoURL          string
 	ActiveNav             string
 	ActiveSection         string
 	SuiteModules          []suiteModule
@@ -78,6 +80,7 @@ type pageData struct {
 	HelpLink              string
 	Stats                 dashboardStats
 	DashboardCharts       []dashboardChart
+	InventoryNetworkAPI   string
 	DeviceTypeStats       []labelCount
 	ConnectionStats       []labelCount
 	StatusStats           []labelCount
@@ -154,6 +157,34 @@ type dashboardChartSegment struct {
 	Tooltip      string
 }
 
+type inventoryNetworkData struct {
+	RootLabel string                  `json:"root_label"`
+	Networks  []inventoryNetworkGroup `json:"networks"`
+}
+
+type inventoryNetworkGroup struct {
+	ID        string                 `json:"id"`
+	Label     string                 `json:"label"`
+	HostCount int                    `json:"host_count"`
+	Hosts     []inventoryNetworkHost `json:"hosts"`
+}
+
+type inventoryNetworkHost struct {
+	ID               string   `json:"id"`
+	AssetID          string   `json:"asset_id"`
+	DisplayName      string   `json:"display_name"`
+	Target           string   `json:"target"`
+	DeviceType       string   `json:"device_type"`
+	ConnectionType   string   `json:"connection_type"`
+	CurrentOS        string   `json:"current_os,omitempty"`
+	CurrentVendor    string   `json:"current_vendor,omitempty"`
+	CurrentProduct   string   `json:"current_product,omitempty"`
+	OpenPorts        []int    `json:"open_ports,omitempty"`
+	ObservationCount int      `json:"observation_count"`
+	Tags             []string `json:"tags,omitempty"`
+	Status           string   `json:"status"`
+}
+
 type statusInfo struct {
 	Label   string
 	Class   string
@@ -223,12 +254,14 @@ func (s *Server) routes() {
 
 	s.mux.HandleFunc("/", s.handleDashboard)
 	s.mux.HandleFunc("/inventory", s.handleInventory)
+	s.mux.HandleFunc("/inventory/network", s.handleInventoryNetwork)
 	s.mux.HandleFunc("/discovery/assets", s.handleDiscoveryAssets)
 	s.mux.HandleFunc("/discovery/compare", s.handleDiscoveryCompare)
 	s.mux.HandleFunc("/discovery", s.handleDiscovery)
 	s.mux.HandleFunc("/security", s.handleSecurity)
 	s.mux.HandleFunc("/workbench", s.handleWorkbench)
 	s.mux.HandleFunc("/automation", s.handleAutomation)
+	s.mux.HandleFunc("/brand-logo", s.handleBrandLogo)
 	s.mux.HandleFunc("/module-illustration", s.handleModuleIllustration)
 	s.mux.HandleFunc("/projects", s.handleProjectsIndex)
 	s.mux.HandleFunc("/projects/new", s.handleProjectNew)
@@ -249,6 +282,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/api/projects", s.handleProjectsAPI)
 	s.mux.HandleFunc("/api/projects/", s.handleProjectRunsAPI)
 	s.mux.HandleFunc("/api/assets", s.handleAssetsAPI)
+	s.mux.HandleFunc("/api/inventory/network", s.handleInventoryNetworkAPI)
 	s.mux.HandleFunc("/api/assets/", s.handleAssetAPI)
 	s.mux.HandleFunc("/api/runs/", s.handleRunAPI)
 	s.mux.HandleFunc("/api/diff", s.handleDiffAPI)
@@ -757,6 +791,43 @@ func (s *Server) handleInventory(w http.ResponseWriter, r *http.Request) {
 	s.renderInventory(w, r, "/inventory")
 }
 
+func (s *Server) handleInventoryNetwork(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/inventory/network" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	data := pageData{
+		Title:               "Netzwerkansicht",
+		AppName:             s.options.AppName,
+		ActiveNav:           "inventory",
+		ActiveSection:       "inventory-network",
+		BasePath:            s.options.BasePath,
+		DBPath:              s.options.DBPath,
+		DataDir:             s.options.DataDir,
+		HeroNote:            "Interactive network topology built from the shared inventory",
+		Notice:              noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:            projects,
+		CurrentProject:      currentProject,
+		ProjectSwitchPath:   "/inventory/network",
+		Project:             currentProject,
+		InventoryNetworkAPI: buildProjectPath("/api/inventory/network", currentProject),
+		Settings:            appSettings,
+	}
+	s.render(w, "inventory_network.html", data)
+}
+
 func (s *Server) handleAssets(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/assets" {
 		http.NotFound(w, r)
@@ -803,6 +874,38 @@ func (s *Server) renderInventory(w http.ResponseWriter, r *http.Request, switchP
 		Settings:          appSettings,
 	}
 	s.render(w, "assets.html", data)
+}
+
+func (s *Server) handleInventoryNetworkAPI(w http.ResponseWriter, r *http.Request) {
+	projectRef := strings.TrimSpace(r.URL.Query().Get("project"))
+	if projectRef == "" {
+		_, currentProject, _, err := s.loadShellContext(r.Context(), "")
+		if err != nil {
+			s.writeError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if currentProject != nil {
+			projectRef = currentProject.ID
+		}
+	}
+	if projectRef == "" {
+		s.writeJSON(w, http.StatusOK, inventoryNetworkData{})
+		return
+	}
+
+	projectAssets, err := s.repo.ListAssets(r.Context(), projectRef)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	project, err := s.repo.GetProject(r.Context(), projectRef)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	s.writeJSON(w, http.StatusOK, buildInventoryNetworkData(project, projectAssets))
 }
 
 func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
@@ -1302,6 +1405,9 @@ func (s *Server) render(w http.ResponseWriter, name string, data pageData) {
 	if data.ModuleNav == nil {
 		data.ModuleNav = buildModuleNav(data.ActiveNav, data.ActiveSection, data.CurrentProject)
 	}
+	if strings.TrimSpace(data.BrandLogoURL) == "" {
+		data.BrandLogoURL = "/brand-logo"
+	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	templates, err := template.ParseFS(assets, "templates/base.html", "templates/"+name)
@@ -1361,7 +1467,7 @@ func (s *Server) renderSuitePlaceholder(w http.ResponseWriter, r *http.Request, 
 }
 
 func (s *Server) handleModuleIllustration(w http.ResponseWriter, r *http.Request) {
-	imagePath, err := resolveModuleIllustrationPath()
+	imagePath, err := resolveAssetPicturePath("404_Image.png")
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -1369,22 +1475,31 @@ func (s *Server) handleModuleIllustration(w http.ResponseWriter, r *http.Request
 	http.ServeFile(w, r, imagePath)
 }
 
-func resolveModuleIllustrationPath() (string, error) {
+func (s *Server) handleBrandLogo(w http.ResponseWriter, r *http.Request) {
+	logoPath, err := resolveAssetPicturePath("logo.png")
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	http.ServeFile(w, r, logoPath)
+}
+
+func resolveAssetPicturePath(fileName string) (string, error) {
 	candidates := []string{}
 
 	if executable, err := os.Executable(); err == nil {
 		execDir := filepath.Dir(executable)
 		candidates = append(candidates,
-			filepath.Join(execDir, "..", "..", "assets", "pictures", "404_Image.png"),
-			filepath.Join(execDir, "..", "assets", "pictures", "404_Image.png"),
-			filepath.Join(execDir, "assets", "pictures", "404_Image.png"),
+			filepath.Join(execDir, "..", "..", "assets", "pictures", fileName),
+			filepath.Join(execDir, "..", "assets", "pictures", fileName),
+			filepath.Join(execDir, "assets", "pictures", fileName),
 		)
 	}
 
 	if cwd, err := os.Getwd(); err == nil {
 		candidates = append(candidates,
-			filepath.Join(cwd, "assets", "pictures", "404_Image.png"),
-			filepath.Join(cwd, "..", "assets", "pictures", "404_Image.png"),
+			filepath.Join(cwd, "assets", "pictures", fileName),
+			filepath.Join(cwd, "..", "assets", "pictures", fileName),
 		)
 	}
 
@@ -1395,7 +1510,7 @@ func resolveModuleIllustrationPath() (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("module illustration not found")
+	return "", fmt.Errorf("asset picture %q not found", fileName)
 }
 
 func (s *Server) writeJSON(w http.ResponseWriter, status int, value any) {
@@ -1636,6 +1751,122 @@ func groupAssets(projectAssets []storage.AssetSummary) []assetGroup {
 		groups = append(groups, group)
 	}
 	return groups
+}
+
+func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []storage.AssetSummary) inventoryNetworkData {
+	type pendingHost struct {
+		groupKey string
+		host     inventoryNetworkHost
+	}
+
+	hosts := make([]pendingHost, 0, len(projectAssets))
+	subnet24Counts := make(map[string]int)
+	subnet16Counts := make(map[string]int)
+
+	for _, asset := range projectAssets {
+		addr, ok := parseIPv4AssetTarget(asset.PrimaryTarget)
+		if !ok {
+			continue
+		}
+		octets := addr.As4()
+
+		group24 := fmt.Sprintf("%d.%d.%d", octets[0], octets[1], octets[2])
+		group16 := fmt.Sprintf("%d.%d", octets[0], octets[1])
+		subnet24Counts[group24]++
+		subnet16Counts[group16]++
+
+		hosts = append(hosts, pendingHost{
+			groupKey: group24,
+			host: inventoryNetworkHost{
+				ID:               addr.String(),
+				AssetID:          asset.ID,
+				DisplayName:      asset.DisplayName,
+				Target:           addr.String(),
+				DeviceType:       asset.EffectiveDeviceType,
+				ConnectionType:   asset.EffectiveConnectionType,
+				CurrentOS:        asset.CurrentOS,
+				CurrentVendor:    asset.CurrentVendor,
+				CurrentProduct:   asset.CurrentProduct,
+				OpenPorts:        asset.CurrentOpenPorts,
+				ObservationCount: asset.ObservationCount,
+				Tags:             asset.Tags,
+				Status:           inventoryHostStatus(asset),
+			},
+		})
+	}
+
+	grouped := make(map[string]*inventoryNetworkGroup)
+	for _, item := range hosts {
+		addr := netip.MustParseAddr(item.host.Target)
+		label, groupID := inventoryNetworkLabel(addr, subnet24Counts, subnet16Counts)
+		group, ok := grouped[groupID]
+		if !ok {
+			group = &inventoryNetworkGroup{ID: groupID, Label: label, Hosts: make([]inventoryNetworkHost, 0)}
+			grouped[groupID] = group
+		}
+		group.Hosts = append(group.Hosts, item.host)
+	}
+
+	keys := make([]string, 0, len(grouped))
+	for key := range grouped {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	out := inventoryNetworkData{
+		RootLabel: firstNonEmptyWeb(strings.TrimSpace(project.PublicID), strings.TrimSpace(project.Name), "Startrace"),
+		Networks:  make([]inventoryNetworkGroup, 0, len(keys)),
+	}
+	for _, key := range keys {
+		group := grouped[key]
+		sort.Slice(group.Hosts, func(i, j int) bool {
+			return group.Hosts[i].Target < group.Hosts[j].Target
+		})
+		group.HostCount = len(group.Hosts)
+		out.Networks = append(out.Networks, *group)
+	}
+	return out
+}
+
+func parseIPv4AssetTarget(target string) (netip.Addr, bool) {
+	trimmed := strings.TrimSpace(target)
+	if trimmed == "" {
+		return netip.Addr{}, false
+	}
+	addr, err := netip.ParseAddr(trimmed)
+	if err != nil || !addr.Is4() {
+		return netip.Addr{}, false
+	}
+	return addr, true
+}
+
+func inventoryNetworkLabel(addr netip.Addr, subnet24Counts map[string]int, subnet16Counts map[string]int) (string, string) {
+	octets := addr.As4()
+	key24 := fmt.Sprintf("%d.%d.%d", octets[0], octets[1], octets[2])
+	key16 := fmt.Sprintf("%d.%d", octets[0], octets[1])
+
+	if subnet24Counts[key24] > 1 {
+		label := fmt.Sprintf("%s.0/24", key24)
+		return label, "net_" + strings.ReplaceAll(key24, ".", "_")
+	}
+	if subnet16Counts[key16] > 1 {
+		label := fmt.Sprintf("%s.0.0/16", key16)
+		return label, "net_" + strings.ReplaceAll(key16, ".", "_")
+	}
+
+	label := addr.String() + "/32"
+	return label, "host_" + strings.ReplaceAll(addr.String(), ".", "_")
+}
+
+func inventoryHostStatus(asset storage.AssetSummary) string {
+	switch {
+	case len(asset.CurrentOpenPorts) > 0:
+		return "online"
+	case asset.ObservationCount > 0:
+		return "observed"
+	default:
+		return "unknown"
+	}
 }
 
 func countAssetProperty(projectAssets []storage.AssetSummary, selector func(storage.AssetSummary) string) []labelCount {

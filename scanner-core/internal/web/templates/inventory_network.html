@@ -1,0 +1,453 @@
+{{define "inventory_network.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel">
+    <div class="panel-head">
+        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Netzwerkansicht</h2>
+        <div class="hero-actions compact-actions">
+            <button class="button button-secondary" id="network-fit-btn" type="button">Fit View</button>
+            <span class="pill" id="network-status-pill">Lade Netzwerkdaten</span>
+        </div>
+    </div>
+    <p class="empty-note">
+        Interaktive Netzwerkansicht des Shared Inventory. Klick auf einen Host hebt den Pfad durch das Netz hervor.
+    </p>
+</section>
+
+<section class="inventory-network-layout">
+    <article class="panel inventory-network-explorer-panel">
+        <div class="panel-head">
+            <h2>Hosts und Netze</h2>
+            <span class="pill subtle" id="network-host-count">0 Hosts</span>
+        </div>
+        <div id="inventory-network-sidebar" class="inventory-network-sidebar">
+            <div class="empty-note">Netzwerkdaten werden geladen.</div>
+        </div>
+    </article>
+
+    <article class="panel inventory-network-graph-panel">
+        <div class="panel-head">
+            <h2>Graph</h2>
+            <span class="pill subtle">Zoombar aktiv</span>
+        </div>
+        <div id="inventory-network-canvas" class="inventory-network-canvas"></div>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Host Details</h2>
+        <span class="pill subtle" id="selected-host-pill">Keine Auswahl</span>
+    </div>
+    <div id="inventory-network-details">
+        <p class="empty-note">Wähle einen Host im Graphen oder in der Seitenleiste aus, um Details und Pfad zu sehen.</p>
+    </div>
+</section>
+
+<script>
+(() => {
+    const networkApi = {{printf "%q" .InventoryNetworkAPI}};
+    const VIS_NETWORK_URL = "https://unpkg.com/vis-network/standalone/umd/vis-network.min.js";
+    const statusPill = document.getElementById("network-status-pill");
+    const hostCountPill = document.getElementById("network-host-count");
+    const selectedHostPill = document.getElementById("selected-host-pill");
+    const sidebar = document.getElementById("inventory-network-sidebar");
+    const details = document.getElementById("inventory-network-details");
+    const fitBtn = document.getElementById("network-fit-btn");
+    const canvasId = "inventory-network-canvas";
+
+    let networkData = null;
+    let hostMap = {};
+    let selectedHost = null;
+    let visNetwork = null;
+    let visNodes = null;
+    let visEdges = null;
+    let networkByHost = {};
+    let visLoadPromise = null;
+
+    function ensureVisNetworkLoaded(timeoutMs = 3200) {
+        if (typeof vis !== "undefined") {
+            return Promise.resolve(true);
+        }
+        if (visLoadPromise) {
+            return visLoadPromise;
+        }
+
+        visLoadPromise = new Promise((resolve) => {
+            const existingScript = document.querySelector(`script[src="${VIS_NETWORK_URL}"]`);
+            if (existingScript) {
+                existingScript.addEventListener("load", () => resolve(typeof vis !== "undefined"), { once: true });
+                existingScript.addEventListener("error", () => resolve(false), { once: true });
+                window.setTimeout(() => resolve(typeof vis !== "undefined"), timeoutMs);
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.src = VIS_NETWORK_URL;
+            script.async = true;
+            script.onload = () => resolve(typeof vis !== "undefined");
+            script.onerror = () => resolve(false);
+            document.head.appendChild(script);
+
+            window.setTimeout(() => resolve(typeof vis !== "undefined"), timeoutMs);
+        }).finally(() => {
+            visLoadPromise = null;
+        });
+
+        return visLoadPromise;
+    }
+
+    function getHostBadge(status) {
+        if (status === "online") return '<span class="pill status-success">ONLINE</span>';
+        if (status === "observed") return '<span class="pill status-warning">OBSERVED</span>';
+        return '<span class="pill subtle">UNKNOWN</span>';
+    }
+
+    function hostColor(host) {
+        switch ((host.device_type || "").toLowerCase()) {
+            case "router":
+                return { background: "#ffad5c", border: "#ffd3a3" };
+            case "server":
+                return { background: "#67a2ff", border: "#9dc7ff" };
+            case "workstation":
+                return { background: "#37e3ff", border: "#9af4ff" };
+            case "printer":
+                return { background: "#b47dff", border: "#dcc2ff" };
+            case "smartphone":
+            case "tablet":
+                return { background: "#3fdc7a", border: "#9df2bb" };
+            case "iot":
+                return { background: "#ff6b6b", border: "#ffb0b0" };
+            default:
+                return { background: "#51627f", border: "#95a7c5" };
+        }
+    }
+
+    function renderSidebar() {
+        if (!networkData || !Array.isArray(networkData.networks) || networkData.networks.length === 0) {
+            sidebar.innerHTML = '<div class="empty-note">Keine IPv4-Hosts im Inventory gefunden.</div>';
+            return;
+        }
+
+        sidebar.innerHTML = "";
+        networkData.networks.forEach((group) => {
+            const groupEl = document.createElement("div");
+            groupEl.className = "inventory-network-group";
+
+            const header = document.createElement("div");
+            header.className = "inventory-network-group-header";
+            header.innerHTML = `
+                <div>
+                    <div class="list-title">${group.label}</div>
+                    <div class="list-meta">${group.host_count} Host${group.host_count === 1 ? "" : "s"}</div>
+                </div>
+                <span class="pill subtle">${group.host_count}</span>
+            `;
+
+            const hostList = document.createElement("div");
+            hostList.className = "inventory-network-host-list";
+
+            group.hosts.forEach((host) => {
+                const item = document.createElement("button");
+                item.type = "button";
+                item.className = "inventory-network-host-item";
+                if (selectedHost && selectedHost.id === host.id) {
+                    item.classList.add("active");
+                }
+                item.innerHTML = `
+                    <div class="inventory-network-host-top">
+                        <div class="list-title">${host.target}</div>
+                        ${getHostBadge(host.status)}
+                    </div>
+                    <div class="list-meta">${host.display_name} | ${host.device_type || "unknown"} | ${host.open_ports?.length || 0} ports</div>
+                `;
+                item.addEventListener("click", () => selectHost(host));
+                hostList.appendChild(item);
+            });
+
+            groupEl.appendChild(header);
+            groupEl.appendChild(hostList);
+            sidebar.appendChild(groupEl);
+        });
+    }
+
+    function renderDetails(host) {
+        if (!host) {
+            details.innerHTML = '<p class="empty-note">Wähle einen Host im Graphen oder in der Seitenleiste aus, um Details und Pfad zu sehen.</p>';
+            selectedHostPill.textContent = "Keine Auswahl";
+            return;
+        }
+
+        const ports = Array.isArray(host.open_ports) && host.open_ports.length
+            ? host.open_ports.map((port) => `<span class="tag">${port}/tcp</span>`).join("")
+            : '<span class="empty-note">Keine offenen Ports gespeichert.</span>';
+        const tags = Array.isArray(host.tags) && host.tags.length
+            ? host.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")
+            : '<span class="empty-note">Keine Tags gesetzt.</span>';
+
+        selectedHostPill.textContent = host.target;
+        details.innerHTML = `
+            <div class="inventory-network-detail-grid">
+                <article class="panel inventory-network-detail-card">
+                    <div class="panel-head">
+                        <h2>${host.display_name}</h2>
+                        ${getHostBadge(host.status)}
+                    </div>
+                    <div class="kv-grid">
+                        <div class="kv-key">Target</div>
+                        <div class="kv-value mono">${host.target}</div>
+                        <div class="kv-key">Device Type</div>
+                        <div class="kv-value">${host.device_type || "unknown"}</div>
+                        <div class="kv-key">Connection</div>
+                        <div class="kv-value">${host.connection_type || "unknown"}</div>
+                        <div class="kv-key">Operating System</div>
+                        <div class="kv-value">${host.current_os || "-"}</div>
+                        <div class="kv-key">Vendor / Product</div>
+                        <div class="kv-value">${[host.current_vendor, host.current_product].filter(Boolean).join(" / ") || "-"}</div>
+                        <div class="kv-key">Observations</div>
+                        <div class="kv-value">${host.observation_count || 0}</div>
+                    </div>
+                </article>
+                <article class="panel inventory-network-detail-card">
+                    <div class="panel-head">
+                        <h2>Connections</h2>
+                        <span class="pill subtle">${(host.open_ports || []).length} ports</span>
+                    </div>
+                    <div class="tag-row">${ports}</div>
+                    <div class="panel-head compact-head">
+                        <h2>Tags</h2>
+                    </div>
+                    <div class="tag-row">${tags}</div>
+                </article>
+            </div>
+        `;
+    }
+
+    function baseNodeState(nodeId) {
+        if (nodeId === "suite-root") {
+            return {
+                color: { background: "#ffad5c", border: "#ffd3a3", highlight: { background: "#ffb96d", border: "#ffffff" } },
+                shadow: { enabled: true, color: "rgba(255,173,92,0.35)", size: 18 }
+            };
+        }
+        if (networkData.networks.some((group) => group.id === nodeId)) {
+            return {
+                color: { background: "#1c335a", border: "#67a2ff", highlight: { background: "#244675", border: "#9ed8ff" } },
+                shadow: { enabled: true, color: "rgba(103,162,255,0.22)", size: 14 }
+            };
+        }
+        const host = hostMap[nodeId];
+        const palette = hostColor(host || {});
+        return {
+            color: { background: palette.background, border: palette.border, highlight: { background: "#37e3ff", border: "#ffffff" } },
+            shadow: { enabled: true, color: palette.background + "66", size: 14 }
+        };
+    }
+
+    function resetGraphColors() {
+        if (!visNodes || !visEdges) {
+            return;
+        }
+        visNodes.forEach((node) => {
+            visNodes.update({ id: node.id, ...baseNodeState(node.id) });
+        });
+        visEdges.forEach((edge) => {
+            visEdges.update({
+                id: edge.id,
+                color: { color: "rgba(103,162,255,0.24)", highlight: "#37e3ff", hover: "#37e3ff", opacity: 1 },
+                width: 1.8,
+            });
+        });
+    }
+
+    function highlightPath(host) {
+        if (!host || !visNodes || !visEdges) {
+            return;
+        }
+        resetGraphColors();
+        const groupId = networkByHost[host.id];
+        if (groupId) {
+            visNodes.update({
+                id: groupId,
+                color: { background: "#37e3ff", border: "#9af4ff", highlight: { background: "#37e3ff", border: "#ffffff" } },
+                shadow: { enabled: true, color: "rgba(55,227,255,0.28)", size: 18 }
+            });
+            visEdges.update({
+                id: `edge_root_${groupId}`,
+                color: { color: "#37e3ff", highlight: "#37e3ff", hover: "#37e3ff", opacity: 1 },
+                width: 4,
+            });
+            visEdges.update({
+                id: `edge_${host.id}`,
+                color: { color: "#37e3ff", highlight: "#37e3ff", hover: "#37e3ff", opacity: 1 },
+                width: 4,
+            });
+        }
+        visNodes.update({
+            id: host.id,
+            color: { background: "#37e3ff", border: "#ffffff", highlight: { background: "#37e3ff", border: "#ffffff" } },
+            shadow: { enabled: true, color: "rgba(55,227,255,0.35)", size: 20 }
+        });
+    }
+
+    function selectHost(host) {
+        selectedHost = host;
+        renderSidebar();
+        renderDetails(host);
+        highlightPath(host);
+    }
+
+    function renderGraph() {
+        const container = document.getElementById(canvasId);
+        if (!container) {
+            return;
+        }
+        if (visNetwork) {
+            visNetwork.destroy();
+            visNetwork = null;
+        }
+
+        if (typeof vis === "undefined") {
+            container.innerHTML = '<div class="empty-note">Netzwerkansicht konnte nicht geladen werden. Die vis-network Bibliothek war nicht verfügbar.</div>';
+            return;
+        }
+
+        container.innerHTML = "";
+        visNodes = new vis.DataSet();
+        visEdges = new vis.DataSet();
+
+        visNodes.add({
+            id: "suite-root",
+            label: `${networkData.root_label || "Startrace"}\nN0`,
+            shape: "dot",
+            size: 24,
+            font: { color: "#ffffff", face: "Bahnschrift", size: 15 },
+            ...baseNodeState("suite-root"),
+        });
+
+        networkData.networks.forEach((group) => {
+            visNodes.add({
+                id: group.id,
+                label: group.label,
+                shape: "box",
+                margin: 12,
+                font: { color: "#ffffff", face: "Bahnschrift", size: 14 },
+                ...baseNodeState(group.id),
+            });
+            visEdges.add({
+                id: `edge_root_${group.id}`,
+                from: "suite-root",
+                to: group.id,
+                color: { color: "rgba(103,162,255,0.24)", highlight: "#37e3ff", hover: "#37e3ff", opacity: 1 },
+                width: 1.8,
+                smooth: { type: "continuous" },
+            });
+
+            group.hosts.forEach((host) => {
+                networkByHost[host.id] = group.id;
+                hostMap[host.id] = host;
+                visNodes.add({
+                    id: host.id,
+                    label: host.target,
+                    shape: "dot",
+                    size: 18,
+                    font: { color: "#ffffff", face: "Bahnschrift", size: 13 },
+                    ...baseNodeState(host.id),
+                });
+                visEdges.add({
+                    id: `edge_${host.id}`,
+                    from: group.id,
+                    to: host.id,
+                    color: { color: "rgba(103,162,255,0.24)", highlight: "#37e3ff", hover: "#37e3ff", opacity: 1 },
+                    width: 1.8,
+                    smooth: { type: "continuous" },
+                });
+            });
+        });
+
+        visNetwork = new vis.Network(container, { nodes: visNodes, edges: visEdges }, {
+            autoResize: true,
+            height: "100%",
+            width: "100%",
+            physics: {
+                enabled: true,
+                stabilization: { iterations: 220, fit: true },
+                barnesHut: {
+                    gravitationalConstant: -3000,
+                    springLength: 150,
+                    springConstant: 0.038,
+                    damping: 0.16,
+                },
+            },
+            interaction: {
+                hover: true,
+                navigationButtons: true,
+                keyboard: true,
+                zoomView: true,
+                dragView: true,
+            },
+            nodes: {
+                borderWidth: 2,
+                shadow: true,
+            },
+            edges: {
+                shadow: false,
+            },
+        });
+
+        visNetwork.on("click", (params) => {
+            if (params.nodes && params.nodes.length === 1) {
+                const nodeId = params.nodes[0];
+                if (hostMap[nodeId]) {
+                    selectHost(hostMap[nodeId]);
+                }
+            }
+        });
+
+        window.setTimeout(() => {
+            visNetwork.fit({ animation: { duration: 360, easingFunction: "easeInOutQuad" } });
+        }, 80);
+    }
+
+    async function loadNetworkView() {
+        statusPill.textContent = "Lade Netzwerkdaten";
+        try {
+            const [response, hasVis] = await Promise.all([
+                fetch(networkApi, { headers: { "Accept": "application/json" }, cache: "no-store" }),
+                ensureVisNetworkLoaded(),
+            ]);
+            if (!response.ok) {
+                throw new Error("network api failed");
+            }
+            networkData = await response.json();
+            hostMap = {};
+            networkByHost = {};
+            const hostCount = (networkData.networks || []).reduce((sum, group) => sum + (group.host_count || 0), 0);
+            hostCountPill.textContent = `${hostCount} Host${hostCount === 1 ? "" : "s"}`;
+            statusPill.textContent = hostCount > 0 ? `${hostCount} Hosts geladen` : "Keine IPv4-Hosts";
+
+            renderSidebar();
+            renderDetails(null);
+
+            if (hasVis) {
+                renderGraph();
+            } else {
+                document.getElementById(canvasId).innerHTML = '<div class="empty-note">Graph-Bibliothek konnte nicht geladen werden. Die Hostliste bleibt weiter nutzbar.</div>';
+            }
+        } catch (_) {
+            statusPill.textContent = "Fehler";
+            sidebar.innerHTML = '<div class="empty-note">Die Netzwerkdaten konnten nicht geladen werden.</div>';
+            document.getElementById(canvasId).innerHTML = '<div class="empty-note">Netzwerkansicht nicht verfügbar.</div>';
+        }
+    }
+
+    fitBtn.addEventListener("click", () => {
+        if (visNetwork) {
+            visNetwork.fit({ animation: { duration: 360, easingFunction: "easeInOutQuad" } });
+        }
+    });
+
+    loadNetworkView();
+})();
+</script>
+{{end}}
