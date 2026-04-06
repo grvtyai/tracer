@@ -1,8 +1,8 @@
 {{define "asset.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-<section class="hero-grid">
-    <article class="panel">
+<section class="hero-grid asset-top-grid">
+    <article class="panel asset-summary-panel">
         <div class="panel-head">
             <h2>{{.Asset.Asset.DisplayName}}</h2>
             <div class="hero-actions compact-actions">
@@ -87,39 +87,73 @@
         </div>
     </article>
 
-    <article class="panel">
+    <article class="panel asset-history-panel">
         <div class="panel-head">
             <h2>Observed History</h2>
             <span class="pill">{{len .Asset.Observations}} observations</span>
         </div>
         {{if .Asset.Observations}}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Observed</th>
-                    <th>Run</th>
-                    <th>Verdict</th>
-                    <th>Type Guess</th>
-                    <th>Connection Guess</th>
-                    <th>Ports</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{range .Asset.Observations}}
-                <tr>
-                    <td>{{if .ObservedAt.IsZero}}-{{else}}{{.ObservedAt.Format "2006-01-02 15:04:05"}}{{end}}</td>
-                    <td class="mono">{{.RunID}}</td>
-                    <td>{{.Verdict}} {{if .Confidence}}({{.Confidence}}){{end}}</td>
-                    <td>{{.DeviceTypeGuess}} {{if .DeviceTypeConfidence}}({{.DeviceTypeConfidence}}){{end}}</td>
-                    <td>{{.ConnectionTypeGuess}} {{if .ConnectionTypeConfidence}}({{.ConnectionTypeConfidence}}){{end}}</td>
-                    <td>{{if .OpenPorts}}{{range $index, $port := .OpenPorts}}{{if $index}}, {{end}}{{$port}}{{end}}{{else}}-{{end}}</td>
-                </tr>
-                {{end}}
-            </tbody>
-        </table>
+        <div class="history-scroll">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Observed</th>
+                        <th>Run</th>
+                        <th>Verdict</th>
+                        <th>Type Guess</th>
+                        <th>Connection Guess</th>
+                        <th>Ports</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Asset.Observations}}
+                    <tr>
+                        <td>{{if .ObservedAt.IsZero}}-{{else}}{{.ObservedAt.Format "2006-01-02 15:04:05"}}{{end}}</td>
+                        <td class="mono">{{.RunID}}</td>
+                        <td>{{.Verdict}} {{if .Confidence}}({{.Confidence}}){{end}}</td>
+                        <td>{{.DeviceTypeGuess}} {{if .DeviceTypeConfidence}}({{.DeviceTypeConfidence}}){{end}}</td>
+                        <td>{{.ConnectionTypeGuess}} {{if .ConnectionTypeConfidence}}({{.ConnectionTypeConfidence}}){{end}}</td>
+                        <td>{{if .OpenPorts}}{{range $index, $port := .OpenPorts}}{{if $index}}, {{end}}{{$port}}{{end}}{{else}}-{{end}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
         {{else}}
         <p class="empty-note">No observations stored for this asset yet.</p>
         {{end}}
     </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Ports</h2>
+    </div>
+    <div class="port-sections">
+        {{range .PortSections}}
+        <details class="port-section {{.Class}}" {{if .DefaultOpen}}open{{end}}>
+            <summary class="port-section-summary">
+                <span>{{.Title}}</span>
+                {{if .Entries}}<span class="pill subtle">{{len .Entries}}</span>{{end}}
+            </summary>
+            <div class="port-section-body">
+                {{if eq .Title "Not tested"}}
+                    <div class="port-summary">{{.Summary}}</div>
+                {{else if .Entries}}
+                    <div class="port-card-grid">
+                        {{range .Entries}}
+                        <div class="port-card">
+                            <div class="port-card-label">{{.Label}} - {{.Summary}}</div>
+                            <div class="port-card-detail">{{if .Detail}}{{.Detail}}{{else}}-{{end}}</div>
+                        </div>
+                        {{end}}
+                    </div>
+                {{else}}
+                    <p class="empty-note">{{.EmptyMessage}}</p>
+                {{end}}
+            </div>
+        </details>
+        {{end}}
+    </div>
 </section>
 {{end}}

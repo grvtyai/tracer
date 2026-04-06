@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
 	"github.com/grvtyai/tracer/scanner-core/internal/storage"
 )
@@ -61,6 +62,7 @@ type pageData struct {
 	Assets             []storage.AssetSummary
 	Asset              *storage.AssetDetails
 	AssetReevaluateURL string
+	PortSections       []portSection
 	AssetGroups        []assetGroup
 	Hosts              []hostSummary
 	RunStatus          statusInfo
@@ -97,6 +99,22 @@ type hostSummary struct {
 type assetGroup struct {
 	Name   string
 	Assets []storage.AssetSummary
+}
+
+type portSection struct {
+	Title        string
+	Class        string
+	DefaultOpen  bool
+	Entries      []portEntry
+	Summary      string
+	EmptyMessage string
+}
+
+type portEntry struct {
+	Port    int
+	Label   string
+	Detail  string
+	Summary string
 }
 
 type labelCount struct {
@@ -602,6 +620,13 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	var lastRun *storage.RunDetails
+	if strings.TrimSpace(asset.Asset.LastRunID) != "" {
+		run, err := s.repo.GetRun(r.Context(), asset.Asset.LastRunID)
+		if err == nil {
+			lastRun = &run
+		}
+	}
 
 	data := pageData{
 		Title:              "Asset " + asset.Asset.DisplayName,
@@ -616,6 +641,7 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 		Project:            &project,
 		Asset:              &asset,
 		AssetReevaluateURL: buildReevaluationURL(project.ID, "Reevaluate "+asset.Asset.DisplayName, asset.Asset.PrimaryTarget, "30m"),
+		PortSections:       buildPortSections(asset, lastRun),
 		HelpLink:           "/help#asset-overrides",
 		Notice:             noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Settings:           appSettings,
@@ -1366,6 +1392,220 @@ func buildNeedsAttentionMessage(run storage.RunDetails) string {
 	default:
 		return "This run kept partial results but at least one stage did not finish cleanly. Review the recorded jobs and then rerun the scan to reach Completed."
 	}
+}
+
+func buildPortSections(asset storage.AssetDetails, run *storage.RunDetails) []portSection {
+	openEntries := map[int]portEntry{}
+	blockedEntries := map[int]portEntry{}
+	filteredEntries := map[int]portEntry{}
+	closedEntries := map[int]portEntry{}
+
+	for _, port := range asset.Asset.CurrentOpenPorts {
+		openEntries[port] = portEntry{
+			Port:    port,
+			Label:   "OPEN",
+			Summary: "Port " + fmt.Sprintf("%d", port),
+			Detail:  "Observed as reachable",
+		}
+	}
+
+	knownPorts := make(map[int]struct{})
+	for _, port := range asset.Asset.CurrentOpenPorts {
+		knownPorts[port] = struct{}{}
+	}
+
+	if run != nil {
+		target := strings.TrimSpace(asset.Asset.PrimaryTarget)
+		for _, record := range run.Evidence {
+			if strings.TrimSpace(record.Target) != target || record.Port <= 0 {
+				continue
+			}
+			knownPorts[record.Port] = struct{}{}
+			entry := describePortRecord(record)
+			switch strings.ToLower(strings.TrimSpace(record.Attributes["state"])) {
+			case "blocked":
+				blockedEntries[record.Port] = entry
+			case "filtered":
+				filteredEntries[record.Port] = entry
+			case "closed":
+				closedEntries[record.Port] = entry
+			default:
+				if isOpenPortKind(record.Kind) {
+					openEntries[record.Port] = entry
+				}
+			}
+		}
+	}
+
+	observedStatePorts := make(map[int]struct{})
+	for port := range openEntries {
+		observedStatePorts[port] = struct{}{}
+	}
+	for port := range blockedEntries {
+		observedStatePorts[port] = struct{}{}
+	}
+	for port := range filteredEntries {
+		observedStatePorts[port] = struct{}{}
+	}
+	for port := range closedEntries {
+		observedStatePorts[port] = struct{}{}
+	}
+
+	notTestedSummary := ""
+	if run != nil {
+		if templatePorts := portUniverseForTemplate(run.Options.PortTemplate); len(templatePorts) > 0 {
+			notTested := make([]int, 0, len(templatePorts))
+			for _, port := range templatePorts {
+				if _, ok := observedStatePorts[port]; ok {
+					continue
+				}
+				notTested = append(notTested, port)
+			}
+			notTestedSummary = compactPortRanges(notTested)
+		}
+	}
+
+	return []portSection{
+		{
+			Title:        "Open",
+			Class:        "port-open",
+			DefaultOpen:  true,
+			Entries:      sortPortEntries(openEntries),
+			EmptyMessage: "No open ports were observed for this asset yet.",
+		},
+		{
+			Title:        "Blocked",
+			Class:        "port-blocked",
+			Entries:      sortPortEntries(blockedEntries),
+			EmptyMessage: "No blocked ports were recorded for this asset.",
+		},
+		{
+			Title:        "Filtered",
+			Class:        "port-filtered",
+			Entries:      sortPortEntries(filteredEntries),
+			EmptyMessage: "No filtered ports were recorded for this asset.",
+		},
+		{
+			Title:        "Closed",
+			Class:        "port-closed",
+			Entries:      sortPortEntries(closedEntries),
+			EmptyMessage: "No closed ports were recorded for this asset.",
+		},
+		{
+			Title:        "Not tested",
+			Class:        "port-untested",
+			Summary:      firstNonEmptyWeb(notTestedSummary, "No compact not-tested range is available for the last run yet."),
+			EmptyMessage: "No compact not-tested range is available for the last run yet.",
+		},
+	}
+}
+
+func describePortRecord(record evidence.Record) portEntry {
+	label := "OPEN"
+	switch strings.ToLower(strings.TrimSpace(record.Attributes["state"])) {
+	case "blocked":
+		label = "BLOCKED"
+	case "filtered":
+		label = "FILTERED"
+	case "closed":
+		label = "CLOSED"
+	}
+
+	detail := firstNonEmptyWeb(
+		record.Attributes["service_name"],
+		record.Attributes["product"],
+		record.Attributes["title"],
+		record.Attributes["tech"],
+	)
+	if product := strings.TrimSpace(record.Attributes["product"]); product != "" && !strings.EqualFold(strings.TrimSpace(detail), product) {
+		detail = strings.TrimSpace(detail + " " + product)
+	}
+	if detail == "" {
+		detail = strings.TrimSpace(record.Summary)
+	}
+
+	return portEntry{
+		Port:    record.Port,
+		Label:   label,
+		Summary: fmt.Sprintf("Port %d", record.Port),
+		Detail:  detail,
+	}
+}
+
+func isOpenPortKind(kind string) bool {
+	switch strings.ToLower(strings.TrimSpace(kind)) {
+	case "open_port", "service_fingerprint", "http_probe", "l7_grab":
+		return true
+	default:
+		return false
+	}
+}
+
+func sortPortEntries(entries map[int]portEntry) []portEntry {
+	ports := make([]int, 0, len(entries))
+	for port := range entries {
+		ports = append(ports, port)
+	}
+	sort.Ints(ports)
+
+	out := make([]portEntry, 0, len(ports))
+	for _, port := range ports {
+		out = append(out, entries[port])
+	}
+	return out
+}
+
+func portUniverseForTemplate(templateName string) []int {
+	switch strings.ToLower(strings.TrimSpace(templateName)) {
+	case "all-default-ports":
+		ports := make([]int, 0, 65535)
+		for port := 1; port <= 65535; port++ {
+			ports = append(ports, port)
+		}
+		return ports
+	case "top-1000-ports":
+		ports := make([]int, 0, 1000)
+		for port := 1; port <= 1000; port++ {
+			ports = append(ports, port)
+		}
+		return ports
+	case "web-only":
+		return []int{80, 81, 88, 443, 444, 591, 8000, 8008, 8080, 8081, 8088, 8443, 8888, 9000, 9443}
+	case "entra-id":
+		return []int{53, 80, 88, 123, 135, 389, 443, 445, 464, 636, 3268, 3269, 3389, 5985, 5986, 8080, 8443}
+	default:
+		return nil
+	}
+}
+
+func compactPortRanges(ports []int) string {
+	if len(ports) == 0 {
+		return ""
+	}
+	sort.Ints(ports)
+
+	ranges := make([]string, 0)
+	start := ports[0]
+	prev := ports[0]
+	for i := 1; i < len(ports); i++ {
+		current := ports[i]
+		if current == prev || current == prev+1 {
+			prev = current
+			continue
+		}
+		ranges = append(ranges, formatPortRange(start, prev))
+		start = current
+		prev = current
+	}
+	ranges = append(ranges, formatPortRange(start, prev))
+	return strings.Join(ranges, ", ")
+}
+
+func formatPortRange(start int, end int) string {
+	if start == end {
+		return fmt.Sprintf("%d", start)
+	}
+	return fmt.Sprintf("%d-%d", start, end)
 }
 
 func mustListAssets(ctx context.Context, repo *storage.SQLiteRepository, projectID string) []storage.AssetSummary {

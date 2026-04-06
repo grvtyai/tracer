@@ -210,6 +210,12 @@ func TestServerAssetsAPIAndPageSupportManualOverrides(t *testing.T) {
 	if !strings.Contains(body, "Edit Host") {
 		t.Fatalf("expected asset page to contain host edit entrypoint, body=%q", body)
 	}
+	if !strings.Contains(body, ">Ports<") {
+		t.Fatalf("expected asset page to contain ports section, body=%q", body)
+	}
+	if !strings.Contains(body, "OPEN - Port 62078") {
+		t.Fatalf("expected asset page to contain open port card, body=%q", body)
+	}
 }
 
 func TestServerCanCreateProjectAndPersistDefaultProject(t *testing.T) {

@@ -143,6 +143,10 @@ h2 { font-size: 20px; }
 .hero-grid { grid-template-columns: 1.25fr 1fr; }
 .panel-grid { grid-template-columns: 1fr 1fr; }
 
+.asset-top-grid {
+    align-items: stretch;
+}
+
 .panel,
 .hero-card,
 .stats-grid {
@@ -558,6 +562,106 @@ h2 { font-size: 20px; }
     border-radius: 16px;
     background: rgba(255,255,255,0.03);
     border: 1px solid var(--border);
+}
+
+.asset-summary-panel,
+.asset-history-panel {
+    display: flex;
+    flex-direction: column;
+}
+
+.asset-history-panel {
+    min-height: 100%;
+}
+
+.history-scroll {
+    flex: 1;
+    min-height: 0;
+    max-height: 420px;
+    overflow: auto;
+}
+
+.port-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.port-section {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--panel-2);
+    overflow: hidden;
+}
+
+.port-section-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 600;
+}
+
+.port-section-summary::-webkit-details-marker {
+    display: none;
+}
+
+.port-section-body {
+    padding: 0 16px 16px;
+}
+
+.port-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+}
+
+.port-card {
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+}
+
+.port-card-label {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.port-card-detail,
+.port-summary {
+    color: var(--text-muted);
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+.port-open .port-section-summary,
+.port-open .port-card-label {
+    color: #3fdc7a;
+}
+
+.port-blocked .port-section-summary,
+.port-blocked .port-card-label {
+    color: #ff8f8f;
+}
+
+.port-filtered .port-section-summary,
+.port-filtered .port-card-label {
+    color: #bb8cff;
+}
+
+.port-closed .port-section-summary,
+.port-closed .port-card-label {
+    color: #d9534f;
+}
+
+.port-untested .port-section-summary,
+.port-untested .port-summary {
+    color: #aeb8c8;
 }
 
 .form-row {
