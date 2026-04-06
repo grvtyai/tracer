@@ -1409,29 +1409,36 @@ func buildPortSections(asset storage.AssetDetails, run *storage.RunDetails) []po
 		}
 	}
 
-	knownPorts := make(map[int]struct{})
-	for _, port := range asset.Asset.CurrentOpenPorts {
-		knownPorts[port] = struct{}{}
-	}
-
 	if run != nil {
 		target := strings.TrimSpace(asset.Asset.PrimaryTarget)
 		for _, record := range run.Evidence {
 			if strings.TrimSpace(record.Target) != target || record.Port <= 0 {
 				continue
 			}
-			knownPorts[record.Port] = struct{}{}
 			entry := describePortRecord(record)
-			switch strings.ToLower(strings.TrimSpace(record.Attributes["state"])) {
+			switch portRecordCategory(record, run) {
 			case "blocked":
 				blockedEntries[record.Port] = entry
 			case "filtered":
 				filteredEntries[record.Port] = entry
 			case "closed":
 				closedEntries[record.Port] = entry
-			default:
-				if isOpenPortKind(record.Kind) {
-					openEntries[record.Port] = entry
+			case "open":
+				openEntries[record.Port] = entry
+			}
+		}
+
+		for _, assessment := range run.Blocking {
+			if strings.TrimSpace(assessment.Target) != target || assessment.Port <= 0 {
+				continue
+			}
+			switch assessment.Verdict {
+			case evidence.VerdictConfirmedBlocked, evidence.VerdictProbableBlocked:
+				blockedEntries[assessment.Port] = portEntry{
+					Port:    assessment.Port,
+					Label:   "BLOCKED",
+					Summary: fmt.Sprintf("Port %d", assessment.Port),
+					Detail:  strings.Join(assessment.Reasons, " "),
 				}
 			}
 		}
@@ -1498,6 +1505,35 @@ func buildPortSections(asset storage.AssetDetails, run *storage.RunDetails) []po
 			EmptyMessage: "No compact not-tested range is available for the last run yet.",
 		},
 	}
+}
+
+func portRecordCategory(record evidence.Record, run *storage.RunDetails) string {
+	if strings.EqualFold(record.Kind, "port_state") {
+		switch strings.ToLower(strings.TrimSpace(record.Attributes["state"])) {
+		case "blocked":
+			return "blocked"
+		case "filtered":
+			return "filtered"
+		case "closed":
+			return "closed"
+		default:
+			return "open"
+		}
+	}
+	if isOpenPortKind(record.Kind) {
+		return "open"
+	}
+	if run != nil {
+		for _, assessment := range run.Blocking {
+			if assessment.Target != record.Target || assessment.Port != record.Port {
+				continue
+			}
+			if assessment.Verdict == evidence.VerdictConfirmedBlocked || assessment.Verdict == evidence.VerdictProbableBlocked {
+				return "blocked"
+			}
+		}
+	}
+	return ""
 }
 
 func describePortRecord(record evidence.Record) portEntry {

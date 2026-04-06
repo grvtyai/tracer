@@ -122,6 +122,8 @@ func ParseOutput(output []byte, job jobs.Job, observedAt time.Time) ([]evidence.
 		}
 
 		for _, port := range host.Ports {
+			records = append(records, buildPortStateRecord(target, host.primaryHostname(), port, job, observedAt))
+
 			if strings.ToLower(port.State.State) != "open" {
 				continue
 			}
@@ -135,6 +137,34 @@ func ParseOutput(output []byte, job jobs.Job, observedAt time.Time) ([]evidence.
 	}
 
 	return records, nil
+}
+
+func buildPortStateRecord(target, hostname string, port port, job jobs.Job, observedAt time.Time) evidence.Record {
+	state := normalizePortState(port.State.State, port.State.Reason)
+	confidence := evidence.ConfidenceConfirmed
+	if state == "filtered" || state == "closed" {
+		confidence = evidence.ConfidenceProbable
+	}
+
+	summary := fmt.Sprintf("%s port %d/%s on %s", strings.ToUpper(state), port.PortID, normalizeProtocol(port.Protocol), target)
+	if reason := strings.TrimSpace(port.State.Reason); reason != "" {
+		summary = fmt.Sprintf("%s (%s)", summary, reason)
+	}
+
+	return evidence.Record{
+		ID:         fmt.Sprintf("%s:%s:%s:%d:state", job.ID, target, port.Protocol, port.PortID),
+		RunID:      job.Metadata["run_id"],
+		Source:     "nmap",
+		Kind:       "port_state",
+		Target:     target,
+		Port:       port.PortID,
+		Protocol:   normalizeProtocol(port.Protocol),
+		Summary:    summary,
+		RawRef:     fmt.Sprintf("xml:host:%s:port:%d:state", target, port.PortID),
+		Attributes: buildPortStateAttributes(hostname, port, job, state),
+		Confidence: confidence,
+		ObservedAt: observedAt,
+	}
 }
 
 func buildServiceRecord(target, hostname string, port port, job jobs.Job, observedAt time.Time) evidence.Record {
@@ -266,6 +296,42 @@ func buildServiceAttributes(hostname string, port port, job jobs.Job) map[string
 	return attributes
 }
 
+func buildPortStateAttributes(hostname string, port port, job jobs.Job, normalizedState string) map[string]string {
+	serviceClasses := job.ServiceClasses
+	if len(serviceClasses) == 0 && strings.TrimSpace(job.ServiceClass) != "" {
+		serviceClasses = []string{strings.TrimSpace(job.ServiceClass)}
+	}
+
+	attributes := map[string]string{
+		"job_id":                     job.ID,
+		"plugin":                     "nmap",
+		"job_kind":                   string(job.Kind),
+		"state":                      normalizedState,
+		"state_reason":               port.State.Reason,
+		"service_name":               port.Service.Name,
+		"service_method":             port.Service.Method,
+		"service_conf":               port.Service.Conf,
+		"service_class":              classify.FromPort(port.PortID),
+		"host_primary_service_class": classify.FromPorts(job.Ports),
+		"host_service_classes":       strings.Join(classify.SortClasses(serviceClasses), ","),
+	}
+
+	if hostname != "" {
+		attributes["hostname"] = hostname
+	}
+	if product := strings.TrimSpace(port.Service.Product); product != "" {
+		attributes["product"] = product
+	}
+	if version := strings.TrimSpace(port.Service.Version); version != "" {
+		attributes["version"] = version
+	}
+	if extraInfo := strings.TrimSpace(port.Service.ExtraInfo); extraInfo != "" {
+		attributes["extra_info"] = extraInfo
+	}
+
+	return attributes
+}
+
 func confidenceFromAccuracy(accuracy string) evidence.Confidence {
 	value, err := strconv.Atoi(strings.TrimSpace(accuracy))
 	if err != nil {
@@ -329,6 +395,20 @@ func normalizeProtocol(protocol string) string {
 	}
 
 	return value
+}
+
+func normalizePortState(state string, reason string) string {
+	normalizedState := strings.ToLower(strings.TrimSpace(state))
+	normalizedReason := strings.ToLower(strings.TrimSpace(reason))
+
+	switch {
+	case normalizedReason == "admin-prohibited" || normalizedReason == "host-prohibited" || normalizedReason == "net-prohibited":
+		return "blocked"
+	case normalizedState == "":
+		return "unknown"
+	default:
+		return normalizedState
+	}
 }
 
 type run struct {

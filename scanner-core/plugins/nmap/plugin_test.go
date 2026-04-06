@@ -98,11 +98,19 @@ func TestParseOutputBuildsServiceAndOSRecords(t *testing.T) {
 		t.Fatalf("ParseOutput returned error: %v", err)
 	}
 
-	if len(records) != 2 {
-		t.Fatalf("expected 2 records, got %d", len(records))
+	if len(records) != 4 {
+		t.Fatalf("expected 4 records, got %d", len(records))
 	}
 
-	serviceRecord := records[0]
+	openStateRecord := records[0]
+	if openStateRecord.Kind != "port_state" {
+		t.Fatalf("unexpected first record kind: %s", openStateRecord.Kind)
+	}
+	if openStateRecord.Attributes["state"] != "open" {
+		t.Fatalf("expected open state, got %#v", openStateRecord.Attributes)
+	}
+
+	serviceRecord := records[1]
 	if serviceRecord.Kind != "service_fingerprint" {
 		t.Fatalf("unexpected service record kind: %s", serviceRecord.Kind)
 	}
@@ -119,7 +127,15 @@ func TestParseOutputBuildsServiceAndOSRecords(t *testing.T) {
 		t.Fatalf("expected per-service class web, got %q", serviceRecord.Attributes["service_class"])
 	}
 
-	osRecord := records[1]
+	closedStateRecord := records[2]
+	if closedStateRecord.Kind != "port_state" {
+		t.Fatalf("unexpected closed state record kind: %s", closedStateRecord.Kind)
+	}
+	if closedStateRecord.Port != 22 || closedStateRecord.Attributes["state"] != "closed" {
+		t.Fatalf("unexpected closed state record: %#v", closedStateRecord)
+	}
+
+	osRecord := records[3]
 	if osRecord.Kind != "host_os_fingerprint" {
 		t.Fatalf("unexpected os record kind: %s", osRecord.Kind)
 	}
@@ -171,14 +187,14 @@ func TestPluginRun(t *testing.T) {
 	if runner.name != "nmap-bin" {
 		t.Fatalf("unexpected binary: %s", runner.name)
 	}
-	if len(records) != 1 {
-		t.Fatalf("expected 1 record, got %d", len(records))
+	if len(records) != 2 {
+		t.Fatalf("expected 2 records, got %d", len(records))
 	}
-	if records[0].Attributes["service_class"] != "web" {
-		t.Fatalf("expected web classification for 8443, got %q", records[0].Attributes["service_class"])
+	if records[1].Attributes["service_class"] != "web" {
+		t.Fatalf("expected web classification for 8443, got %q", records[1].Attributes["service_class"])
 	}
-	if records[0].ObservedAt != now {
-		t.Fatalf("unexpected observed time: %v", records[0].ObservedAt)
+	if records[1].ObservedAt != now {
+		t.Fatalf("unexpected observed time: %v", records[1].ObservedAt)
 	}
 }
 
