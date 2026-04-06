@@ -33,45 +33,45 @@ type Server struct {
 }
 
 type pageData struct {
-	Title             string
-	AppName           string
-	ActiveNav         string
-	BasePath          string
-	DBPath            string
-	DataDir           string
-	BodyClass         string
-	HeroNote          string
-	Notice            string
-	Project           *storage.ProjectSummary
-	Projects          []storage.ProjectSummary
-	CurrentProject    *storage.ProjectSummary
-	ProjectSwitchPath string
-	ProjectForm       projectFormData
-	Settings          storage.AppSettings
-	PreflightChecks   []preflightCheck
-	PreflightHealthy  bool
-	PreflightState    string
-	ScanForm          scanFormData
-	RecentRuns        []storage.RunSummary
-	RecentRunItems    []runListItem
-	Runs              []storage.RunSummary
-	RunItems          []runListItem
-	Run               *storage.RunDetails
-	RunReevaluateURL  string
-	Assets            []storage.AssetSummary
-	Asset             *storage.AssetDetails
+	Title              string
+	AppName            string
+	ActiveNav          string
+	BasePath           string
+	DBPath             string
+	DataDir            string
+	BodyClass          string
+	HeroNote           string
+	Notice             string
+	Project            *storage.ProjectSummary
+	Projects           []storage.ProjectSummary
+	CurrentProject     *storage.ProjectSummary
+	ProjectSwitchPath  string
+	ProjectForm        projectFormData
+	Settings           storage.AppSettings
+	PreflightChecks    []preflightCheck
+	PreflightHealthy   bool
+	PreflightState     string
+	ScanForm           scanFormData
+	RecentRuns         []storage.RunSummary
+	RecentRunItems     []runListItem
+	Runs               []storage.RunSummary
+	RunItems           []runListItem
+	Run                *storage.RunDetails
+	RunReevaluateURL   string
+	Assets             []storage.AssetSummary
+	Asset              *storage.AssetDetails
 	AssetReevaluateURL string
-	AssetGroups       []assetGroup
-	Hosts             []hostSummary
-	RunStatus         statusInfo
-	ScheduledScans    []storage.ScheduledScan
-	WarningDetails    []warningDetail
-	HelpLink          string
-	Stats             dashboardStats
-	DeviceTypeStats   []labelCount
-	ConnectionStats   []labelCount
-	StatusStats       []labelCount
-	DiffAPI           string
+	AssetGroups        []assetGroup
+	Hosts              []hostSummary
+	RunStatus          statusInfo
+	ScheduledScans     []storage.ScheduledScan
+	WarningDetails     []warningDetail
+	HelpLink           string
+	Stats              dashboardStats
+	DeviceTypeStats    []labelCount
+	ConnectionStats    []labelCount
+	StatusStats        []labelCount
+	DiffAPI            string
 }
 
 type dashboardStats struct {
@@ -83,7 +83,7 @@ type dashboardStats struct {
 }
 
 type hostSummary struct {
-	AssetID          string
+	AssetID         string
 	Target          string
 	Verdict         string
 	Confidence      string
@@ -120,12 +120,12 @@ type warningDetail struct {
 }
 
 type runListItem struct {
-	Run         storage.RunSummary
-	HostCount   int
-	SubnetCount int
-	StatusLabel string
-	StatusClass string
-	Clickable   bool
+	Run         storage.RunSummary `json:"run"`
+	HostCount   int                `json:"host_count"`
+	SubnetCount int                `json:"subnet_count"`
+	StatusLabel string             `json:"status_label"`
+	StatusClass string             `json:"status_class"`
+	Clickable   bool               `json:"clickable"`
 }
 
 type projectFormData struct {
@@ -604,21 +604,21 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := pageData{
-		Title:             "Asset " + asset.Asset.DisplayName,
-		AppName:           s.options.AppName,
-		ActiveNav:         "assets",
-		BasePath:          s.options.BasePath,
-		DBPath:            s.options.DBPath,
-		DataDir:           s.options.DataDir,
-		Projects:          projects,
-		CurrentProject:    &project,
-		ProjectSwitchPath: "/assets",
-		Project:           &project,
-		Asset:             &asset,
+		Title:              "Asset " + asset.Asset.DisplayName,
+		AppName:            s.options.AppName,
+		ActiveNav:          "assets",
+		BasePath:           s.options.BasePath,
+		DBPath:             s.options.DBPath,
+		DataDir:            s.options.DataDir,
+		Projects:           projects,
+		CurrentProject:     &project,
+		ProjectSwitchPath:  "/assets",
+		Project:            &project,
+		Asset:              &asset,
 		AssetReevaluateURL: buildReevaluationURL(project.ID, "Reevaluate "+asset.Asset.DisplayName, asset.Asset.PrimaryTarget, "30m"),
-		HelpLink:          "/help#asset-overrides",
-		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
-		Settings:          appSettings,
+		HelpLink:           "/help#asset-overrides",
+		Notice:             noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Settings:           appSettings,
 	}
 	s.render(w, "asset.html", data)
 }
@@ -936,9 +936,11 @@ func (s *Server) handleProjectRunsAPI(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	runItems := buildRunListItems(r.Context(), s.repo, runs)
 	s.writeJSON(w, http.StatusOK, map[string]any{
 		"project_id": projectID,
 		"runs":       runs,
+		"run_items":  runItems,
 	})
 }
 

@@ -3,12 +3,14 @@ package web
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -28,30 +30,30 @@ type preflightCheck struct {
 }
 
 type scanFormData struct {
-	ProjectID             string
-	ScanName              string
-	ScopeInput            string
-	PortTemplate          string
-	ActiveInterface       string
-	PassiveInterface      string
+	ProjectID               string
+	ScanName                string
+	ScopeInput              string
+	PortTemplate            string
+	ActiveInterface         string
+	PassiveInterface        string
 	DetectedActiveInterface string
-	StartTimeDisplay      string
-	PassiveMode           string
-	ZeekAutoStart         bool
-	ZeekLogDir            string
-	ContinueOnError       bool
-	RetainPartialResults  bool
-	ReevaluateAmbiguous   bool
-	ReevaluatePreset      string
-	ReevaluateAfter       string
-	ReevaluateCustom      string
-	EnableRouteSampling   bool
-	EnableServiceScan     bool
-	EnablePassiveIngest   bool
-	EnableOSDetection     bool
-	EnableLayer2          bool
-	UseLargeRangeStrategy bool
-	ScanTag               string
+	StartTimeDisplay        string
+	PassiveMode             string
+	ZeekAutoStart           bool
+	ZeekLogDir              string
+	ContinueOnError         bool
+	RetainPartialResults    bool
+	ReevaluateAmbiguous     bool
+	ReevaluatePreset        string
+	ReevaluateAfter         string
+	ReevaluateCustom        string
+	EnableRouteSampling     bool
+	EnableServiceScan       bool
+	EnablePassiveIngest     bool
+	EnableOSDetection       bool
+	EnableLayer2            bool
+	UseLargeRangeStrategy   bool
+	ScanTag                 string
 }
 
 func (s *Server) handleScanNew(w http.ResponseWriter, r *http.Request) {
@@ -179,23 +181,34 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) executeScanAsync(project storage.ProjectSummary, runRecord storage.RunRecord, runStore *storage.SQLiteRunStore, template templates.Template, effective options.EffectiveOptions) {
 	ctx := context.Background()
-	executedPlan, jobResults, records, err := app.ExecuteRunWithPersistence(ctx, app.DefaultPlugins(), template, effective, runStore)
+	templatePath, err := writeTemporaryTemplate(template)
 	if err != nil {
-		_ = s.repo.CompleteRun(ctx, runRecord.ID, storage.RunCompletion{
-			Status: "failed",
-			Plan:   executedPlan,
-		})
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("prepare scan template: %w", err))
+		return
+	}
+	defer os.Remove(templatePath)
+
+	cmd, err := buildScanWorkerCommand(runRecord.ID, project.Name, templatePath, effective)
+	if err != nil {
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, err)
 		return
 	}
 
-	blocking := app.AnalyzeEvidence(records)
-	reevaluation := app.BuildReevaluation(records, jobResults, effective)
-	_ = s.repo.CompleteRun(ctx, runRecord.ID, storage.RunCompletion{
-		Status:       summarizeRunStatusWeb(jobResults),
-		Plan:         executedPlan,
-		Blocking:     blocking,
-		Reevaluation: reevaluation,
-	})
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		if runStillRunning, stateErr := s.runStillRunning(ctx, runRecord.ID); stateErr == nil && runStillRunning {
+			message := strings.TrimSpace(string(output))
+			if message == "" {
+				message = err.Error()
+			}
+			s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("launch root worker: %s", message))
+		}
+		return
+	}
+
+	if runStillRunning, err := s.runStillRunning(ctx, runRecord.ID); err == nil && runStillRunning {
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("scan worker exited without finalizing the run"))
+	}
 }
 
 func (s *Server) handlePreflightAPI(w http.ResponseWriter, r *http.Request) {
@@ -242,6 +255,128 @@ func commandCheck(name string, required bool) preflightCheck {
 	}
 }
 
+func writeTemporaryTemplate(template templates.Template) (string, error) {
+	file, err := os.CreateTemp("", "startrace-run-*.json")
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(template); err != nil {
+		return "", err
+	}
+	return file.Name(), nil
+}
+
+func buildScanWorkerCommand(runID string, projectName string, templatePath string, effective options.EffectiveOptions) (*exec.Cmd, error) {
+	tracerBinary, err := resolveTracerBinaryPath()
+	if err != nil {
+		return nil, err
+	}
+
+	args := []string{
+		tracerBinary,
+		"-mode", "execute-run",
+		"-run-id", runID,
+		"-template", templatePath,
+		"-project", projectName,
+		"-db-path", effective.DBPath,
+		"-data-dir", effective.DataDir,
+		"-continue-on-error", fmt.Sprintf("%t", effective.ContinueOnError),
+		"-retain-partial-results", fmt.Sprintf("%t", effective.RetainPartialResults),
+		"-reevaluate-ambiguous", fmt.Sprintf("%t", effective.ReevaluateAmbiguous),
+		"-auto-start-zeek", fmt.Sprintf("%t", effective.AutoStartZeek),
+	}
+	if trimmed := strings.TrimSpace(effective.ActiveInterface); trimmed != "" {
+		args = append(args, "-active-interface", trimmed)
+	}
+	if trimmed := strings.TrimSpace(effective.PassiveInterface); trimmed != "" {
+		args = append(args, "-passive-interface", trimmed)
+	}
+	if trimmed := strings.TrimSpace(effective.PortTemplate); trimmed != "" {
+		args = append(args, "-port-template", trimmed)
+	}
+	if trimmed := strings.TrimSpace(effective.PassiveMode); trimmed != "" {
+		args = append(args, "-passive-mode", trimmed)
+	}
+	if trimmed := strings.TrimSpace(effective.ZeekLogDir); trimmed != "" {
+		args = append(args, "-zeek-log-dir", trimmed)
+	}
+	if trimmed := strings.TrimSpace(effective.ReevaluateAfter); trimmed != "" {
+		args = append(args, "-reevaluate-after", trimmed)
+	}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "linux" && !processRunsAsRoot() {
+		sudoArgs := []string{"-n", "env", "PATH=" + os.Getenv("PATH")}
+		sudoArgs = append(sudoArgs, args...)
+		cmd = exec.Command("sudo", sudoArgs...)
+	} else {
+		cmd = exec.Command(args[0], args[1:]...)
+		cmd.Env = os.Environ()
+	}
+	return cmd, nil
+}
+
+func resolveTracerBinaryPath() (string, error) {
+	if executable, err := os.Executable(); err == nil {
+		sibling := filepath.Join(filepath.Dir(executable), "tracer")
+		if runtime.GOOS == "windows" {
+			sibling += ".exe"
+		}
+		if _, err := os.Stat(sibling); err == nil {
+			return sibling, nil
+		}
+	}
+
+	tracerBinary, err := exec.LookPath("tracer")
+	if err != nil {
+		return "", fmt.Errorf("locate tracer worker binary: %w", err)
+	}
+	return tracerBinary, nil
+}
+
+func processRunsAsRoot() bool {
+	if runtime.GOOS != "linux" {
+		return false
+	}
+	output, err := exec.Command("id", "-u").Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(output)) == "0"
+}
+
+func (s *Server) runStillRunning(ctx context.Context, runID string) (bool, error) {
+	run, err := s.repo.GetRun(ctx, runID)
+	if err != nil {
+		return false, err
+	}
+	return strings.EqualFold(strings.TrimSpace(run.Run.Status), "running"), nil
+}
+
+func (s *Server) markRunLaunchFailed(ctx context.Context, runID string, runStore *storage.SQLiteRunStore, template templates.Template, err error) {
+	now := time.Now().UTC()
+	_ = runStore.WriteJobResults(ctx, []jobs.ExecutionResult{
+		{
+			JobID:      "scan-launch",
+			Kind:       jobs.KindAnalyze,
+			Plugin:     "launcher",
+			Targets:    append(append([]string{}, template.Scope.Targets...), template.Scope.CIDRs...),
+			Status:     jobs.StatusFailed,
+			Error:      err.Error(),
+			StartedAt:  now,
+			FinishedAt: now,
+		},
+	})
+	_ = s.repo.CompleteRun(ctx, runID, storage.RunCompletion{
+		Status: "failed",
+		Plan:   []jobs.Job{{ID: "scan-launch", Kind: jobs.KindAnalyze, Plugin: "launcher"}},
+	})
+}
+
 func dbPathCheck(dbPath string) preflightCheck {
 	dir := filepath.Dir(dbPath)
 	if err := os.MkdirAll(dir, 0o775); err != nil {
@@ -285,27 +420,27 @@ func defaultScanForm(project *storage.ProjectSummary) scanFormData {
 		scope = ""
 	}
 	return scanFormData{
-		ProjectID:            project.ID,
-		ScanName:             "Quick Sweep",
-		ScopeInput:           scope,
-		PortTemplate:         "all-default-ports",
-		ActiveInterface:      detectActiveInterface(),
+		ProjectID:               project.ID,
+		ScanName:                "Quick Sweep",
+		ScopeInput:              scope,
+		PortTemplate:            "all-default-ports",
+		ActiveInterface:         detectActiveInterface(),
 		DetectedActiveInterface: detectActiveInterface(),
-		StartTimeDisplay:     time.Now().Format("2006-01-02 15:04"),
-		PassiveMode:          "auto",
-		ZeekAutoStart:        true,
-		ZeekLogDir:           "/opt/zeek/logs/current",
-		ContinueOnError:      true,
-		RetainPartialResults: true,
-		ReevaluateAmbiguous:  false,
-		ReevaluatePreset:     "off",
-		ReevaluateAfter:      "",
-		ReevaluateCustom:     "",
-		EnableRouteSampling:  true,
-		EnableServiceScan:    true,
-		EnablePassiveIngest:  true,
-		EnableOSDetection:    true,
-		ScanTag:              "internal",
+		StartTimeDisplay:        time.Now().Format("2006-01-02 15:04"),
+		PassiveMode:             "auto",
+		ZeekAutoStart:           true,
+		ZeekLogDir:              "/opt/zeek/logs/current",
+		ContinueOnError:         true,
+		RetainPartialResults:    true,
+		ReevaluateAmbiguous:     false,
+		ReevaluatePreset:        "off",
+		ReevaluateAfter:         "",
+		ReevaluateCustom:        "",
+		EnableRouteSampling:     true,
+		EnableServiceScan:       true,
+		EnablePassiveIngest:     true,
+		EnableOSDetection:       true,
+		ScanTag:                 "internal",
 	}
 }
 

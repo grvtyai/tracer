@@ -6,11 +6,11 @@
         <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Run History</h2>
         <div class="hero-actions">
             <a class="button button-primary" href="/scans/new?project={{.CurrentProject.ID}}">Start Scan</a>
-            <span class="pill">{{len .Runs}} runs</span>
+            <span class="pill" id="runs-count">{{len .Runs}} runs</span>
         </div>
     </div>
     {{if .RunItems}}
-    <table class="table">
+    <table class="table" id="runs-table" data-runs-api="/api/projects/{{.CurrentProject.ID}}/runs" data-project-id="{{.CurrentProject.ID}}">
         <thead>
             <tr>
                 <th>Started</th>
@@ -21,7 +21,7 @@
                 <th>Run ID</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="runs-table-body">
             {{range .RunItems}}
             <tr class="{{if not .Clickable}}row-disabled{{end}}">
                 <td>
@@ -45,8 +45,136 @@
             {{end}}
         </tbody>
     </table>
+    <p class="empty-note" id="runs-empty-note" hidden>No runs stored for this project yet.</p>
     {{else}}
-    <p class="empty-note">No runs stored for this project yet.</p>
+    <table class="table" id="runs-table" data-runs-api="/api/projects/{{.CurrentProject.ID}}/runs" data-project-id="{{.CurrentProject.ID}}" hidden>
+        <thead>
+            <tr>
+                <th>Started</th>
+                <th>Status</th>
+                <th>Run Name</th>
+                <th>Hosts</th>
+                <th>Subnets</th>
+                <th>Run ID</th>
+            </tr>
+        </thead>
+        <tbody id="runs-table-body"></tbody>
+    </table>
+    <p class="empty-note" id="runs-empty-note">No runs stored for this project yet.</p>
     {{end}}
 </section>
+
+<script>
+(() => {
+    const table = document.getElementById("runs-table");
+    const body = document.getElementById("runs-table-body");
+    const emptyNote = document.getElementById("runs-empty-note");
+    const count = document.getElementById("runs-count");
+    if (!table || !body) {
+        return;
+    }
+
+    const apiPath = table.dataset.runsApi;
+    const formatter = new Intl.DateTimeFormat(undefined, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
+    const renderRow = (item) => {
+        const row = document.createElement("tr");
+        if (!item.clickable) {
+            row.classList.add("row-disabled");
+        }
+
+        const startedCell = document.createElement("td");
+        const startedText = item.run.started_at ? formatter.format(new Date(item.run.started_at)) : "-";
+        if (item.clickable) {
+            const link = document.createElement("a");
+            link.className = "table-link";
+            link.href = `/runs/${item.run.id}`;
+            link.textContent = startedText;
+            startedCell.appendChild(link);
+        } else {
+            const span = document.createElement("span");
+            span.textContent = startedText;
+            startedCell.appendChild(span);
+        }
+        row.appendChild(startedCell);
+
+        const statusCell = document.createElement("td");
+        const status = document.createElement("span");
+        status.className = `status-label ${item.status_class || ""}`.trim();
+        if ((item.run.status || "").toLowerCase() === "running") {
+            const spinner = document.createElement("span");
+            spinner.className = "spinner";
+            status.appendChild(spinner);
+        }
+        status.appendChild(document.createTextNode(item.status_label || item.run.status || "Unknown"));
+        statusCell.appendChild(status);
+        row.appendChild(statusCell);
+
+        const nameCell = document.createElement("td");
+        nameCell.textContent = item.run.template_name || "-";
+        row.appendChild(nameCell);
+
+        const hostCell = document.createElement("td");
+        hostCell.textContent = `${item.host_count ?? 0}`;
+        row.appendChild(hostCell);
+
+        const subnetCell = document.createElement("td");
+        subnetCell.textContent = `${item.subnet_count ?? 0}`;
+        row.appendChild(subnetCell);
+
+        const idCell = document.createElement("td");
+        idCell.className = "mono";
+        idCell.textContent = item.run.id || "-";
+        row.appendChild(idCell);
+
+        return row;
+    };
+
+    const renderRuns = (items) => {
+        body.innerHTML = "";
+        if (!Array.isArray(items) || items.length === 0) {
+            table.hidden = true;
+            if (emptyNote) {
+                emptyNote.hidden = false;
+            }
+            if (count) {
+                count.textContent = "0 runs";
+            }
+            return;
+        }
+
+        items.forEach((item) => body.appendChild(renderRow(item)));
+        table.hidden = false;
+        if (emptyNote) {
+            emptyNote.hidden = true;
+        }
+        if (count) {
+            count.textContent = `${items.length} runs`;
+        }
+    };
+
+    const refreshRuns = async () => {
+        try {
+            const response = await fetch(apiPath, {
+                headers: {"Accept": "application/json"},
+                cache: "no-store",
+            });
+            if (!response.ok) {
+                return;
+            }
+            const payload = await response.json();
+            renderRuns(payload.run_items || []);
+        } catch (_) {
+        }
+    };
+
+    window.setInterval(refreshRuns, 5000);
+})();
+</script>
 {{end}}

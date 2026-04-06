@@ -37,7 +37,7 @@ func main() {
 		autoStartZeekFlag   optionalBool
 	)
 
-	flag.StringVar(&mode, "mode", "plan", "execution mode: plan, run, projects, runs, show-run, or diff")
+	flag.StringVar(&mode, "mode", "plan", "execution mode: plan, run, execute-run, projects, runs, show-run, or diff")
 	flag.StringVar(&template, "template", "examples/phase1-template.json", "path to a JSON template file")
 	flag.StringVar(&runID, "run-id", "", "run identifier for show-run")
 	flag.StringVar(&baselineRunID, "baseline-run", "", "baseline run identifier for diff mode")
@@ -194,6 +194,48 @@ func main() {
 			Blocking:     output.Blocking,
 			Reevaluation: output.Reevaluation,
 		}); err != nil {
+			fail(err)
+		}
+		emitJSON(output)
+		return
+	case "execute-run":
+		if runID == "" {
+			fail(fmt.Errorf("execute-run mode requires --run-id"))
+		}
+
+		loadedTemplate, effectiveOptions, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag)
+		repository, err := storage.OpenSQLite(effectiveOptions.DBPath)
+		if err != nil {
+			fail(err)
+		}
+		defer repository.Close()
+
+		runStore, err := repository.BindRunStore(context.Background(), runID)
+		if err != nil {
+			fail(err)
+		}
+
+		executedPlan, jobResults, records, err := app.ExecuteRunWithPersistence(context.Background(), app.DefaultPlugins(), loadedTemplate, effectiveOptions, runStore)
+		output.Plan = executedPlan
+		output.JobResults = jobResults
+		output.Evidence = records
+		output.Blocking = app.AnalyzeEvidence(records)
+		output.Reevaluation = app.BuildReevaluation(records, jobResults, effectiveOptions)
+
+		completionStatus := summarizeRunStatus(jobResults)
+		if err != nil {
+			completionStatus = "failed"
+		}
+		if completeErr := repository.CompleteRun(context.Background(), runID, storage.RunCompletion{
+			Status:       completionStatus,
+			Plan:         executedPlan,
+			Blocking:     output.Blocking,
+			Reevaluation: output.Reevaluation,
+		}); completeErr != nil {
+			fail(completeErr)
+		}
+
+		if err != nil {
 			fail(err)
 		}
 		emitJSON(output)

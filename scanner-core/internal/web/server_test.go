@@ -96,6 +96,46 @@ func TestServerRunPageRendersHostData(t *testing.T) {
 	}
 }
 
+func TestProjectRunsAPIIncludesRunItems(t *testing.T) {
+	repo := openTestRepo(t)
+	defer repo.Close()
+
+	runID := seedTestRun(t, repo)
+	run, err := repo.GetRun(context.Background(), runID)
+	if err != nil {
+		t.Fatalf("GetRun returned error: %v", err)
+	}
+
+	server, err := NewServer(repo, Options{
+		DBPath:  repo.Path(),
+		DataDir: filepath.Dir(repo.Path()),
+		AppName: "Startrace",
+	})
+	if err != nil {
+		t.Fatalf("NewServer returned error: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/projects/"+run.Run.ProjectID+"/runs", nil)
+	recorder := httptest.NewRecorder()
+	server.Handler().ServeHTTP(recorder, req)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected runs api 200, got %d", recorder.Code)
+	}
+
+	var payload struct {
+		RunItems []runListItem `json:"run_items"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("Unmarshal run items payload returned error: %v", err)
+	}
+	if len(payload.RunItems) != 1 {
+		t.Fatalf("expected 1 run item, got %d", len(payload.RunItems))
+	}
+	if payload.RunItems[0].HostCount != 1 {
+		t.Fatalf("unexpected host count: got %d", payload.RunItems[0].HostCount)
+	}
+}
+
 func TestServerAssetsAPIAndPageSupportManualOverrides(t *testing.T) {
 	repo := openTestRepo(t)
 	defer repo.Close()
@@ -167,8 +207,8 @@ func TestServerAssetsAPIAndPageSupportManualOverrides(t *testing.T) {
 	if !strings.Contains(body, "Andres iPhone") {
 		t.Fatalf("expected asset page to contain manual display name, body=%q", body)
 	}
-	if !strings.Contains(body, "operator-confirmed labels") {
-		t.Fatalf("expected asset page to contain override guidance, body=%q", body)
+	if !strings.Contains(body, "Edit Host") {
+		t.Fatalf("expected asset page to contain host edit entrypoint, body=%q", body)
 	}
 }
 

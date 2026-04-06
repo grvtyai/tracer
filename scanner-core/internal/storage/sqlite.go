@@ -318,6 +318,17 @@ func (r *SQLiteRepository) StartRun(ctx context.Context, projectID string, spec 
 	return run, &SQLiteRunStore{repo: r, runID: run.ID}, nil
 }
 
+func (r *SQLiteRepository) BindRunStore(ctx context.Context, runID string) (*SQLiteRunStore, error) {
+	var exists int
+	if err := r.db.QueryRowContext(ctx, `SELECT 1 FROM runs WHERE id = ?`, runID).Scan(&exists); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("run %q not found", runID)
+		}
+		return nil, fmt.Errorf("bind run store: %w", err)
+	}
+	return &SQLiteRunStore{repo: r, runID: runID}, nil
+}
+
 func (r *SQLiteRepository) CompleteRun(ctx context.Context, runID string, completion RunCompletion) error {
 	finishedAt := time.Now().UTC()
 
