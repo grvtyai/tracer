@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -82,6 +83,7 @@ type pageData struct {
 	RoadmapItems       []string
 	PrimaryAction      *pageAction
 	SecondaryAction    *pageAction
+	ModuleImageURL     string
 	DiffAPI            string
 }
 
@@ -205,6 +207,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/security", s.handleSecurity)
 	s.mux.HandleFunc("/workbench", s.handleWorkbench)
 	s.mux.HandleFunc("/automation", s.handleAutomation)
+	s.mux.HandleFunc("/module-illustration", s.handleModuleIllustration)
 	s.mux.HandleFunc("/projects", s.handleProjectsIndex)
 	s.mux.HandleFunc("/projects/new", s.handleProjectNew)
 	s.mux.HandleFunc("/projects/", s.handleProject)
@@ -942,7 +945,7 @@ func (s *Server) handleSecurity(w http.ResponseWriter, r *http.Request) {
 		"Introduce a shared findings model above raw scan evidence.",
 		"Add first security summaries that correlate assets, open services and future checks.",
 		"Prepare the UI for module-owned reports and remediation guidance.",
-	}, &pageAction{Label: "Open Discovery", URL: buildProjectPath("/discovery", nil), Variant: "button-secondary"})
+	}, &pageAction{Label: "Open Discovery", URL: buildProjectPath("/discovery", nil), Variant: "button-secondary"}, true)
 }
 
 func (s *Server) handleWorkbench(w http.ResponseWriter, r *http.Request) {
@@ -958,7 +961,7 @@ func (s *Server) handleWorkbench(w http.ResponseWriter, r *http.Request) {
 		"Add a shared artifact model for requests, responses and notes.",
 		"Build a first HTTP workbench instead of a full Burp-style proxy stack.",
 		"Verify that non-scanner tools can live cleanly inside the same product shell.",
-	}, &pageAction{Label: "Open Inventory", URL: buildProjectPath("/inventory", nil), Variant: "button-secondary"})
+	}, &pageAction{Label: "Open Inventory", URL: buildProjectPath("/inventory", nil), Variant: "button-secondary"}, true)
 }
 
 func (s *Server) handleAutomation(w http.ResponseWriter, r *http.Request) {
@@ -974,7 +977,7 @@ func (s *Server) handleAutomation(w http.ResponseWriter, r *http.Request) {
 		"Promote scheduled scans into a generic task scheduler and runner.",
 		"Track pending, running, completed and failed automation runs independently from discovery runs.",
 		"Expose a UI for module-owned schedules instead of special-case scanner forms.",
-	}, &pageAction{Label: "Open Discovery", URL: buildProjectPath("/discovery", nil), Variant: "button-secondary"})
+	}, &pageAction{Label: "Open Discovery", URL: buildProjectPath("/discovery", nil), Variant: "button-secondary"}, true)
 }
 
 func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request) {
@@ -1285,7 +1288,7 @@ func (s *Server) render(w http.ResponseWriter, name string, data pageData) {
 	}
 }
 
-func (s *Server) renderSuitePlaceholder(w http.ResponseWriter, r *http.Request, title string, overview string, currentState []string, roadmap []string, secondaryAction *pageAction) {
+func (s *Server) renderSuitePlaceholder(w http.ResponseWriter, r *http.Request, title string, overview string, currentState []string, roadmap []string, secondaryAction *pageAction, showImage bool) {
 	ctx := r.Context()
 	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
 	if err != nil {
@@ -1322,10 +1325,51 @@ func (s *Server) renderSuitePlaceholder(w http.ResponseWriter, r *http.Request, 
 		SecondaryAction: secondaryAction,
 		Settings:        appSettings,
 	}
+	if showImage {
+		data.ModuleImageURL = "/module-illustration"
+	}
 	if data.SecondaryAction != nil && currentProject != nil {
 		data.SecondaryAction.URL = buildProjectPath(strings.Split(data.SecondaryAction.URL, "?")[0], currentProject)
 	}
 	s.render(w, "module.html", data)
+}
+
+func (s *Server) handleModuleIllustration(w http.ResponseWriter, r *http.Request) {
+	imagePath, err := resolveModuleIllustrationPath()
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	http.ServeFile(w, r, imagePath)
+}
+
+func resolveModuleIllustrationPath() (string, error) {
+	candidates := []string{}
+
+	if executable, err := os.Executable(); err == nil {
+		execDir := filepath.Dir(executable)
+		candidates = append(candidates,
+			filepath.Join(execDir, "..", "..", "assets", "pictures", "404_Image.png"),
+			filepath.Join(execDir, "..", "assets", "pictures", "404_Image.png"),
+			filepath.Join(execDir, "assets", "pictures", "404_Image.png"),
+		)
+	}
+
+	if cwd, err := os.Getwd(); err == nil {
+		candidates = append(candidates,
+			filepath.Join(cwd, "assets", "pictures", "404_Image.png"),
+			filepath.Join(cwd, "..", "assets", "pictures", "404_Image.png"),
+		)
+	}
+
+	for _, candidate := range candidates {
+		cleaned := filepath.Clean(candidate)
+		if _, err := os.Stat(cleaned); err == nil {
+			return cleaned, nil
+		}
+	}
+
+	return "", fmt.Errorf("module illustration not found")
 }
 
 func (s *Server) writeJSON(w http.ResponseWriter, status int, value any) {

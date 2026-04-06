@@ -24,6 +24,13 @@
     </article>
 </section>
 
+{{if .ModuleImageURL}}
+<section class="panel">
+    <div class="module-image-frame">
+        <img class="module-image" src="{{.ModuleImageURL}}" alt="{{.Title}} illustration" />
+    </div>
+</section>
+{{else}}
 <section class="panel-grid">
     <article class="panel">
         <div class="panel-head">
@@ -47,4 +54,5 @@
         </ul>
     </article>
 </section>
+{{end}}
 {{end}}
