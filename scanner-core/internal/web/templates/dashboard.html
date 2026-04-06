@@ -62,21 +62,34 @@
         <h2 class="chart-title">{{.Title}}</h2>
         {{if .Segments}}
         <div class="chart-stack">
-            <div class="pie-chart">
-                <svg class="pie-chart-svg" viewBox="0 0 100 100" aria-hidden="true">
+            <div class="donut-shell">
+                <svg class="donut-chart" viewBox="0 0 120 120" aria-hidden="true">
+                    <circle class="donut-track" cx="60" cy="60" r="44"></circle>
                     {{range .Segments}}
-                    {{if .FullCircle}}
-                    <circle cx="50" cy="50" r="44" fill="{{.Color}}"></circle>
-                    {{else}}
-                    <path d="{{.PathData}}" fill="{{.Color}}"></path>
-                    {{end}}
+                    <circle
+                        class="donut-segment"
+                        cx="60"
+                        cy="60"
+                        r="44"
+                        pathLength="100"
+                        stroke="{{.Color}}"
+                        stroke-dasharray="{{.DashArray}}"
+                        stroke-dashoffset="{{.DashOffset}}"
+                        data-tooltip="{{.Tooltip}}"
+                        data-color="{{.Color}}"
+                        style="--segment-color: {{.Color}};"
+                        tabindex="0"
+                    >
+                        <title>{{.Tooltip}}</title>
+                    </circle>
                     {{end}}
                 </svg>
+                <div class="chart-glow-core"></div>
             </div>
             <div class="chart-legend-box">
                 <div class="chart-legend">
                 {{range .Segments}}
-                <div class="chart-legend-item">
+                <div class="chart-legend-item" data-tooltip="{{.Tooltip}}" data-color="{{.Color}}">
                     <svg class="chart-swatch" viewBox="0 0 14 14" aria-hidden="true">
                         <circle cx="7" cy="7" r="6" fill="{{.Color}}"></circle>
                     </svg>
@@ -95,6 +108,8 @@
     </article>
     {{end}}
 </section>
+
+<div class="chart-hover-tip" id="chart-hover-tip" hidden></div>
 
 <section class="panel">
     <div class="panel-head">
@@ -117,4 +132,54 @@
     <p class="empty-note">No assets available for this project yet.</p>
     {{end}}
 </section>
+
+<script>
+(() => {
+    const tooltip = document.getElementById("chart-hover-tip");
+    if (!tooltip) {
+        return;
+    }
+
+    const positionTooltip = (x, y) => {
+        const offset = 18;
+        tooltip.style.left = `${x + offset}px`;
+        tooltip.style.top = `${y + offset}px`;
+    };
+
+    const showTooltip = (event, element) => {
+        const text = element.dataset.tooltip;
+        if (!text) {
+            return;
+        }
+        tooltip.textContent = text;
+        tooltip.style.setProperty("--tip-glow", element.dataset.color || "rgba(91,140,255,0.8)");
+        tooltip.hidden = false;
+        if (typeof event.clientX === "number" && typeof event.clientY === "number") {
+            positionTooltip(event.clientX, event.clientY);
+            return;
+        }
+        const rect = element.getBoundingClientRect();
+        positionTooltip(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    };
+
+    const moveTooltip = (event) => {
+        if (tooltip.hidden) {
+            return;
+        }
+        positionTooltip(event.clientX, event.clientY);
+    };
+
+    const hideTooltip = () => {
+        tooltip.hidden = true;
+    };
+
+    document.querySelectorAll(".donut-segment, .chart-legend-item").forEach((element) => {
+        element.addEventListener("pointerenter", (event) => showTooltip(event, element));
+        element.addEventListener("pointermove", moveTooltip);
+        element.addEventListener("pointerleave", hideTooltip);
+        element.addEventListener("focus", (event) => showTooltip(event, element));
+        element.addEventListener("blur", hideTooltip);
+    });
+})();
+</script>
 {{end}}

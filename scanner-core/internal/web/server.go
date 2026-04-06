@@ -149,8 +149,9 @@ type dashboardChartSegment struct {
 	Count        int
 	PercentLabel string
 	Color        string
-	PathData     string
-	FullCircle   bool
+	DashArray    string
+	DashOffset   string
+	Tooltip      string
 }
 
 type statusInfo struct {
@@ -1723,16 +1724,17 @@ func buildDashboardChart(title string, counts []labelCount, emptyMessage string)
 	for idx, entry := range normalized {
 		color := palette[idx%len(palette)]
 		percent := float64(entry.Count) / float64(total) * 100
-		end := start + percent
+		dashArray, dashOffset := buildDonutStroke(start, percent)
 		segments = append(segments, dashboardChartSegment{
 			Label:        entry.Label,
 			Count:        entry.Count,
 			PercentLabel: fmt.Sprintf("%.1f%%", percent),
 			Color:        color,
-			PathData:     buildPieSlicePath(start, end),
-			FullCircle:   percent >= 99.999,
+			DashArray:    dashArray,
+			DashOffset:   dashOffset,
+			Tooltip:      fmt.Sprintf("%s | %d | %.1f%%", entry.Label, entry.Count, percent),
 		})
-		start = end
+		start += percent
 	}
 
 	return dashboardChart{
@@ -1742,38 +1744,15 @@ func buildDashboardChart(title string, counts []labelCount, emptyMessage string)
 	}
 }
 
-func buildPieSlicePath(startPercent float64, endPercent float64) string {
-	if endPercent-startPercent >= 99.999 {
-		return ""
+func buildDonutStroke(startPercent float64, spanPercent float64) (string, string) {
+	if spanPercent >= 99.999 {
+		return "100 0", "0"
 	}
 
-	startAngle := startPercent / 100 * 2 * math.Pi
-	endAngle := endPercent / 100 * 2 * math.Pi
-	centerX := 50.0
-	centerY := 50.0
-	radius := 44.0
-
-	startX := centerX + radius*math.Cos(startAngle-math.Pi/2)
-	startY := centerY + radius*math.Sin(startAngle-math.Pi/2)
-	endX := centerX + radius*math.Cos(endAngle-math.Pi/2)
-	endY := centerY + radius*math.Sin(endAngle-math.Pi/2)
-	largeArc := 0
-	if endPercent-startPercent > 50 {
-		largeArc = 1
-	}
-
-	return fmt.Sprintf(
-		"M %.3f %.3f L %.3f %.3f A %.3f %.3f 0 %d 1 %.3f %.3f Z",
-		centerX,
-		centerY,
-		startX,
-		startY,
-		radius,
-		radius,
-		largeArc,
-		endX,
-		endY,
-	)
+	gap := math.Min(1.4, spanPercent*0.18)
+	visible := math.Max(spanPercent-gap, 0.8)
+	offset := -(startPercent + gap/2)
+	return fmt.Sprintf("%.3f %.3f", visible, 100-visible), fmt.Sprintf("%.3f", offset)
 }
 
 func normalizeChartCounts(counts []labelCount, maxSlices int) []labelCount {

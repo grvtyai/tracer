@@ -556,18 +556,55 @@ h2 { font-size: 20px; }
     width: 100%;
 }
 
-.pie-chart {
+.donut-shell {
     position: relative;
-    width: min(170px, 100%);
+    width: min(190px, 100%);
     aspect-ratio: 1;
     margin: 0 auto;
 }
 
-.pie-chart-svg {
+.donut-chart {
     display: block;
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 14px 28px rgba(0,0,0,0.22));
+    overflow: visible;
+}
+
+.donut-track {
+    fill: none;
+    stroke: rgba(255,255,255,0.08);
+    stroke-width: 6;
+}
+
+.donut-segment {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 60px 60px;
+    filter: drop-shadow(0 0 6px var(--segment-color, rgba(91,140,255,0.8)));
+    transition: stroke-width 0.18s ease, filter 0.18s ease, opacity 0.18s ease;
+    cursor: pointer;
+}
+
+.donut-segment:hover,
+.donut-segment:focus-visible {
+    stroke-width: 8;
+    filter: drop-shadow(0 0 8px var(--segment-color, rgba(91,140,255,0.8))) drop-shadow(0 0 18px var(--segment-color, rgba(91,140,255,0.8)));
+    outline: none;
+}
+
+.chart-glow-core {
+    position: absolute;
+    inset: 31%;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, rgba(47,215,255,0.18), rgba(91,140,255,0.08) 45%, transparent 72%),
+        rgba(15, 19, 27, 0.86);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow:
+        inset 0 0 16px rgba(47,215,255,0.12),
+        0 0 22px rgba(47,215,255,0.08);
 }
 
 .chart-legend {
@@ -596,6 +633,7 @@ h2 { font-size: 20px; }
     padding: 6px 8px;
     border-radius: 10px;
     background: rgba(255,255,255,0.03);
+    cursor: default;
 }
 
 .chart-swatch {
@@ -603,6 +641,23 @@ h2 { font-size: 20px; }
     width: 14px;
     height: 14px;
     margin-top: 4px;
+}
+
+.chart-hover-tip {
+    position: fixed;
+    z-index: 50;
+    max-width: 260px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(15, 19, 27, 0.94);
+    color: var(--text);
+    font-size: 12px;
+    pointer-events: none;
+    box-shadow:
+        0 12px 28px rgba(0,0,0,0.35),
+        0 0 14px var(--tip-glow, rgba(91,140,255,0.35));
+    backdrop-filter: blur(10px);
 }
 
 .compare-form-grid {
