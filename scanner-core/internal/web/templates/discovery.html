@@ -8,10 +8,11 @@
             <span class="pill status-success">Live</span>
         </div>
         <p class="empty-note">{{.OverviewText}}</p>
+        {{if .SecondaryAction}}
         <div class="hero-actions">
-            {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
-            {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
+            <a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>
         </div>
+        {{end}}
     </article>
 
     <article class="stats-grid">
@@ -34,33 +35,9 @@
     </article>
 </section>
 
-<section class="panel-grid">
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Current State</h2>
-        </div>
-        <ul class="bullet-list">
-            {{range .CurrentStateItems}}
-            <li>{{.}}</li>
-            {{end}}
-        </ul>
-    </article>
-
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Next Foundation Steps</h2>
-        </div>
-        <ul class="bullet-list">
-            {{range .RoadmapItems}}
-            <li>{{.}}</li>
-            {{end}}
-        </ul>
-    </article>
-</section>
-
 <section class="panel">
     <div class="panel-head">
-        <h2>Latest Discovery Runs</h2>
+        <h2>Latest Discovery Runs History</h2>
         <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Run History</a>
     </div>
     {{if .RecentRunItems}}

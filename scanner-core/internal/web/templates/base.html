@@ -82,7 +82,7 @@
             {{if .ModuleNav}}
             <nav class="module-nav" aria-label="Module Navigation">
                 {{range .ModuleNav}}
-                <a class="module-nav-link {{if .Active}}active{{end}}" href="{{.URL}}">{{.Label}}</a>
+                <a class="module-nav-link {{if .Primary}}primary{{end}} {{if .Active}}active{{end}}" href="{{.URL}}">{{.Label}}</a>
                 {{end}}
             </nav>
             {{end}}

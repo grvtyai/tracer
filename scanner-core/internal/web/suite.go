@@ -18,9 +18,10 @@ type suiteCard struct {
 }
 
 type moduleNavItem struct {
-	Label  string
-	URL    string
-	Active bool
+	Label   string
+	URL     string
+	Active  bool
+	Primary bool
 }
 
 type pageAction struct {
@@ -89,10 +90,10 @@ func buildModuleNav(activeNav string, activeSection string, currentProject *stor
 	switch activeNav {
 	case "discovery":
 		candidates = []candidate{
+			{section: "discovery-launch", label: "Start Run", url: "/scans/new"},
 			{section: "discovery-overview", label: "Overview", url: "/discovery"},
 			{section: "discovery-runs", label: "Runs", url: "/runs"},
 			{section: "discovery-assets", label: "Assets", url: "/discovery/assets"},
-			{section: "discovery-launch", label: "Start Run", url: "/scans/new"},
 		}
 	case "inventory":
 		candidates = []candidate{
@@ -122,9 +123,10 @@ func buildModuleNav(activeNav string, activeSection string, currentProject *stor
 	items := make([]moduleNavItem, 0, len(candidates))
 	for _, candidate := range candidates {
 		items = append(items, moduleNavItem{
-			Label:  candidate.label,
-			URL:    buildProjectPath(candidate.url, currentProject),
-			Active: activeSection == candidate.section,
+			Label:   candidate.label,
+			URL:     buildProjectPath(candidate.url, currentProject),
+			Active:  activeSection == candidate.section,
+			Primary: activeNav == "discovery" && candidate.section == "discovery-launch",
 		})
 	}
 

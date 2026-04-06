@@ -74,6 +74,7 @@ type pageData struct {
 	WarningDetails     []warningDetail
 	HelpLink           string
 	Stats              dashboardStats
+	DashboardCharts    []dashboardChart
 	DeviceTypeStats    []labelCount
 	ConnectionStats    []labelCount
 	StatusStats        []labelCount
@@ -131,6 +132,23 @@ type portEntry struct {
 type labelCount struct {
 	Label string
 	Count int
+}
+
+type dashboardChart struct {
+	Title        string
+	Subtitle     string
+	TotalLabel   string
+	TotalValue   int
+	Style        string
+	Segments     []dashboardChartSegment
+	EmptyMessage string
+}
+
+type dashboardChartSegment struct {
+	Label        string
+	Count        int
+	PercentLabel string
+	Color        string
 }
 
 type statusInfo struct {
@@ -285,44 +303,8 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 			EvidenceCount: countEvidence(runs),
 			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
 		},
-		SuiteCards: []suiteCard{
-			{
-				Title:       "Discovery",
-				Summary:     "Scanner-driven discovery, run history, preflight checks and the first scheduled task workflows live here.",
-				URL:         buildProjectPath("/discovery", currentProject),
-				StatusLabel: "Live",
-				StatusClass: moduleStatusClass("Live"),
-			},
-			{
-				Title:       "Inventory",
-				Summary:     "Shared asset inventory with persistent observations, operator overrides and cross-module context.",
-				URL:         buildProjectPath("/inventory", currentProject),
-				StatusLabel: "Live",
-				StatusClass: moduleStatusClass("Live"),
-			},
-			{
-				Title:       "Security",
-				Summary:     "Reserved for findings, security workflows and higher-level checks that reuse the same shared project data.",
-				URL:         buildProjectPath("/security", currentProject),
-				StatusLabel: "Foundation",
-				StatusClass: moduleStatusClass("Foundation"),
-			},
-			{
-				Title:       "Workbench",
-				Summary:     "Reserved for operator-driven tooling such as an HTTP repeater, request crafting and future test utilities.",
-				URL:         buildProjectPath("/workbench", currentProject),
-				StatusLabel: "Foundation",
-				StatusClass: moduleStatusClass("Foundation"),
-			},
-			{
-				Title:       "Automation",
-				Summary:     "Reserved for the generic scheduler and module-triggered tasks that will sit above individual tools.",
-				URL:         buildProjectPath("/automation", currentProject),
-				StatusLabel: "Foundation",
-				StatusClass: moduleStatusClass("Foundation"),
-			},
-		},
-		Settings: appSettings,
+		DashboardCharts: buildDashboardCharts(projectAssets, runs),
+		Settings:        appSettings,
 	}
 	s.render(w, "dashboard.html", data)
 }
@@ -378,21 +360,6 @@ func (s *Server) handleDiscovery(w http.ResponseWriter, r *http.Request) {
 			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
 		},
 		OverviewText: "This module is the home for network discovery, scanner orchestration, run review and the first scheduled scan workflows. The important shift is that Discovery now feeds shared suite data instead of defining the whole product.",
-		CurrentStateItems: []string{
-			"GUI-started scans already persist runs, evidence and asset observations into the shared project store.",
-			"Run history, host review, acknowledgements and time-based reevaluation records already exist and stay visible here.",
-			"Preflight checks still validate discovery dependencies such as naabu, nmap, httpx and zgrab2 before you launch a run.",
-		},
-		RoadmapItems: []string{
-			"Promote scheduled scans from stored records to a generic automation executor.",
-			"Split discovery-specific orchestration further away from the global suite shell.",
-			"Keep extending the scanner, but only as one module consuming shared suite services.",
-		},
-		PrimaryAction: &pageAction{
-			Label:   "Start Discovery Run",
-			URL:     buildProjectPath("/scans/new", currentProject),
-			Variant: "button-primary",
-		},
 		SecondaryAction: &pageAction{
 			Label:   "Open Run History",
 			URL:     buildProjectPath("/runs", currentProject),
@@ -1624,6 +1591,22 @@ func countAssetProperty(projectAssets []storage.AssetSummary, selector func(stor
 	return mapToLabelCounts(counts)
 }
 
+func countPortUsage(projectAssets []storage.AssetSummary) []labelCount {
+	counts := make(map[string]int)
+	for _, asset := range projectAssets {
+		for _, port := range asset.CurrentOpenPorts {
+			counts[fmt.Sprintf("%d/tcp", port)]++
+		}
+	}
+	return mapToLabelCounts(counts)
+}
+
+func countOSFamilies(projectAssets []storage.AssetSummary) []labelCount {
+	return countAssetProperty(projectAssets, func(asset storage.AssetSummary) string {
+		return detectOSFamily(asset.CurrentOS)
+	})
+}
+
 func countRunStatuses(runs []storage.RunSummary) []labelCount {
 	counts := make(map[string]int)
 	for _, run := range runs {
@@ -1635,6 +1618,131 @@ func countRunStatuses(runs []storage.RunSummary) []labelCount {
 		counts[label]++
 	}
 	return mapToLabelCounts(counts)
+}
+
+func buildDashboardCharts(projectAssets []storage.AssetSummary, runs []storage.RunSummary) []dashboardChart {
+	return []dashboardChart{
+		buildDashboardChart(
+			"Assets",
+			"Inventory grouped by current classification",
+			"assets",
+			countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveDeviceType }),
+			"No assets are available for this project yet.",
+		),
+		buildDashboardChart(
+			"Ports",
+			"All currently observed open ports across the shared inventory",
+			"port observations",
+			countPortUsage(projectAssets),
+			"No open ports have been stored yet.",
+		),
+		buildDashboardChart(
+			"Operating Systems",
+			"Detected platform families based on the latest asset observations",
+			"platform signals",
+			countOSFamilies(projectAssets),
+			"No operating system data has been stored yet.",
+		),
+		buildDashboardChart(
+			"Connections",
+			"Current connection assumptions across shared assets",
+			"connection hints",
+			countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveConnectionType }),
+			"No connection type data is available yet.",
+		),
+	}
+}
+
+func buildDashboardChart(title string, subtitle string, totalLabel string, counts []labelCount, emptyMessage string) dashboardChart {
+	normalized := normalizeChartCounts(counts, 6)
+	total := 0
+	for _, entry := range normalized {
+		total += entry.Count
+	}
+
+	if total == 0 {
+		return dashboardChart{
+			Title:        title,
+			Subtitle:     subtitle,
+			TotalLabel:   totalLabel,
+			EmptyMessage: emptyMessage,
+		}
+	}
+
+	palette := []string{"#5b8cff", "#2fd7ff", "#ff9f43", "#3fdc7a", "#ff6b6b", "#c792ea", "#8be9fd"}
+	segments := make([]dashboardChartSegment, 0, len(normalized))
+	gradientParts := make([]string, 0, len(normalized))
+	start := 0.0
+	for idx, entry := range normalized {
+		color := palette[idx%len(palette)]
+		percent := float64(entry.Count) / float64(total) * 100
+		end := start + percent
+		segments = append(segments, dashboardChartSegment{
+			Label:        entry.Label,
+			Count:        entry.Count,
+			PercentLabel: fmt.Sprintf("%.1f%%", percent),
+			Color:        color,
+		})
+		gradientParts = append(gradientParts, fmt.Sprintf("%s %.2f%% %.2f%%", color, start, end))
+		start = end
+	}
+
+	return dashboardChart{
+		Title:      title,
+		Subtitle:   subtitle,
+		TotalLabel: totalLabel,
+		TotalValue: total,
+		Style:      "conic-gradient(" + strings.Join(gradientParts, ", ") + ")",
+		Segments:   segments,
+	}
+}
+
+func normalizeChartCounts(counts []labelCount, maxSlices int) []labelCount {
+	if len(counts) == 0 {
+		return nil
+	}
+
+	normalized := append([]labelCount(nil), counts...)
+	sort.SliceStable(normalized, func(i, j int) bool {
+		if normalized[i].Count == normalized[j].Count {
+			return normalized[i].Label < normalized[j].Label
+		}
+		return normalized[i].Count > normalized[j].Count
+	})
+
+	if maxSlices <= 0 || len(normalized) <= maxSlices {
+		return normalized
+	}
+
+	visible := append([]labelCount(nil), normalized[:maxSlices-1]...)
+	other := 0
+	for _, entry := range normalized[maxSlices-1:] {
+		other += entry.Count
+	}
+	visible = append(visible, labelCount{Label: "other", Count: other})
+	return visible
+}
+
+func detectOSFamily(value string) string {
+	lowered := strings.ToLower(strings.TrimSpace(value))
+	switch {
+	case lowered == "":
+		return "unknown"
+	case strings.Contains(lowered, "windows"):
+		return "windows"
+	case strings.Contains(lowered, "macos"), strings.Contains(lowered, "os x"), strings.Contains(lowered, "darwin"):
+		return "macos"
+	case strings.Contains(lowered, "ios"), strings.Contains(lowered, "iphone"), strings.Contains(lowered, "ipad"):
+		return "ios"
+	case strings.Contains(lowered, "android"):
+		return "android"
+	case strings.Contains(lowered, "ubuntu"), strings.Contains(lowered, "debian"), strings.Contains(lowered, "linux"), strings.Contains(lowered, "centos"), strings.Contains(lowered, "fedora"), strings.Contains(lowered, "red hat"):
+		return "linux"
+	case strings.Contains(lowered, "freebsd"), strings.Contains(lowered, "openbsd"), strings.Contains(lowered, "netbsd"), strings.Contains(lowered, "bsd"):
+		return "bsd"
+	default:
+		return "other"
+	}
 }
 
 func countRunHosts(run storage.RunDetails) int {

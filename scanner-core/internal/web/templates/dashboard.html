@@ -1,46 +1,38 @@
 {{define "dashboard.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-<section class="hero-grid">
-    <article class="panel">
-        <div class="panel-head">
-            <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{else}}No Project{{end}}</h2>
-            {{if .CurrentProject}}<span class="pill">{{.CurrentProject.PublicID}}</span>{{end}}
-        </div>
-        {{if .CurrentProject}}
-        <div class="kv-grid">
-            <div class="kv-key">Owner</div>
-            <div class="kv-value">{{.CurrentProject.OwnerUsername}}</div>
-            <div class="kv-key">Storage path</div>
-            <div class="kv-value mono">{{.CurrentProject.StoragePath}}</div>
-            <div class="kv-key">Target database</div>
-            <div class="kv-value mono">{{.CurrentProject.TargetDBPath}}</div>
-            <div class="kv-key">Notes</div>
-            <div class="kv-value">{{if .CurrentProject.Notes}}{{.CurrentProject.Notes}}{{else}}-{{end}}</div>
-        </div>
-        {{else}}
-        <p class="empty-note">Create your first project to start organizing shared data across Discovery, Inventory and the next suite modules.</p>
-        {{end}}
-    </article>
-
-    <article class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">Runs</div>
-            <div class="stat-value">{{.Stats.RunCount}}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Assets</div>
-            <div class="stat-value">{{.Stats.AssetCount}}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Evidence</div>
-            <div class="stat-value">{{.Stats.EvidenceCount}}</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Reevaluation</div>
-            <div class="stat-value">{{.Stats.ReevalCount}}</div>
-        </div>
-    </article>
+<section class="panel">
+    <div class="panel-head">
+        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{else}}No Project{{end}}</h2>
+        {{if .CurrentProject}}<span class="pill">{{.CurrentProject.PublicID}}</span>{{end}}
+    </div>
+    {{if .CurrentProject}}
+    <div class="kv-grid">
+        <div class="kv-key">Owner</div>
+        <div class="kv-value">{{if .CurrentProject.OwnerUsername}}{{.CurrentProject.OwnerUsername}}{{else}}-{{end}}</div>
+        <div class="kv-key">Storage path</div>
+        <div class="kv-value mono">{{.CurrentProject.StoragePath}}</div>
+        <div class="kv-key">Target database</div>
+        <div class="kv-value mono">{{.CurrentProject.TargetDBPath}}</div>
+        <div class="kv-key">Created</div>
+        <div class="kv-value">{{if .CurrentProject.CreatedAt.IsZero}}-{{else}}{{.CurrentProject.CreatedAt.Format "2006-01-02 15:04"}}{{end}}</div>
+        <div class="kv-key">Updated</div>
+        <div class="kv-value">{{if .CurrentProject.UpdatedAt.IsZero}}-{{else}}{{.CurrentProject.UpdatedAt.Format "2006-01-02 15:04"}}{{end}}</div>
+        <div class="kv-key">Runs</div>
+        <div class="kv-value">{{.CurrentProject.RunCount}}</div>
+        <div class="kv-key">Last run</div>
+        <div class="kv-value">{{if .CurrentProject.LastRunAt.IsZero}}-{{else}}{{.CurrentProject.LastRunAt.Format "2006-01-02 15:04"}}{{end}}</div>
+        <div class="kv-key">Notes</div>
+        <div class="kv-value">{{if .CurrentProject.Notes}}{{.CurrentProject.Notes}}{{else}}-{{end}}</div>
+    </div>
+    <div class="tag-row">
+        <span class="tag">Assets {{.Stats.AssetCount}}</span>
+        <span class="tag">Evidence {{.Stats.EvidenceCount}}</span>
+        <span class="tag">Reevaluation {{.Stats.ReevalCount}}</span>
+    </div>
+    {{else}}
+    <p class="empty-note">Create your first project to start organizing shared data across Discovery, Inventory and the next suite modules.</p>
+    {{end}}
 </section>
 
 {{if not .RecentRunItems}}
@@ -61,53 +53,40 @@
 {{end}}
 
 <section class="panel-grid">
-    <article class="panel">
+    {{range .DashboardCharts}}
+    <article class="panel chart-panel">
         <div class="panel-head">
-            <h2>Suite Areas</h2>
-        </div>
-        <div class="list">
-            {{range .SuiteCards}}
-            <a class="list-item" href="{{.URL}}">
-                <div>
-                    <div class="list-title">{{.Title}}</div>
-                    <div class="list-meta">{{.Summary}}</div>
-                </div>
-                <span class="pill {{.StatusClass}}">{{.StatusLabel}}</span>
-            </a>
-            {{end}}
-        </div>
-    </article>
-
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Latest Runs</h2>
-        </div>
-        {{if .RecentRunItems}}
-        <div class="list">
-            {{range .RecentRunItems}}
-            {{if .Clickable}}
-            <a href="/runs/{{.Run.ID}}" class="list-item">
-                <div>
-                    <div class="list-title">{{.Run.TemplateName}}</div>
-                    <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts | {{.SubnetCount}} subnet{{if ne .SubnetCount 1}}s{{end}}</div>
-                </div>
-                <span class="pill {{if eq .Run.Status "running"}}running-pill{{end}} {{.StatusClass}}">{{if eq .Run.Status "running"}}<span class="spinner tiny"></span>{{end}}{{.StatusLabel}}</span>
-            </a>
-            {{else}}
-            <div class="list-item disabled">
-                <div>
-                    <div class="list-title">{{.Run.TemplateName}}</div>
-                    <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts | {{.SubnetCount}} subnet{{if ne .SubnetCount 1}}s{{end}}</div>
-                </div>
-                <span class="pill {{if eq .Run.Status "running"}}running-pill{{end}} {{.StatusClass}}">{{if eq .Run.Status "running"}}<span class="spinner tiny"></span>{{end}}{{.StatusLabel}}</span>
+            <div>
+                <h2>{{.Title}}</h2>
+                <div class="list-meta">{{.Subtitle}}</div>
             </div>
-            {{end}}
-            {{end}}
+            {{if gt .TotalValue 0}}<span class="pill">{{.TotalValue}} {{.TotalLabel}}</span>{{end}}
+        </div>
+        {{if .Segments}}
+        <div class="chart-layout">
+            <div class="pie-chart" style="background: {{.Style}};">
+                <div class="pie-chart-hole">
+                    <span>{{.TotalValue}}</span>
+                    <small>{{.TotalLabel}}</small>
+                </div>
+            </div>
+            <div class="chart-legend">
+                {{range .Segments}}
+                <div class="chart-legend-item">
+                    <span class="chart-swatch" style="background: {{.Color}};"></span>
+                    <div>
+                        <div class="list-title">{{.Label}}</div>
+                        <div class="list-meta">{{.Count}} | {{.PercentLabel}}</div>
+                    </div>
+                </div>
+                {{end}}
+            </div>
         </div>
         {{else}}
-        <p class="empty-note">No runs stored for this project yet.</p>
+        <p class="empty-note">{{.EmptyMessage}}</p>
         {{end}}
     </article>
+    {{end}}
 </section>
 
 <section class="panel">

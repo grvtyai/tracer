@@ -691,6 +691,7 @@ func inferDeviceType(item observedAsset) (string, string) {
 		item.Vendor,
 		item.Product,
 	}, " "))
+	osSignal := strings.ToLower(strings.TrimSpace(item.OSName))
 
 	hasPort := func(port int) bool {
 		return slices.Contains(item.OpenPorts, port)
@@ -701,15 +702,15 @@ func inferDeviceType(item observedAsset) (string, string) {
 		return "smartphone", string(evidence.ConfidenceProbable)
 	case containsAny(joined, "ipad", "tablet"):
 		return "tablet", string(evidence.ConfidenceProbable)
+	case containsAny(osSignal, "windows", "macos", "os x") || containsAny(joined, "laptop", "desktop", "workstation", "surface", "thinkpad", "macbook", "imac"):
+		return "workstation", string(evidence.ConfidenceConfirmed)
 	case containsAny(joined, "printer", "epson", "brother", "hp laser", "laserjet") || hasPort(631) || hasPort(9100) || hasPort(515):
 		return "printer", string(evidence.ConfidenceProbable)
-	case containsAny(joined, "fritz", "router", "gateway", "access point") || (hasPort(53) && hasPort(80) && hasPort(443)):
-		return "router", string(evidence.ConfidenceConfirmed)
 	case containsAny(joined, "camera", "chromecast", "sonos", "smart tv", "alexa", "echo", "nest", "iot", "roku"):
 		return "iot", string(evidence.ConfidenceProbable)
-	case containsAny(joined, "windows", "macos", "laptop", "desktop", "workstation"):
-		return "workstation", string(evidence.ConfidenceProbable)
-	case containsAny(joined, "ubuntu", "debian", "linux", "server", "nas") || hasPort(22) || hasPort(25):
+	case containsAny(joined, "fritz", "router", "gateway", "access point") || (hasPort(53) && hasPort(80) && hasPort(443) && !containsAny(osSignal, "windows", "macos", "os x")):
+		return "router", string(evidence.ConfidenceConfirmed)
+	case containsAny(osSignal, "ubuntu", "debian", "linux", "centos", "fedora", "red hat", "unix") || containsAny(joined, "server", "nas") || hasPort(22) || hasPort(25):
 		return "server", string(evidence.ConfidenceProbable)
 	default:
 		return "unknown", string(evidence.ConfidenceAmbiguous)

@@ -10,7 +10,7 @@
         Inventory entries sit above individual tools and runs. Discovery observations already feed this view, while manual names, tags and classifications can be layered on top safely.
     </p>
     <p class="empty-note">
-        Grouping uses the effective device type. Additional suite modules can later attach findings, artifacts and notes to the same shared objects.
+        Grouping uses the effective device type, while the latest OS, hostname and service signals continue refining the automatic guess underneath.
     </p>
 </section>
 
@@ -27,7 +27,12 @@
             <a class="list-item" href="/assets/{{.ID}}">
                 <div>
                     <div class="list-title">{{.DisplayName}}</div>
-                    <div class="list-meta">{{.PrimaryTarget}} | {{.EffectiveConnectionType}} | {{.CurrentOS}}</div>
+                    <div class="list-meta">{{.PrimaryTarget}} | {{.EffectiveConnectionType}} | {{if .CurrentOS}}{{.CurrentOS}}{{else}}OS unknown{{end}}</div>
+                    <div class="tag-row asset-signal-row">
+                        <span class="tag">Classified {{.EffectiveDeviceType}}</span>
+                        {{if .DeviceTypeGuess}}<span class="tag">Guess {{.DeviceTypeGuess}} ({{.DeviceTypeConfidence}})</span>{{end}}
+                        {{if .ManualDeviceType}}<span class="tag">Manual override active</span>{{end}}
+                    </div>
                     {{if .Tags}}
                     <div class="tag-row">
                         {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
