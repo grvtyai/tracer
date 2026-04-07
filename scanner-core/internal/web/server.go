@@ -878,20 +878,16 @@ func (s *Server) renderInventory(w http.ResponseWriter, r *http.Request, switchP
 
 func (s *Server) handleInventoryNetworkAPI(w http.ResponseWriter, r *http.Request) {
 	projectRef := strings.TrimSpace(r.URL.Query().Get("project"))
-	if projectRef == "" {
-		_, currentProject, _, err := s.loadShellContext(r.Context(), "")
-		if err != nil {
-			s.writeError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if currentProject != nil {
-			projectRef = currentProject.ID
-		}
+	_, currentProject, _, err := s.loadShellContext(r.Context(), projectRef)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
 	}
-	if projectRef == "" {
+	if currentProject == nil {
 		s.writeJSON(w, http.StatusOK, inventoryNetworkData{})
 		return
 	}
+	projectRef = currentProject.ID
 
 	projectAssets, err := s.repo.ListAssets(r.Context(), projectRef)
 	if err != nil {
@@ -899,13 +895,7 @@ func (s *Server) handleInventoryNetworkAPI(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	project, err := s.repo.GetProject(r.Context(), projectRef)
-	if err != nil {
-		s.writeError(w, http.StatusInternalServerError, err)
-		return
-	}
-
-	s.writeJSON(w, http.StatusOK, buildInventoryNetworkData(project, projectAssets))
+	s.writeJSON(w, http.StatusOK, buildInventoryNetworkData(*currentProject, projectAssets))
 }
 
 func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
@@ -1755,8 +1745,9 @@ func groupAssets(projectAssets []storage.AssetSummary) []assetGroup {
 
 func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []storage.AssetSummary) inventoryNetworkData {
 	type pendingHost struct {
-		groupKey string
-		host     inventoryNetworkHost
+		groupID    string
+		groupLabel string
+		host       inventoryNetworkHost
 	}
 
 	hosts := make([]pendingHost, 0, len(projectAssets))
@@ -1765,23 +1756,28 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 
 	for _, asset := range projectAssets {
 		addr, ok := parseIPv4AssetTarget(asset.PrimaryTarget)
-		if !ok {
-			continue
+		groupID := "inventory_hosts"
+		groupLabel := "Inventory Hosts"
+		hostID := asset.ID
+		hostTarget := firstNonEmptyWeb(asset.PrimaryTarget, asset.DisplayName, asset.ID)
+		if ok {
+			octets := addr.As4()
+			group24 := fmt.Sprintf("%d.%d.%d", octets[0], octets[1], octets[2])
+			group16 := fmt.Sprintf("%d.%d", octets[0], octets[1])
+			subnet24Counts[group24]++
+			subnet16Counts[group16]++
+			hostID = addr.String()
+			hostTarget = addr.String()
 		}
-		octets := addr.As4()
-
-		group24 := fmt.Sprintf("%d.%d.%d", octets[0], octets[1], octets[2])
-		group16 := fmt.Sprintf("%d.%d", octets[0], octets[1])
-		subnet24Counts[group24]++
-		subnet16Counts[group16]++
 
 		hosts = append(hosts, pendingHost{
-			groupKey: group24,
+			groupID:    groupID,
+			groupLabel: groupLabel,
 			host: inventoryNetworkHost{
-				ID:               addr.String(),
+				ID:               hostID,
 				AssetID:          asset.ID,
 				DisplayName:      asset.DisplayName,
-				Target:           addr.String(),
+				Target:           hostTarget,
 				DeviceType:       asset.EffectiveDeviceType,
 				ConnectionType:   asset.EffectiveConnectionType,
 				CurrentOS:        asset.CurrentOS,
@@ -1797,11 +1793,15 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 
 	grouped := make(map[string]*inventoryNetworkGroup)
 	for _, item := range hosts {
-		addr := netip.MustParseAddr(item.host.Target)
-		label, groupID := inventoryNetworkLabel(addr, subnet24Counts, subnet16Counts)
+		groupID := item.groupID
+		groupLabel := item.groupLabel
+		if addr, ok := parseIPv4AssetTarget(item.host.Target); ok {
+			groupLabel, groupID = inventoryNetworkLabel(addr, subnet24Counts, subnet16Counts)
+		}
+
 		group, ok := grouped[groupID]
 		if !ok {
-			group = &inventoryNetworkGroup{ID: groupID, Label: label, Hosts: make([]inventoryNetworkHost, 0)}
+			group = &inventoryNetworkGroup{ID: groupID, Label: groupLabel, Hosts: make([]inventoryNetworkHost, 0)}
 			grouped[groupID] = group
 		}
 		group.Hosts = append(group.Hosts, item.host)
