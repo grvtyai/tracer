@@ -111,6 +111,10 @@ type dashboardStats struct {
 	HostCount     int
 	EvidenceCount int
 	ReevalCount   int
+	SubnetCount   int
+	OpenPortCount int
+	CVECount      int
+	CriticalCVEs  int
 }
 
 type hostSummary struct {
@@ -450,7 +454,7 @@ func (s *Server) handleDiscovery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := pageData{
-		Title:              "Discovery",
+		Title:              "Satelite Discovery",
 		AppName:            s.options.AppName,
 		ActiveNav:          "discovery",
 		ActiveSection:      "discovery-overview",
@@ -471,8 +475,11 @@ func (s *Server) handleDiscovery(w http.ResponseWriter, r *http.Request) {
 			HostCount:     len(projectAssets),
 			EvidenceCount: countEvidence(runs),
 			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
+			SubnetCount:   countUniqueSubnets(projectAssets),
+			OpenPortCount: countObservedOpenPorts(projectAssets),
+			CVECount:      countCVEFindingsAcrossRuns(ctx, s.repo, runs, false),
+			CriticalCVEs:  countCVEFindingsAcrossRuns(ctx, s.repo, runs, true),
 		},
-		OverviewText: "This module is the home for network discovery, scanner orchestration, run review and the first scheduled scan workflows. The important shift is that Discovery now feeds shared suite data instead of defining the whole product.",
 		SecondaryAction: &pageAction{
 			Label:   "Open Run History",
 			URL:     buildProjectPath("/runs", currentProject),
@@ -513,7 +520,7 @@ func (s *Server) handleDiscoveryTemplates(w http.ResponseWriter, r *http.Request
 	}
 
 	data := pageData{
-		Title:              "Discovery Templates",
+		Title:              "Satelite Discovery Templates",
 		AppName:            s.options.AppName,
 		ActiveNav:          "discovery",
 		ActiveSection:      "discovery-templates",
@@ -564,7 +571,7 @@ func (s *Server) handleDiscoveryCompare(w http.ResponseWriter, r *http.Request) 
 	}
 
 	data := pageData{
-		Title:                 "Compare Runs",
+		Title:                 "Compare Satelite Discovery Runs",
 		AppName:               s.options.AppName,
 		ActiveNav:             "discovery",
 		ActiveSection:         "discovery-compare",
@@ -895,7 +902,7 @@ func (s *Server) handleInventoryNetwork(w http.ResponseWriter, r *http.Request) 
 	networkData := buildInventoryNetworkData(*currentProject, projectAssets, runLookup)
 
 	data := pageData{
-		Title:                "Network View",
+		Title:                "Satelite Network View",
 		AppName:              s.options.AppName,
 		ActiveNav:            "inventory",
 		ActiveSection:        "inventory-network",
@@ -2655,6 +2662,98 @@ func countPortUsage(projectAssets []storage.AssetSummary) []labelCount {
 		}
 	}
 	return mapToLabelCounts(counts)
+}
+
+func countUniqueSubnets(projectAssets []storage.AssetSummary) int {
+	subnet24Counts, subnet16Counts := inventorySubnetCounts(projectAssets)
+	seen := make(map[string]struct{})
+	for _, asset := range projectAssets {
+		_, groupID := inventorySubnetGroup(asset, subnet24Counts, subnet16Counts)
+		if strings.TrimSpace(groupID) == "" || groupID == "inventory_hosts" {
+			continue
+		}
+		seen[groupID] = struct{}{}
+	}
+	return len(seen)
+}
+
+func countObservedOpenPorts(projectAssets []storage.AssetSummary) int {
+	total := 0
+	for _, asset := range projectAssets {
+		total += len(asset.CurrentOpenPorts)
+	}
+	return total
+}
+
+func countCVEFindingsAcrossRuns(ctx context.Context, repo *storage.SQLiteRepository, runs []storage.RunSummary, criticalOnly bool) int {
+	seen := make(map[string]struct{})
+	total := 0
+	for _, run := range runs {
+		details, err := repo.GetRun(ctx, run.ID)
+		if err != nil {
+			continue
+		}
+		for _, record := range details.Evidence {
+			if !recordLooksLikeCVE(record) {
+				continue
+			}
+			if criticalOnly && !recordLooksCritical(record) {
+				continue
+			}
+			key := firstNonEmptyWeb(
+				strings.TrimSpace(record.Attributes["cve"]),
+				strings.TrimSpace(record.Attributes["cve_id"]),
+				strings.TrimSpace(record.RawRef),
+				strings.TrimSpace(record.Summary),
+				fmt.Sprintf("%s:%d:%s", record.Target, record.Port, record.Kind),
+			)
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
+			total++
+		}
+	}
+	return total
+}
+
+func recordLooksLikeCVE(record evidence.Record) bool {
+	values := []string{
+		record.Kind,
+		record.RawRef,
+		record.Summary,
+		record.Attributes["cve"],
+		record.Attributes["cve_id"],
+		record.Attributes["finding"],
+		record.Attributes["title"],
+		record.Attributes["description"],
+	}
+	for _, value := range values {
+		lowered := strings.ToLower(strings.TrimSpace(value))
+		if lowered == "" {
+			continue
+		}
+		if strings.Contains(lowered, "cve-") || strings.Contains(lowered, "vulnerability") || strings.Contains(lowered, "vuln") {
+			return true
+		}
+	}
+	return false
+}
+
+func recordLooksCritical(record evidence.Record) bool {
+	values := []string{
+		record.Attributes["severity"],
+		record.Attributes["risk"],
+		record.Attributes["level"],
+		record.Summary,
+		record.RawRef,
+	}
+	for _, value := range values {
+		if strings.Contains(strings.ToLower(strings.TrimSpace(value)), "critical") {
+			return true
+		}
+	}
+	return false
 }
 
 func countOSFamilies(projectAssets []storage.AssetSummary) []labelCount {

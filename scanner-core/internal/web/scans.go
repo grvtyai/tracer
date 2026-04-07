@@ -121,7 +121,7 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 
 	preflightChecks := collectPreflightChecks(s.options.DBPath)
 	data := pageData{
-		Title:             "Start Scan",
+		Title:             "Start Satelite Discovery Run",
 		AppName:           s.options.AppName,
 		ActiveNav:         "discovery",
 		ActiveSection:     "discovery-launch",

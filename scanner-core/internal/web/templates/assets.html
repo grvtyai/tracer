@@ -3,18 +3,8 @@
 {{define "page"}}
 <section class="panel">
     <div class="panel-head">
-        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Shared Inventory</h2>
-        <span class="pill">{{len .Assets}} assets</span>
-    </div>
-    <p class="empty-note">
-        Inventory groups the shared suite data by subnet first, then by inferred device type, so larger environments stay readable.
-    </p>
-</section>
-
-<section class="panel">
-    <div class="panel-head">
         <h2>Search Inventory</h2>
-        <span class="pill subtle">{{len .InventorySections}} subnets</span>
+        <span class="pill subtle">{{len .Assets}} assets</span>
     </div>
     <label class="form-row">
         <span class="form-label">Search subnets, hostnames, IPs, classes, tags or service previews</span>

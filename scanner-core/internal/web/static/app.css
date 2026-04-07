@@ -460,6 +460,10 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     padding: 18px;
 }
 
+.stats-grid-wide {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .stat-card {
     padding: 16px;
     border-radius: 18px;
@@ -1736,6 +1740,7 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     .inventory-network-layout,
     .inventory-network-detail-grid { grid-template-columns: 1fr; }
     .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stats-grid-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .panel.wide { grid-column: auto; }
 }
 
@@ -1747,6 +1752,7 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
         justify-content: flex-start;
     }
     .stats-grid { grid-template-columns: 1fr; }
+    .stats-grid-wide { grid-template-columns: 1fr; }
     .kv-grid { grid-template-columns: 1fr; }
     .form-grid,
     .checkbox-grid,

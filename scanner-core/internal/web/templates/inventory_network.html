@@ -1,24 +1,10 @@
 {{define "inventory_network.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-<section class="panel">
-    <div class="panel-head">
-        <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Network View</h2>
-        <div class="hero-actions compact-actions">
-            <button class="button button-secondary" id="network-fit-btn" type="button">Fit View</button>
-            <span class="pill" id="network-status-pill">Network data ready</span>
-        </div>
-    </div>
-    <p class="empty-note">
-        Interactive network view of the shared inventory. Infrastructure nodes are elevated ahead of end hosts, and paths follow real route data or a sensible gateway inference.
-    </p>
-</section>
-
 <section class="inventory-network-layout">
     <article class="panel inventory-network-explorer-panel">
         <div class="panel-head">
             <h2>Hosts and Networks</h2>
-            <span class="pill subtle" id="network-host-count">0 Hosts</span>
         </div>
         <div id="inventory-network-sidebar" class="inventory-network-sidebar">
             <div class="empty-note">Preparing network data.</div>
@@ -27,8 +13,10 @@
 
     <article class="panel inventory-network-graph-panel">
         <div class="panel-head">
-            <h2>Graph</h2>
+            <h2>Satelite Network View</h2>
             <div class="hero-actions compact-actions">
+                <span class="pill subtle" id="network-host-count">0 Hosts Loaded</span>
+                <button class="button button-secondary" id="network-fit-btn" type="button">Fit View</button>
                 <button class="button button-secondary" id="network-zoom-in-btn" type="button">+</button>
                 <button class="button button-secondary" id="network-zoom-out-btn" type="button">-</button>
                 <button class="button button-secondary" id="network-reset-btn" type="button">Reset</button>
@@ -84,7 +72,6 @@
 <script>
 (() => {
     const networkData = {{.InventoryNetworkJSON}};
-    const statusPill = document.getElementById("network-status-pill");
     const hostCountPill = document.getElementById("network-host-count");
     const selectedHostPill = document.getElementById("selected-host-pill");
     const sidebar = document.getElementById("inventory-network-sidebar");
@@ -588,13 +575,12 @@
         try {
             const networks = Array.isArray(networkData?.networks) ? networkData.networks : [];
             const hostCount = networks.reduce((sum, group) => sum + (group.host_count || 0), 0);
-            hostCountPill.textContent = `${hostCount} Host${hostCount === 1 ? "" : "s"}`;
-            statusPill.textContent = hostCount > 0 ? `${hostCount} Hosts Loaded` : "No Inventory Hosts";
+            hostCountPill.textContent = hostCount > 0 ? `${hostCount} Hosts Loaded` : "No Inventory Hosts";
             renderSidebar();
             renderDetails(null);
             renderGraph();
         } catch (error) {
-            statusPill.textContent = "Error";
+            hostCountPill.textContent = "Error";
             sidebar.innerHTML = '<div class="empty-note">The network data could not be rendered.</div>';
             canvas.innerHTML = '<div class="empty-note">Network view unavailable.</div>';
             console.error("inventory network render failed", error);

@@ -1,21 +1,16 @@
 {{define "discovery.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-<section class="hero-grid">
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Discovery Module</h2>
-            <span class="pill status-success">Live</span>
-        </div>
-        <p class="empty-note">{{.OverviewText}}</p>
+<section class="panel">
+    <div class="panel-head">
+        <h2>Current Satelite Discovery State</h2>
         {{if .SecondaryAction}}
-        <div class="hero-actions">
+        <div class="hero-actions compact-actions">
             <a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>
         </div>
         {{end}}
-    </article>
-
-    <article class="stats-grid">
+    </div>
+    <article class="stats-grid stats-grid-wide">
         <div class="stat-card">
             <div class="stat-label">Runs</div>
             <div class="stat-value">{{.Stats.RunCount}}</div>
@@ -32,12 +27,32 @@
             <div class="stat-label">Reevaluation</div>
             <div class="stat-value">{{.Stats.ReevalCount}}</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-label">Hosts</div>
+            <div class="stat-value">{{.Stats.HostCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Subnets</div>
+            <div class="stat-value">{{.Stats.SubnetCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Open Ports</div>
+            <div class="stat-value">{{.Stats.OpenPortCount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">CVEs</div>
+            <div class="stat-value">{{.Stats.CVECount}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Critical CVEs</div>
+            <div class="stat-value">{{.Stats.CriticalCVEs}}</div>
+        </div>
     </article>
 </section>
 
 <section class="panel">
     <div class="panel-head">
-        <h2>Search Discovery</h2>
+        <h2>Search Satelite Discovery</h2>
         <span class="pill subtle">{{len .RecentRunItems}} runs indexed</span>
     </div>
     <label class="form-row">
@@ -48,7 +63,7 @@
 
 <section class="panel">
     <div class="panel-head">
-        <h2>Latest Discovery Runs History</h2>
+        <h2>Latest Satelite Discovery Run History</h2>
         <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Run History</a>
     </div>
     {{if .RecentRunItems}}
