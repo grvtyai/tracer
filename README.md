@@ -1,12 +1,18 @@
-# Startrace
+<p align="center">
+  <img src="assets/pictures/logo.png" alt="Startrace logo" width="220">
+</p>
 
-`Startrace` is a modular local operator suite for small infrastructure, lab networks and similar environments.
+# 🛰️ Startrace
+
+A modular local operator suite for small infrastructure, lab networks and similar environments.
+
+Built with Go, SQLite and a local browser UI.
 
 It is not meant to be "just a scanner". The long-term goal is a suite with a shared data model, a shared browser UI and multiple modules that work on the same projects, assets and evidence.
 
 Right now the first real module is `Radar`.
 
-## What Startrace Is
+## 🌌 What Startrace Is
 
 `Startrace` currently combines:
 
@@ -27,7 +33,7 @@ The current UI modules are:
 
 Only `Radar` and `Inventory` are meaningfully developed today. The other module areas already exist so new capabilities can be added inside the real product structure instead of being bolted on later.
 
-## Architecture
+## 🧱 Architecture
 
 `Startrace` is built as a modular system:
 
@@ -42,7 +48,7 @@ The boundary is:
 - modules feed the suite with actions, data and workflow logic
 - shared packages stay above individual modules
 
-## Current State
+## 📡 Current State
 
 ### Radar
 
@@ -82,7 +88,7 @@ These areas already exist in the UI as product spaces, but are still early:
 - `Automation`
 - `Help`
 
-## Ubuntu Installation
+## 🚀 Ubuntu Installation
 
 The main supported runtime target is Ubuntu.
 
@@ -159,7 +165,7 @@ http://<ubuntu-ip>:8080
 6. Review `Inventory`
 7. Use `Help` for setup and troubleshooting notes
 
-## CLI Usage
+## 🖥️ CLI Usage
 
 The CLI writes to the same persistence model and should also be run with `sudo` on Linux.
 
@@ -173,7 +179,7 @@ sudo ./bin/tracer -mode show-run --run-id <run-id>
 sudo ./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
 ```
 
-## Repository Layout
+## 🗂️ Repository Layout
 
 - `scanner-core/cmd/startrace`: web server entrypoint
 - `scanner-core/cmd/tracer`: CLI entrypoint
@@ -185,7 +191,7 @@ sudo ./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
 - `docs`: supporting documentation
 - `scripts`: install and verification helpers
 
-## Near-Term Plan
+## 🌠 Near-Term Plan
 
 The near-term goal is not to add disconnected features. The priority is to make the suite structure hold.
 
@@ -197,7 +203,7 @@ Current focus:
 4. improve inventory quality, classification and topology views
 5. make `Security`, `Workbench` and `Automation` real module homes
 
-## More Documentation
+## 📚 More Documentation
 
 - [docs/INSTALL-UBUNTU.md](docs/INSTALL-UBUNTU.md)
 - [docs/STARTRACE-WEB-ARCHITECTURE.md](docs/STARTRACE-WEB-ARCHITECTURE.md)
