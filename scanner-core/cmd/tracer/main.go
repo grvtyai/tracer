@@ -8,11 +8,11 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/app"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	radarruntime "github.com/grvtyai/tracer/scanner-core/internal/modules/radar/runtime"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/platform"
-	"github.com/grvtyai/tracer/scanner-core/internal/storage"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
 	"github.com/grvtyai/tracer/scanner-core/internal/templates"
 )
 
@@ -79,7 +79,7 @@ func main() {
 
 		emitJSON(queryOutput{
 			Mode:        mode,
-			Persistence: &app.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
+			Persistence: &radarruntime.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
 			Projects:    projects,
 		})
 		return
@@ -98,7 +98,7 @@ func main() {
 		emitJSON(queryOutput{
 			Mode:          mode,
 			ProjectFilter: projectName,
-			Persistence:   &app.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
+			Persistence:   &radarruntime.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
 			Runs:          runs,
 		})
 		return
@@ -120,7 +120,7 @@ func main() {
 
 		emitJSON(queryOutput{
 			Mode:        mode,
-			Persistence: &app.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path(), ProjectID: run.Run.ProjectID, ProjectName: run.Run.ProjectName, RunID: run.Run.ID},
+			Persistence: &radarruntime.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path(), ProjectID: run.Run.ProjectID, ProjectName: run.Run.ProjectName, RunID: run.Run.ID},
 			Run:         &run,
 		})
 		return
@@ -142,7 +142,7 @@ func main() {
 
 		emitJSON(queryOutput{
 			Mode:        mode,
-			Persistence: &app.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
+			Persistence: &radarruntime.PersistenceInfo{Backend: "sqlite", DBPath: repository.Path()},
 			Diff:        &diff,
 		})
 		return
@@ -176,16 +176,16 @@ func main() {
 			fail(err)
 		}
 
-		executedPlan, jobResults, records, err := app.ExecuteRunWithPersistence(context.Background(), app.DefaultPlugins(), loadedTemplate, effectiveOptions, runStore)
+		executedPlan, jobResults, records, err := radarruntime.ExecuteRunWithPersistence(context.Background(), radarruntime.DefaultPlugins(), loadedTemplate, effectiveOptions, runStore)
 		if err != nil {
 			fail(err)
 		}
 		output.Plan = executedPlan
 		output.JobResults = jobResults
 		output.Evidence = records
-		output.Blocking = app.AnalyzeEvidence(records)
-		output.Reevaluation = app.BuildReevaluation(records, jobResults, effectiveOptions)
-		output.Persistence = &app.PersistenceInfo{
+		output.Blocking = radarruntime.AnalyzeEvidence(records)
+		output.Reevaluation = radarruntime.BuildReevaluation(records, jobResults, effectiveOptions)
+		output.Persistence = &radarruntime.PersistenceInfo{
 			Backend:     "sqlite",
 			DBPath:      effectiveOptions.DBPath,
 			ProjectID:   project.ID,
@@ -220,12 +220,12 @@ func main() {
 			fail(err)
 		}
 
-		executedPlan, jobResults, records, err := app.ExecuteRunWithPersistence(context.Background(), app.DefaultPlugins(), loadedTemplate, effectiveOptions, runStore)
+		executedPlan, jobResults, records, err := radarruntime.ExecuteRunWithPersistence(context.Background(), radarruntime.DefaultPlugins(), loadedTemplate, effectiveOptions, runStore)
 		output.Plan = executedPlan
 		output.JobResults = jobResults
 		output.Evidence = records
-		output.Blocking = app.AnalyzeEvidence(records)
-		output.Reevaluation = app.BuildReevaluation(records, jobResults, effectiveOptions)
+		output.Blocking = radarruntime.AnalyzeEvidence(records)
+		output.Reevaluation = radarruntime.BuildReevaluation(records, jobResults, effectiveOptions)
 
 		completionStatus := summarizeRunStatus(jobResults)
 		if err != nil {
@@ -328,30 +328,30 @@ func buildOptionOverrides(activeInterface string, passiveInterface string, portT
 }
 
 type queryOutput struct {
-	Mode          string                   `json:"mode"`
-	ProjectFilter string                   `json:"project_filter,omitempty"`
-	Persistence   *app.PersistenceInfo     `json:"persistence,omitempty"`
-	Projects      []storage.ProjectSummary `json:"projects,omitempty"`
-	Runs          []storage.RunSummary     `json:"runs,omitempty"`
-	Run           *storage.RunDetails      `json:"run,omitempty"`
-	Diff          *storage.RunDiff         `json:"diff,omitempty"`
+	Mode          string                        `json:"mode"`
+	ProjectFilter string                        `json:"project_filter,omitempty"`
+	Persistence   *radarruntime.PersistenceInfo `json:"persistence,omitempty"`
+	Projects      []storage.ProjectSummary      `json:"projects,omitempty"`
+	Runs          []storage.RunSummary          `json:"runs,omitempty"`
+	Run           *storage.RunDetails           `json:"run,omitempty"`
+	Diff          *storage.RunDiff              `json:"diff,omitempty"`
 }
 
-func buildScanOutput(mode string, template string, activeInterface string, passiveInterface string, portTemplate string, passiveMode string, zeekLogDir string, projectName string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool, autoStartZeek optionalBool) (templates.Template, options.EffectiveOptions, app.Output) {
-	loadedTemplate, err := app.LoadTemplate(template)
+func buildScanOutput(mode string, template string, activeInterface string, passiveInterface string, portTemplate string, passiveMode string, zeekLogDir string, projectName string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool, autoStartZeek optionalBool) (templates.Template, options.EffectiveOptions, radarruntime.Output) {
+	loadedTemplate, err := radarruntime.LoadTemplate(template)
 	if err != nil {
 		fail(err)
 	}
 
 	overrides := buildOptionOverrides(activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnError, retainPartial, reevaluate, autoStartZeek)
-	effectiveOptions := app.ResolveOptions(loadedTemplate, overrides)
+	effectiveOptions := radarruntime.ResolveOptions(loadedTemplate, overrides)
 	if effectiveOptions.Project == "" {
 		effectiveOptions.Project = loadedTemplate.Name
 	}
 	effectiveOptions.DBPath = storage.ResolveDBPath(effectiveOptions.DataDir, effectiveOptions.DBPath)
 
-	plan := app.BuildSeedPlanWithOptions(loadedTemplate, effectiveOptions)
-	output := app.Output{
+	plan := radarruntime.BuildSeedPlanWithOptions(loadedTemplate, effectiveOptions)
+	output := radarruntime.Output{
 		Mode:     mode,
 		Template: template,
 		Options:  effectiveOptions,

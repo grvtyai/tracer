@@ -1,4 +1,4 @@
-package web
+package suite
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/classify"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/storage"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
 )
 
 //go:embed templates/*.html static/*

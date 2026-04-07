@@ -1,4 +1,4 @@
-package app
+package runtime
 
 import (
 	"context"
@@ -14,18 +14,18 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/arp_scan"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/httpx"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/ldapdomaindump"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/naabu"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/nmap"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/scamper"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/sharphound"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/zeek"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/zgrab2"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/storage"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
 	"github.com/grvtyai/tracer/scanner-core/internal/templates"
-	"github.com/grvtyai/tracer/scanner-core/plugins/arp_scan"
-	"github.com/grvtyai/tracer/scanner-core/plugins/httpx"
-	"github.com/grvtyai/tracer/scanner-core/plugins/ldapdomaindump"
-	"github.com/grvtyai/tracer/scanner-core/plugins/naabu"
-	"github.com/grvtyai/tracer/scanner-core/plugins/nmap"
-	"github.com/grvtyai/tracer/scanner-core/plugins/scamper"
-	"github.com/grvtyai/tracer/scanner-core/plugins/sharphound"
-	"github.com/grvtyai/tracer/scanner-core/plugins/zeek"
-	"github.com/grvtyai/tracer/scanner-core/plugins/zgrab2"
 )
 
 type Output struct {

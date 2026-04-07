@@ -16,7 +16,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	"github.com/grvtyai/tracer/scanner-core/internal/platform"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
 )
 
 type Runner interface {

@@ -1,4 +1,4 @@
-package web
+package suite
 
 import (
 	"bufio"
@@ -14,12 +14,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/app"
 	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	radarruntime "github.com/grvtyai/tracer/scanner-core/internal/modules/radar/runtime"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/platform"
-	"github.com/grvtyai/tracer/scanner-core/internal/storage"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
 	"github.com/grvtyai/tracer/scanner-core/internal/templates"
 )
 
@@ -551,7 +551,7 @@ func buildTemplateFromForm(form scanFormData, project storage.ProjectSummary, se
 		},
 	}
 
-	effective := app.ResolveOptions(template, options.TemplateOptions{})
+	effective := radarruntime.ResolveOptions(template, options.TemplateOptions{})
 	if !form.ReevaluateAmbiguous {
 		effective.ReevaluateAfter = ""
 	}
