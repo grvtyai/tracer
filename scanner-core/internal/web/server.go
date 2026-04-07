@@ -208,23 +208,41 @@ type inventoryNetworkGroup struct {
 	ID        string                 `json:"id"`
 	Label     string                 `json:"label"`
 	HostCount int                    `json:"host_count"`
+	GatewayID string                 `json:"gateway_id,omitempty"`
 	Hosts     []inventoryNetworkHost `json:"hosts"`
 }
 
 type inventoryNetworkHost struct {
-	ID               string   `json:"id"`
-	AssetID          string   `json:"asset_id"`
-	DisplayName      string   `json:"display_name"`
-	Target           string   `json:"target"`
-	DeviceType       string   `json:"device_type"`
-	ConnectionType   string   `json:"connection_type"`
-	CurrentOS        string   `json:"current_os,omitempty"`
-	CurrentVendor    string   `json:"current_vendor,omitempty"`
-	CurrentProduct   string   `json:"current_product,omitempty"`
-	OpenPorts        []int    `json:"open_ports,omitempty"`
-	ObservationCount int      `json:"observation_count"`
-	Tags             []string `json:"tags,omitempty"`
-	Status           string   `json:"status"`
+	ID               string                `json:"id"`
+	AssetID          string                `json:"asset_id"`
+	DisplayName      string                `json:"display_name"`
+	Target           string                `json:"target"`
+	DeviceType       string                `json:"device_type"`
+	ConnectionType   string                `json:"connection_type"`
+	CurrentOS        string                `json:"current_os,omitempty"`
+	CurrentVendor    string                `json:"current_vendor,omitempty"`
+	CurrentProduct   string                `json:"current_product,omitempty"`
+	OpenPorts        []int                 `json:"open_ports,omitempty"`
+	PortDetails      []inventoryPortDetail `json:"port_details,omitempty"`
+	ObservationCount int                   `json:"observation_count"`
+	Tags             []string              `json:"tags,omitempty"`
+	Status           string                `json:"status"`
+	RoutePath        []string              `json:"route_path,omitempty"`
+	RouteMode        string                `json:"route_mode,omitempty"`
+	RouteSummary     string                `json:"route_summary,omitempty"`
+	IsGateway        bool                  `json:"is_gateway,omitempty"`
+}
+
+type inventoryPortDetail struct {
+	Port     int    `json:"port"`
+	Protocol string `json:"protocol"`
+	State    string `json:"state"`
+	Service  string `json:"service,omitempty"`
+	Product  string `json:"product,omitempty"`
+	Version  string `json:"version,omitempty"`
+	Source   string `json:"source,omitempty"`
+	Summary  string `json:"summary,omitempty"`
+	Detail   string `json:"detail,omitempty"`
 }
 
 type statusInfo struct {
@@ -855,7 +873,8 @@ func (s *Server) handleInventoryNetwork(w http.ResponseWriter, r *http.Request) 
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	networkData := buildInventoryNetworkData(*currentProject, projectAssets)
+	runLookup := s.inventoryRunLookup(ctx)
+	networkData := buildInventoryNetworkData(*currentProject, projectAssets, runLookup)
 
 	data := pageData{
 		Title:                "Netzwerkansicht",
@@ -946,7 +965,8 @@ func (s *Server) handleInventoryNetworkAPI(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	s.writeJSON(w, http.StatusOK, buildInventoryNetworkData(*currentProject, projectAssets))
+	runLookup := s.inventoryRunLookup(r.Context())
+	s.writeJSON(w, http.StatusOK, buildInventoryNetworkData(*currentProject, projectAssets, runLookup))
 }
 
 func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
@@ -1574,6 +1594,25 @@ func (s *Server) writeError(w http.ResponseWriter, status int, err error) {
 	s.writeJSON(w, status, map[string]any{"error": err.Error()})
 }
 
+func (s *Server) inventoryRunLookup(ctx context.Context) func(string) *storage.RunDetails {
+	cache := make(map[string]*storage.RunDetails)
+	return func(runID string) *storage.RunDetails {
+		trimmed := strings.TrimSpace(runID)
+		if trimmed == "" {
+			return nil
+		}
+		if cached, ok := cache[trimmed]; ok {
+			return cached
+		}
+		run, err := s.repo.GetRun(ctx, trimmed)
+		if err != nil {
+			return nil
+		}
+		cache[trimmed] = &run
+		return &run
+	}
+}
+
 func (s *Server) loadShellContext(ctx context.Context, requestedProject string) ([]storage.ProjectSummary, *storage.ProjectSummary, storage.AppSettings, error) {
 	projects, err := s.repo.ListProjects(ctx)
 	if err != nil {
@@ -1897,7 +1936,7 @@ func buildInventorySections(projectAssets []storage.AssetSummary) []inventorySub
 	return sections
 }
 
-func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []storage.AssetSummary) inventoryNetworkData {
+func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []storage.AssetSummary, runLookup func(string) *storage.RunDetails) inventoryNetworkData {
 	type pendingHost struct {
 		groupID    string
 		groupLabel string
@@ -1906,7 +1945,6 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 
 	hosts := make([]pendingHost, 0, len(projectAssets))
 	subnet24Counts, subnet16Counts := inventorySubnetCounts(projectAssets)
-
 	for _, asset := range projectAssets {
 		groupID := "inventory_hosts"
 		groupLabel := "Inventory Hosts"
@@ -1917,6 +1955,12 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 			hostTarget = addr.String()
 			groupLabel, groupID = inventoryNetworkLabel(addr, subnet24Counts, subnet16Counts)
 		}
+		var lastRun *storage.RunDetails
+		if runLookup != nil {
+			lastRun = runLookup(asset.LastRunID)
+		}
+		portDetails := buildInventoryPortDetails(asset, lastRun)
+		routePath, routeMode, routeSummary := buildInventoryRouteInfo(asset, lastRun)
 
 		hosts = append(hosts, pendingHost{
 			groupID:    groupID,
@@ -1932,9 +1976,13 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 				CurrentVendor:    asset.CurrentVendor,
 				CurrentProduct:   asset.CurrentProduct,
 				OpenPorts:        asset.CurrentOpenPorts,
+				PortDetails:      portDetails,
 				ObservationCount: asset.ObservationCount,
 				Tags:             asset.Tags,
 				Status:           inventoryHostStatus(asset),
+				RoutePath:        routePath,
+				RouteMode:        routeMode,
+				RouteSummary:     routeSummary,
 			},
 		})
 	}
@@ -1964,6 +2012,7 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 	}
 	for _, key := range keys {
 		group := grouped[key]
+		markInventoryGateway(group)
 		sort.Slice(group.Hosts, func(i, j int) bool {
 			return group.Hosts[i].Target < group.Hosts[j].Target
 		})
@@ -2216,6 +2265,238 @@ func inventoryHostStatus(asset storage.AssetSummary) string {
 	default:
 		return "unknown"
 	}
+}
+
+func buildInventoryPortDetails(asset storage.AssetSummary, run *storage.RunDetails) []inventoryPortDetail {
+	entries := make(map[int]inventoryPortDetail)
+
+	for _, port := range asset.CurrentOpenPorts {
+		entries[port] = inventoryPortDetail{
+			Port:     port,
+			Protocol: "tcp",
+			State:    "OPEN",
+			Service:  inventoryServiceName(port),
+			Source:   "inventory",
+			Detail:   inventoryServiceDetail(port),
+			Summary:  "Observed as reachable",
+		}
+	}
+
+	if run != nil {
+		target := strings.TrimSpace(asset.PrimaryTarget)
+		for _, record := range run.Evidence {
+			if strings.TrimSpace(record.Target) != target || record.Port <= 0 {
+				continue
+			}
+			if !isOpenPortKind(record.Kind) && !strings.EqualFold(record.Kind, "port_state") {
+				continue
+			}
+			detail := describeInventoryPortDetail(record)
+			existing, ok := entries[record.Port]
+			if !ok || inventoryPortDetailPriority(detail) >= inventoryPortDetailPriority(existing) {
+				entries[record.Port] = detail
+			}
+		}
+	}
+
+	ports := make([]int, 0, len(entries))
+	for port := range entries {
+		ports = append(ports, port)
+	}
+	sort.Ints(ports)
+
+	out := make([]inventoryPortDetail, 0, len(ports))
+	for _, port := range ports {
+		out = append(out, entries[port])
+	}
+	return out
+}
+
+func describeInventoryPortDetail(record evidence.Record) inventoryPortDetail {
+	protocol := strings.TrimSpace(record.Protocol)
+	if protocol == "" {
+		protocol = "tcp"
+	}
+	state := "OPEN"
+	if strings.EqualFold(record.Kind, "port_state") {
+		switch strings.ToLower(strings.TrimSpace(record.Attributes["state"])) {
+		case "blocked":
+			state = "BLOCKED"
+		case "filtered":
+			state = "FILTERED"
+		case "closed":
+			state = "CLOSED"
+		}
+	}
+
+	service := firstNonEmptyWeb(
+		record.Attributes["service_name"],
+		record.Attributes["web_server"],
+		record.Attributes["title"],
+		inventoryServiceName(record.Port),
+	)
+	product := strings.TrimSpace(record.Attributes["product"])
+	version := firstNonEmptyWeb(record.Attributes["version"], record.Attributes["tls_version"])
+	detail := firstNonEmptyWeb(
+		record.Attributes["title"],
+		record.Attributes["tech"],
+		record.Attributes["extra_info"],
+		record.Attributes["content_type"],
+		record.Attributes["location"],
+		record.Attributes["state_reason"],
+		record.Attributes["status"],
+		record.Summary,
+	)
+
+	return inventoryPortDetail{
+		Port:     record.Port,
+		Protocol: protocol,
+		State:    state,
+		Service:  service,
+		Product:  product,
+		Version:  version,
+		Source:   record.Source,
+		Summary:  strings.TrimSpace(record.Summary),
+		Detail:   detail,
+	}
+}
+
+func inventoryPortDetailPriority(detail inventoryPortDetail) int {
+	score := 0
+	if detail.Service != "" {
+		score += 4
+	}
+	if detail.Product != "" {
+		score += 3
+	}
+	if detail.Version != "" {
+		score += 2
+	}
+	if detail.Detail != "" {
+		score++
+	}
+	return score
+}
+
+func buildInventoryRouteInfo(asset storage.AssetSummary, run *storage.RunDetails) ([]string, string, string) {
+	if run == nil {
+		return nil, "", ""
+	}
+	target := strings.TrimSpace(asset.PrimaryTarget)
+	if target == "" {
+		return nil, "", ""
+	}
+
+	for _, record := range run.Evidence {
+		if !strings.EqualFold(record.Kind, "route_trace") || strings.TrimSpace(record.Target) != target {
+			continue
+		}
+		hops := splitCSVList(record.Attributes["hop_addrs"])
+		if len(hops) == 0 {
+			continue
+		}
+		if hops[len(hops)-1] != target {
+			hops = append(hops, target)
+		}
+		return hops, "exact", firstNonEmptyWeb(record.Summary, "Route trace available")
+	}
+
+	return nil, "", ""
+}
+
+func markInventoryGateway(group *inventoryNetworkGroup) {
+	if group == nil || len(group.Hosts) == 0 {
+		return
+	}
+
+	referencedFirstHops := make(map[string]int)
+	for _, host := range group.Hosts {
+		if len(host.RoutePath) > 1 {
+			referencedFirstHops[host.RoutePath[0]]++
+		}
+	}
+
+	bestIndex := -1
+	bestScore := 0
+	for index := range group.Hosts {
+		score := inventoryGatewayScore(group.Hosts[index]) + referencedFirstHops[group.Hosts[index].Target]*6
+		if score > bestScore {
+			bestScore = score
+			bestIndex = index
+		}
+	}
+
+	if bestIndex < 0 || bestScore < 8 {
+		return
+	}
+
+	group.GatewayID = group.Hosts[bestIndex].ID
+	group.Hosts[bestIndex].IsGateway = true
+	for index := range group.Hosts {
+		if index == bestIndex {
+			if len(group.Hosts[index].RoutePath) == 0 {
+				group.Hosts[index].RoutePath = []string{group.Hosts[index].Target}
+				group.Hosts[index].RouteMode = "inferred"
+				group.Hosts[index].RouteSummary = "Gateway candidate for this subnet"
+			}
+			continue
+		}
+		if len(group.Hosts[index].RoutePath) == 0 {
+			group.Hosts[index].RoutePath = []string{group.Hosts[bestIndex].Target, group.Hosts[index].Target}
+			group.Hosts[index].RouteMode = "inferred"
+			group.Hosts[index].RouteSummary = "Inferred path through subnet gateway"
+		}
+	}
+}
+
+func inventoryGatewayScore(host inventoryNetworkHost) int {
+	score := 0
+	switch normalizedInventoryCategory(host.DeviceType) {
+	case "router":
+		score += 14
+	case "server":
+		score += 5
+	}
+	if strings.Contains(strings.ToLower(host.CurrentProduct), "firewall") || strings.Contains(strings.ToLower(host.CurrentProduct), "gateway") {
+		score += 7
+	}
+	if strings.Contains(strings.ToLower(host.CurrentVendor), "pfsense") || strings.Contains(strings.ToLower(host.CurrentVendor), "opnsense") {
+		score += 6
+	}
+	if hostHasPort(host, 53) {
+		score += 3
+	}
+	if hostHasPort(host, 67) || hostHasPort(host, 68) {
+		score += 4
+	}
+	if hostHasPort(host, 80) || hostHasPort(host, 443) {
+		score += 1
+	}
+	if len(host.RoutePath) > 0 {
+		score += 2
+	}
+	return score
+}
+
+func hostHasPort(host inventoryNetworkHost, port int) bool {
+	for _, current := range host.OpenPorts {
+		if current == port {
+			return true
+		}
+	}
+	return false
+}
+
+func splitCSVList(value string) []string {
+	parts := strings.Split(strings.TrimSpace(value), ",")
+	out := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
 }
 
 func countAssetProperty(projectAssets []storage.AssetSummary, selector func(storage.AssetSummary) string) []labelCount {

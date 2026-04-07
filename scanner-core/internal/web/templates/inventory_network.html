@@ -132,9 +132,36 @@
         const ports = Array.isArray(host.open_ports) && host.open_ports.length
             ? host.open_ports.map((port) => `<span class="tag">${port}/tcp</span>`).join("")
             : '<span class="empty-note">Keine offenen Ports gespeichert.</span>';
+        const portDetails = Array.isArray(host.port_details) && host.port_details.length
+            ? host.port_details.map((entry) => `
+                <article class="inventory-port-detail-card">
+                    <div class="inventory-port-detail-head">
+                        <span class="inventory-port-detail-port">${entry.port}/${(entry.protocol || "tcp").toUpperCase()}</span>
+                        <span class="pill subtle">${entry.state || "OPEN"}</span>
+                    </div>
+                    <div class="inventory-port-detail-grid">
+                        <div class="kv-key">Service</div>
+                        <div class="kv-value">${entry.service || "-"}</div>
+                        <div class="kv-key">Product</div>
+                        <div class="kv-value">${entry.product || "-"}</div>
+                        <div class="kv-key">Version</div>
+                        <div class="kv-value">${entry.version || "-"}</div>
+                        <div class="kv-key">Protocol</div>
+                        <div class="kv-value">${(entry.protocol || "tcp").toUpperCase()}</div>
+                        <div class="kv-key">Source</div>
+                        <div class="kv-value">${entry.source || "-"}</div>
+                        <div class="kv-key">Detail</div>
+                        <div class="kv-value">${entry.detail || entry.summary || "-"}</div>
+                    </div>
+                </article>
+            `).join("")
+            : '<p class="empty-note">Keine erweiterten Portdetails aus dem letzten Run verfuegbar.</p>';
         const tags = Array.isArray(host.tags) && host.tags.length
             ? host.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")
             : '<span class="empty-note">Keine Tags gesetzt.</span>';
+        const routePath = Array.isArray(host.route_path) && host.route_path.length
+            ? host.route_path.map((hop) => `<span class="inventory-route-hop">${hop}</span>`).join('<span class="inventory-route-arrow">-></span>')
+            : '<span class="empty-note">Kein Route-Pfad vorhanden.</span>';
 
         selectedHostPill.textContent = host.target;
         details.innerHTML = `
@@ -157,6 +184,8 @@
                         <div class="kv-value">${[host.current_vendor, host.current_product].filter(Boolean).join(" / ") || "-"}</div>
                         <div class="kv-key">Observations</div>
                         <div class="kv-value">${host.observation_count || 0}</div>
+                        <div class="kv-key">Route Mode</div>
+                        <div class="kv-value">${host.route_mode || "-"}</div>
                     </div>
                 </article>
                 <article class="panel inventory-network-detail-card">
@@ -165,6 +194,14 @@
                         <span class="pill subtle">${(host.open_ports || []).length} ports</span>
                     </div>
                     <div class="tag-row">${ports}</div>
+                    <div class="inventory-port-detail-stack">${portDetails}</div>
+                    <div class="panel-head compact-head">
+                        <h2>Route Path</h2>
+                    </div>
+                    <div class="inventory-route-panel">
+                        <div class="inventory-route-flow">${routePath}</div>
+                        <div class="list-meta">${host.route_summary || "Kein genauer Routenhinweis aus den letzten Daten verfuegbar."}</div>
+                    </div>
                     <div class="panel-head compact-head">
                         <h2>Tags</h2>
                     </div>
@@ -204,17 +241,28 @@
         }
 
         const groupId = networkByHost[host.id];
+        const groupNode = groupId ? document.querySelector(`.network-svg-node[data-node-id="${groupId}"]`) : null;
+        const gatewayId = groupNode ? groupNode.getAttribute("data-gateway-id") : "";
         document.querySelectorAll(".network-svg-node, .network-svg-edge").forEach((element) => {
             element.classList.add("dimmed");
         });
-        ["suite-root", groupId, host.id].forEach((nodeId) => {
+        const activeNodes = ["suite-root", groupId];
+        if (gatewayId && gatewayId !== host.id) {
+            activeNodes.push(gatewayId);
+        }
+        activeNodes.push(host.id);
+        activeNodes.forEach((nodeId) => {
             const node = document.querySelector(`.network-svg-node[data-node-id="${nodeId}"]`);
             if (node) {
                 node.classList.add("active");
                 node.classList.remove("dimmed");
             }
         });
-        [`edge_root_${groupId}`, `edge_${host.id}`].forEach((edgeId) => {
+        const activeEdges = [`edge_root_${groupId}`, `edge_${host.id}`];
+        if (gatewayId && gatewayId !== host.id) {
+            activeEdges.push(`edge_${gatewayId}`);
+        }
+        activeEdges.forEach((edgeId) => {
             const edge = document.querySelector(`.network-svg-edge[data-edge-id="${edgeId}"]`);
             if (edge) {
                 edge.classList.add("active");
@@ -248,7 +296,7 @@
                 y: groupY,
                 kind: "group",
             };
-            groups.push({ node: groupNode, hosts: [] });
+            groups.push({ node: groupNode, hosts: [], gatewayId: group.gateway_id || "" });
             edges.push({ id: `edge_root_${group.id}`, from: "suite-root", to: group.id });
 
             (group.hosts || []).forEach((host, index) => {
@@ -261,7 +309,8 @@
                     x: hostX,
                     y: hostY,
                 });
-                edges.push({ id: `edge_${host.id}`, from: group.id, to: host.id });
+                const edgeFrom = group.gateway_id && group.gateway_id !== host.id ? group.gateway_id : group.id;
+                edges.push({ id: `edge_${host.id}`, from: edgeFrom, to: host.id });
             });
 
             cursorX += groupWidth + 120;
@@ -370,8 +419,12 @@
         renderNode(layout.root.x, layout.root.y, layout.root.label, "root", "suite-root", "N0");
         layout.groups.forEach((group) => {
             renderNode(group.node.x, group.node.y, group.node.label, "group", group.node.id, `${group.hosts.length} hosts`);
+            const groupElement = viewport.querySelector(`.network-svg-node[data-node-id="${group.node.id}"]`);
+            if (groupElement && group.gatewayId) {
+                groupElement.setAttribute("data-gateway-id", group.gatewayId);
+            }
             group.hosts.forEach((host) => {
-                renderNode(host.x, host.y, host.target, "host", host.id, host.device_type || "unknown");
+                renderNode(host.x, host.y, host.target, "host", host.id, host.is_gateway ? "gateway" : (host.device_type || "unknown"));
             });
         });
 
