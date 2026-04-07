@@ -14,11 +14,19 @@ The scanner is no longer the product surface by itself. It is the first major mo
 
 `Startrace` now follows a suite-first structure inside this repository:
 
-- `internal/suite`: the browser-facing Startrace shell, routing, layout, shared templates and global styling
+- `internal/suite`: the browser-facing Startrace shell, routing, layout, templates, components and global styling
 - `internal/shared`: shared persistence, platform/runtime helpers and cross-module data foundations
-- `internal/modules/radar`: the current scanner/discovery module runtime and Radar-specific workflows
+- `internal/modules/*`: module capabilities, workflows, runtime logic and integrations
 
 This keeps the GUI as the product shell instead of treating it as part of Radar, while still letting Radar remain the first major live module inside the suite.
+
+The important boundary is:
+
+- `suite` owns the GUI
+- `shared` owns canonical data and shared infrastructure
+- `modules` own capabilities, workflows and data production
+
+That means modules are not intended to become separate mini frontends by default. The suite renders the product UI and consumes data or workflow output from the modules.
 
 ## Product Direction
 
@@ -202,7 +210,7 @@ sudo ./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
 
 - `scanner-core/cmd/tracer`: CLI entrypoint for Radar/discovery execution
 - `scanner-core/cmd/startrace`: suite web server entrypoint
-- `scanner-core/internal/suite`: suite shell routes, templates and global static assets
+- `scanner-core/internal/suite`: suite shell routes, templates, components and global static assets
 - `scanner-core/internal/shared/platform`: shared runtime/platform helpers such as privilege checks
 - `scanner-core/internal/shared/storage`: SQLite persistence, projects, runs, assets and schedules
 - `scanner-core/internal/modules/radar/runtime`: Radar run planning and execution logic

@@ -50,6 +50,7 @@ It is responsible for:
 - exposing a JSON API for browser interactions
 - project-aware navigation and shell layout
 - shared templates and styling
+- shared UI components and page composition
 - composing views from module and shared data
 
 ### 3. modules
@@ -59,12 +60,14 @@ Right now the first live module is `Radar`, but the same split should later appl
 
 Each module can carry:
 
-- HTTP handlers / module routes
 - service or runtime logic
-- module-specific templates
-- module-specific static assets
+- integrations with tools or scanners
+- module-specific queries, actions and workflow helpers
+- data preparation for the suite layer
 
-This keeps the product easy to evolve without letting one module become the entire app structure.
+The suite remains the place where the browser-facing UI is rendered. A module may justify a specialized view later, but the default rule is that modules provide capabilities and the suite presents them.
+
+This keeps the product easy to evolve without letting one module become the entire app structure or a second frontend.
 
 ## Initial Repository Shape
 
@@ -78,6 +81,7 @@ scanner-core/
 |-- internal/
 |   |-- modules/
 |   |   `-- radar/
+|   |       |-- integrations/
 |   |       `-- runtime/
 |   |-- shared/
 |   |   |-- platform/
@@ -85,6 +89,8 @@ scanner-core/
 |   `-- suite/
 |       |-- server.go
 |       |-- server_test.go
+|       |-- components/
+|       |-- pages/
 |       |-- templates/
 |       `-- static/
 ```
@@ -145,5 +151,6 @@ To keep the suite maintainable as more modules arrive:
 
 - the suite shell owns navigation, layout and global UI concerns
 - shared packages own canonical data models and persistence
-- modules own workflows and module-specific presentation
+- modules own workflows, actions, integrations and data preparation
 - modules should depend on shared foundations, not directly on each other
+- visual consistency should come from the suite layer, not from each module inventing its own UI stack
