@@ -227,6 +227,14 @@
             <div class="inventory-network-detail-grid">
                 <article class="panel inventory-network-detail-card">
                     <div class="panel-head">
+                        <h2>Ports</h2>
+                        <span class="pill subtle">${(host.open_ports || []).length} ports</span>
+                    </div>
+                    <div class="tag-row">${ports}</div>
+                    <div class="inventory-port-detail-stack">${portDetails}</div>
+                </article>
+                <article class="panel inventory-network-detail-card">
+                    <div class="panel-head">
                         <h2>${host.display_name}</h2>
                         ${getHostBadge(host.status)}
                     </div>
@@ -246,14 +254,6 @@
                         <div class="kv-key">Route Mode</div>
                         <div class="kv-value">${host.route_mode || "-"}</div>
                     </div>
-                </article>
-                <article class="panel inventory-network-detail-card">
-                    <div class="panel-head">
-                        <h2>Connections</h2>
-                        <span class="pill subtle">${(host.open_ports || []).length} ports</span>
-                    </div>
-                    <div class="tag-row">${ports}</div>
-                    <div class="inventory-port-detail-stack">${portDetails}</div>
                     <div class="panel-head compact-head">
                         <h2>Route Path</h2>
                     </div>
@@ -503,11 +503,11 @@
                 appendText(wrapper, node.sublabel || "", "network-svg-sublabel", 0, 64);
             } else if (visual.shape === "triangle") {
                 const triangle = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                triangle.setAttribute("d", "M 0 -42 L 42 34 L -42 34 Z");
+                triangle.setAttribute("d", "M 0 -50 L 56 40 L -56 40 Z");
                 triangle.setAttribute("class", "network-triangle-shape");
                 wrapper.appendChild(triangle);
-                appendText(wrapper, node.target || node.label, "network-svg-label", 0, 4);
-                appendText(wrapper, node.graph_role_label || visual.roleLabel || "", "network-svg-sublabel", 0, 56);
+                appendText(wrapper, node.graph_role_label || visual.roleLabel || "", "network-svg-sublabel", 0, 6);
+                appendText(wrapper, node.target || node.label, "network-svg-label", 0, 24);
             } else if (visual.shape === "dc") {
                 const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
                 rect.setAttribute("x", "-72");

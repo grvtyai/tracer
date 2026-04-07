@@ -42,6 +42,7 @@ func buildSuiteModules(activeNav string, currentProject *storage.ProjectSummary)
 		{key: "security", label: "Security", path: "/security"},
 		{key: "workbench", label: "Workbench", path: "/workbench"},
 		{key: "automation", label: "Automation", path: "/automation"},
+		{key: "help", label: "Help", path: "/help"},
 		{key: "settings", label: "Settings", path: "/settings"},
 	}
 
@@ -116,7 +117,16 @@ func buildModuleNav(activeNav string, activeSection string, currentProject *stor
 	case "settings":
 		candidates = []candidate{
 			{section: "settings-overview", label: "Overview", url: "/settings"},
-			{section: "settings-help", label: "Help", url: "/help"},
+		}
+	case "help":
+		candidates = []candidate{
+			{section: "help-overview", label: "Overview", url: "/help"},
+			{section: "help-installation", label: "Installation", url: "/help/installation"},
+			{section: "help-basics", label: "Basics", url: "/help/basics"},
+			{section: "help-plugins", label: "Plugins", url: "/help/plugins"},
+			{section: "help-runs", label: "Runs", url: "/help/runs"},
+			{section: "help-reevaluation", label: "Reevaluation", url: "/help/reevaluation"},
+			{section: "help-troubleshooting", label: "Troubleshooting", url: "/help/troubleshooting"},
 		}
 	default:
 		return nil

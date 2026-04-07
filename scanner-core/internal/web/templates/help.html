@@ -3,108 +3,81 @@
 {{define "page"}}
 <section class="panel">
     <div class="panel-head">
-        <h2>Operator Guide</h2>
+        <h2>Startrace Help Center</h2>
+        <span class="pill subtle">{{len .HelpTopics}} topics</span>
     </div>
-    <p class="empty-note">
-        This page is the built-in working guide for tracer and startrace. It explains what run states mean, how to troubleshoot failed plugins and how reevaluation should be used in day-to-day operation.
-    </p>
+    <div class="kv-grid">
+        <div class="kv-key">Tool</div>
+        <div class="kv-value">Startrace is the suite shell. tracer remains the scanner/worker core inside it.</div>
+        <div class="kv-key">GitHub Repo</div>
+        <div class="kv-value"><a href="{{.RepoURL}}" target="_blank" rel="noreferrer">{{.RepoURL}}</a></div>
+        <div class="kv-key">Local Workspace</div>
+        <div class="kv-value mono">{{.RepoPath}}</div>
+    </div>
+    <div class="help-search-row">
+        <input id="help-search" class="input" type="search" placeholder="Search help topics, plugins, runs, reevaluation..." value="{{.HelpSearchQuery}}" />
+    </div>
 </section>
 
-<section class="panel-grid">
-    <article class="panel" id="run-status">
-        <div class="panel-head">
-            <h2>Run Status</h2>
-        </div>
-        <div class="list">
-            <div class="list-item static">
-                <div>
-                    <div class="list-title status-success">Completed</div>
-                    <div class="list-meta">All planned work finished cleanly or warnings were explicitly accepted by the operator.</div>
-                </div>
+<section class="panel">
+    <div class="panel-head">
+        <h2>Latest Additions</h2>
+    </div>
+    <div class="help-latest-grid">
+        {{range .HelpLatest}}
+        <a class="panel help-latest-card help-topic-card" href="{{.URL}}" data-help-filter="{{.Title}} {{.Summary}} {{.Category}}">
+            <div class="panel-head">
+                <h2>{{.Title}}</h2>
+                <span class="pill status-info">New</span>
             </div>
-            <div class="list-item static">
-                <div>
-                    <div class="list-title status-warning">Needs attention</div>
-                    <div class="list-meta">One or more jobs failed or the run produced reevaluation hints. Review the failed jobs, fix what matters, then rerun or accept warnings when the remaining gaps are acceptable.</div>
-                </div>
-            </div>
-            <div class="list-item static">
-                <div>
-                    <div class="list-title status-info">Running</div>
-                    <div class="list-meta">The scan is still active. The run becomes clickable after completion.</div>
-                </div>
-            </div>
-            <div class="list-item static">
-                <div>
-                    <div class="list-title status-danger">Failed</div>
-                    <div class="list-meta">The run could not finish. This should stay rare and normally means a bigger setup or execution issue.</div>
-                </div>
-            </div>
-        </div>
-    </article>
-
-    <article class="panel" id="run-status-needs-attention">
-        <div class="panel-head">
-            <h2>When a Run Needs Attention</h2>
-        </div>
-        <ul class="bullet-list">
-            <li>Open the run and read the yellow warning box first.</li>
-            <li>Check the failed job list to see which plugin failed, on which host and with which error text.</li>
-            <li>If the failed plugin matters for your goal, fix the tool, path or target issue and run the scan again.</li>
-            <li>If the missing plugin result is acceptable and the rest of the data is good enough, use `Accept warnings and complete`.</li>
-            <li>Use reevaluation when uncertainty should be checked later rather than blocking the current analysis.</li>
-        </ul>
-    </article>
+            <div class="list-meta">{{.Category}}</div>
+            <p class="empty-note">{{.Summary}}</p>
+        </a>
+        {{end}}
+    </div>
 </section>
 
-<section class="panel-grid">
-    <article class="panel" id="plugin-troubleshooting">
-        <div class="panel-head">
-            <h2>Plugin Troubleshooting</h2>
-        </div>
-        <ul class="bullet-list">
-            <li><span class="mono">naabu</span>: check binary availability, correct active interface and reachable scope.</li>
-            <li><span class="mono">nmap</span>: check privilege level, host reachability and service ports discovered earlier in the run.</li>
-            <li><span class="mono">scamper</span>: traceroute-style reachability can fail even when later TCP probes still work. This is common in private networks and not always critical.</li>
-            <li><span class="mono">httpx</span> and <span class="mono">zgrab2</span>: verify the host really offers HTTP on the scanned port and that redirects or TLS behavior are acceptable.</li>
-            <li><span class="mono">zeek</span>: passive ingest depends on visible traffic and a valid log directory. Zero passive findings can still be fine.</li>
-        </ul>
-    </article>
-
-    <article class="panel" id="reevaluation">
-        <div class="panel-head">
-            <h2>Reevaluation</h2>
-        </div>
-        <ul class="bullet-list">
-            <li>`Reevaluate all Hosts` opens a new scan configuration seeded with the current run scope.</li>
-            <li>`Timebased Reevaluation` stores a future reevaluation request for the same run scope. The schedule is persisted already; automatic execution is the next planned step.</li>
-            <li>`Reevaluate this Host` on an asset opens a new scan configuration focused on just that host.</li>
-            <li>The asset-level reevaluate checkbox keeps a host marked for future follow-up even when run-wide reevaluation is off.</li>
-        </ul>
-    </article>
+<section class="panel">
+    <div class="panel-head">
+        <h2>Help Topics</h2>
+    </div>
+    <div id="help-topic-grid" class="help-topic-grid">
+        {{range .HelpTopics}}
+        <a class="panel help-topic-card" href="{{.URL}}" data-help-filter="{{.Title}} {{.Summary}} {{.Category}} {{.Slug}}">
+            <div class="panel-head">
+                <h2>{{.Title}}</h2>
+                <span class="pill subtle">{{.Category}}</span>
+            </div>
+            <p class="empty-note">{{.Summary}}</p>
+        </a>
+        {{end}}
+    </div>
+    <p id="help-empty-state" class="empty-note" hidden>No help topic matches the current search.</p>
 </section>
 
-<section class="panel-grid">
-    <article class="panel" id="asset-overrides">
-        <div class="panel-head">
-            <h2>Asset Overrides</h2>
-        </div>
-        <ul class="bullet-list">
-            <li>Observed data always stays intact.</li>
-            <li>`Edit Host` lets you add manual labels such as device type, connection type, tags and notes.</li>
-            <li>Use overrides when you know more than the scanner can safely infer, for example that a device is definitely Wi-Fi even though the scan can only guess.</li>
-        </ul>
-    </article>
+<script>
+(() => {
+    const input = document.getElementById("help-search");
+    const cards = Array.from(document.querySelectorAll(".help-topic-card"));
+    const emptyState = document.getElementById("help-empty-state");
+    if (!input || !cards.length) return;
 
-    <article class="panel" id="analytics">
-        <div class="panel-head">
-            <h2>Analytics</h2>
-        </div>
-        <ul class="bullet-list">
-            <li>Analytics groups runs and assets into a dashboard-friendly shape.</li>
-            <li>Device type and connection type become much more useful once manual overrides are maintained.</li>
-            <li>For private networks this is the basis for later views such as smartphones, workstations, servers and IoT groups.</li>
-        </ul>
-    </article>
-</section>
+    function applyFilter() {
+        const needle = input.value.trim().toLowerCase();
+        let visible = 0;
+        cards.forEach((card) => {
+            const haystack = (card.getAttribute("data-help-filter") || "").toLowerCase();
+            const match = needle === "" || haystack.includes(needle);
+            card.hidden = !match;
+            if (match) visible += 1;
+        });
+        if (emptyState) {
+            emptyState.hidden = visible !== 0;
+        }
+    }
+
+    input.addEventListener("input", applyFilter);
+    applyFilter();
+})();
+</script>
 {{end}}

@@ -1,0 +1,44 @@
+{{define "help_topic.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+{{if .HelpTopic}}
+<section class="panel">
+    <div class="panel-head">
+        <h2>{{.HelpTopic.Title}}</h2>
+        <span class="pill subtle">{{.HelpTopic.Category}}</span>
+    </div>
+    <p class="empty-note">{{.HelpTopic.Summary}}</p>
+    {{if .HelpTopic.Links}}
+    <div class="tag-row">
+        {{range .HelpTopic.Links}}
+        <a class="tag" href="{{.URL}}" target="_blank" rel="noreferrer">{{.Label}}</a>
+        {{end}}
+    </div>
+    {{end}}
+</section>
+
+<section class="panel-grid">
+    {{range .HelpTopic.Sections}}
+    <article class="panel">
+        <div class="panel-head">
+            <h2>{{.Title}}</h2>
+        </div>
+        <ul class="bullet-list">
+            {{range .Content}}
+            <li>{{.}}</li>
+            {{end}}
+        </ul>
+    </article>
+    {{end}}
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Expand Later</h2>
+    </div>
+    <p class="empty-note">
+        This page is intentionally scaffolded now so we can add precise material later without changing the Help structure again.
+    </p>
+</section>
+{{end}}
+{{end}}

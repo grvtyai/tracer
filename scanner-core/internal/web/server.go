@@ -85,6 +85,12 @@ type pageData struct {
 	DashboardCharts       []dashboardChart
 	InventoryNetworkAPI   string
 	InventoryNetworkJSON  template.JS
+	HelpTopics            []helpTopicCard
+	HelpLatest            []helpTopicCard
+	HelpTopic             *helpTopicPage
+	HelpSearchQuery       string
+	RepoURL               string
+	RepoPath              string
 	DeviceTypeStats       []labelCount
 	ConnectionStats       []labelCount
 	StatusStats           []labelCount
@@ -339,6 +345,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/analytics", s.handleAnalytics)
 	s.mux.HandleFunc("/settings", s.handleSettings)
 	s.mux.HandleFunc("/help", s.handleHelp)
+	s.mux.HandleFunc("/help/", s.handleHelpTopic)
 
 	s.mux.HandleFunc("/api/health", s.handleHealthAPI)
 	s.mux.HandleFunc("/api/options", s.handleOptionsAPI)
@@ -398,7 +405,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		RecentRuns:        takeRuns(runs, 8),
 		RecentRunItems:    buildRunListItems(ctx, s.repo, takeRuns(runs, 8)),
 		Assets:            takeAssets(projectAssets, 8),
-		HelpLink:          "/help",
+		HelpLink:          buildProjectPath("/help", currentProject),
 		Stats: dashboardStats{
 			RunCount:      len(runs),
 			AssetCount:    len(projectAssets),
@@ -718,7 +725,7 @@ func (s *Server) handleRuns(w http.ResponseWriter, r *http.Request) {
 		Runs:              runs,
 		RunItems:          buildRunListItems(ctx, s.repo, runs),
 		DiffAPI:           "/api/diff",
-		HelpLink:          "/help#run-status",
+		HelpLink:          buildProjectPath("/help/runs", currentProject),
 		Settings:          appSettings,
 	}
 	s.render(w, "runs.html", data)
@@ -785,7 +792,7 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		ScheduledScans:    scheduledScans,
 		RunReevaluateURL:  buildReevaluationURL(project.ID, "Reevaluate "+run.Run.TemplateName, runScopeInput(run), "30m"),
 		WarningDetails:    buildWarningDetails(run),
-		HelpLink:          "/help#run-status-needs-attention",
+		HelpLink:          buildProjectPath("/help/troubleshooting", &project),
 		Settings:          appSettings,
 	}
 	s.render(w, "run.html", data)
@@ -1030,7 +1037,7 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 		Asset:              &asset,
 		AssetReevaluateURL: buildReevaluationURL(project.ID, "Reevaluate "+asset.Asset.DisplayName, asset.Asset.PrimaryTarget, "30m"),
 		PortSections:       buildPortSections(asset, lastRun),
-		HelpLink:           "/help#asset-overrides",
+		HelpLink:           buildProjectPath("/help/inventory", &project),
 		Notice:             noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Settings:           appSettings,
 	}
@@ -1110,7 +1117,7 @@ func (s *Server) handleAnalytics(w http.ResponseWriter, r *http.Request) {
 		DeviceTypeStats: countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveDeviceType }),
 		ConnectionStats: countAssetProperty(projectAssets, func(asset storage.AssetSummary) string { return asset.EffectiveConnectionType }),
 		StatusStats:     countRunStatuses(runs),
-		HelpLink:        "/help#analytics",
+		HelpLink:        buildProjectPath("/help/best-practices", currentProject),
 		Settings:        appSettings,
 	}
 	s.render(w, "analytics.html", data)
@@ -1197,7 +1204,7 @@ func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request) {
 		CurrentProject:    currentProject,
 		ProjectSwitchPath: "/settings",
 		Project:           currentProject,
-		HelpLink:          "/help",
+		HelpLink:          buildProjectPath("/help", currentProject),
 		Settings:          appSettings,
 	}
 	s.render(w, "settings.html", data)
@@ -1211,23 +1218,68 @@ func (s *Server) handleHelp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	helpCards := buildHelpCards(currentProjectID(currentProject))
 	data := pageData{
 		Title:             "Help",
 		AppName:           s.options.AppName,
-		ActiveNav:         "settings",
-		ActiveSection:     "settings-help",
+		ActiveNav:         "help",
+		ActiveSection:     "help-overview",
 		BasePath:          s.options.BasePath,
 		DBPath:            s.options.DBPath,
 		DataDir:           s.options.DataDir,
-		HeroNote:          "Operator guide for troubleshooting, reevaluation and host workflows",
 		Projects:          projects,
 		CurrentProject:    currentProject,
 		ProjectSwitchPath: "/help",
 		Project:           currentProject,
-		HelpLink:          "/help",
+		HelpLink:          buildProjectPath("/help", currentProject),
+		HelpTopics:        helpCards,
+		HelpLatest:        latestHelpCards(helpCards, 3),
+		RepoURL:           "https://github.com/grvtyai/tracer",
+		RepoPath:          "C:\\Users\\andre\\Desktop\\repos\\tracer\\tracer",
 		Settings:          appSettings,
 	}
 	s.render(w, "help.html", data)
+}
+
+func (s *Server) handleHelpTopic(w http.ResponseWriter, r *http.Request) {
+	slug := strings.Trim(strings.TrimPrefix(r.URL.Path, "/help/"), "/")
+	if slug == "" {
+		http.Redirect(w, r, "/help", http.StatusSeeOther)
+		return
+	}
+
+	topic, ok := findHelpTopic(slug)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	data := pageData{
+		Title:             topic.Title,
+		AppName:           s.options.AppName,
+		ActiveNav:         "help",
+		ActiveSection:     "help-" + topic.Slug,
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/help/" + topic.Slug,
+		Project:           currentProject,
+		HelpLink:          buildProjectPath("/help", currentProject),
+		HelpTopic:         &topic,
+		RepoURL:           "https://github.com/grvtyai/tracer",
+		RepoPath:          "C:\\Users\\andre\\Desktop\\repos\\tracer\\tracer",
+		Settings:          appSettings,
+	}
+	s.render(w, "help_topic.html", data)
 }
 
 func (s *Server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
@@ -1633,6 +1685,13 @@ func (s *Server) loadShellContext(ctx context.Context, requestedProject string) 
 
 	current := selectProject(projects, requestedProject, settings.DefaultProjectID)
 	return projects, current, settings, nil
+}
+
+func currentProjectID(project *storage.ProjectSummary) string {
+	if project == nil {
+		return ""
+	}
+	return strings.TrimSpace(project.ID)
 }
 
 func selectProject(projects []storage.ProjectSummary, requested string, defaultProjectID string) *storage.ProjectSummary {

@@ -95,25 +95,9 @@ a { color: inherit; text-decoration: none; }
     margin-bottom: 24px;
 }
 
-.brand-mark {
-    width: 48px;
-    height: 48px;
-    border-radius: 16px;
-    display: grid;
-    place-items: center;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: white;
-    background: linear-gradient(135deg, var(--accent), var(--accent-2), var(--accent-warm));
-    box-shadow:
-        0 0 0 1px rgba(255,255,255,0.14),
-        0 16px 36px rgba(0,0,0,0.3),
-        0 0 20px rgba(55,227,255,0.18);
-}
-
 .brand-logo {
-    width: 100%;
-    height: 100%;
+    width: 56px;
+    height: 56px;
     object-fit: contain;
     display: block;
     filter: drop-shadow(0 0 16px rgba(55,227,255,0.16));
@@ -221,14 +205,6 @@ a { color: inherit; text-decoration: none; }
     align-items: flex-start;
     gap: 18px;
     margin-bottom: 24px;
-}
-
-.eyebrow {
-    color: var(--accent-2);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 8px;
 }
 
 h1, h2 { margin: 0; }
@@ -1004,6 +980,34 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
         rgba(255,255,255,0.02);
 }
 
+.help-search-row {
+    margin-top: 16px;
+}
+
+.help-latest-grid,
+.help-topic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+
+.help-topic-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 100%;
+    transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.help-topic-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(55,227,255,0.24);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.08),
+        0 12px 26px rgba(0,0,0,0.18),
+        0 0 18px rgba(55,227,255,0.08);
+}
+
 .inventory-network-layout {
     display: grid;
     grid-template-columns: 360px 1fr;
@@ -1257,16 +1261,19 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
 .network-svg-node.role-gateway path {
     fill: rgba(255,207,90,0.18);
     stroke: #ffcf5a;
+    stroke-linejoin: round;
 }
 
 .network-svg-node.role-firewall path {
     fill: rgba(63,220,122,0.18);
     stroke: #3fdc7a;
+    stroke-linejoin: round;
 }
 
 .network-svg-node.role-dns path {
     fill: rgba(180,125,255,0.18);
     stroke: #b47dff;
+    stroke-linejoin: round;
 }
 
 .network-svg-node.role-domain-controller rect {
