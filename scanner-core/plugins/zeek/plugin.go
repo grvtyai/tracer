@@ -16,6 +16,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/tracer/scanner-core/internal/platform"
 )
 
 type Runner interface {
@@ -114,6 +115,13 @@ func (p Plugin) ensureLogDir(ctx context.Context, logDir string, zeekctlBinary s
 	runner := p.runner
 	if runner == nil {
 		runner = ExecRunner{}
+	}
+	if _, ok := runner.(ExecRunner); ok {
+		resolved, err := platform.ResolveExecutable(zeekctlBinary)
+		if err != nil {
+			return fmt.Errorf("resolve zeekctl binary: %w", err)
+		}
+		zeekctlBinary = resolved
 	}
 
 	output, err := runner.Run(ctx, zeekctlBinary, []string{"deploy"})

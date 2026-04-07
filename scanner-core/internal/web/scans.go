@@ -265,7 +265,7 @@ func privilegeCheck() preflightCheck {
 }
 
 func commandCheck(name string, required bool) preflightCheck {
-	if _, err := exec.LookPath(name); err != nil {
+	if _, err := platform.ResolveExecutable(name); err != nil {
 		status := "warning"
 		if required {
 			status = "error"
@@ -359,6 +359,10 @@ func resolveTracerBinaryPath() (string, error) {
 	}
 
 	tracerBinary, err := exec.LookPath("tracer")
+	if err == nil {
+		return tracerBinary, nil
+	}
+	tracerBinary, err = platform.ResolveExecutable("tracer")
 	if err != nil {
 		return "", fmt.Errorf("locate tracer worker binary: %w", err)
 	}

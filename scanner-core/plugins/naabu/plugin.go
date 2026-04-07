@@ -14,6 +14,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/tracer/scanner-core/internal/platform"
 )
 
 type Runner interface {
@@ -64,6 +65,13 @@ func (p *Plugin) Run(ctx context.Context, job jobs.Job) ([]evidence.Record, erro
 	binary := p.binary
 	if binary == "" {
 		binary = "naabu"
+	}
+	if _, ok := runner.(ExecRunner); ok {
+		resolvedBinary, resolveErr := platform.ResolveExecutable(binary)
+		if resolveErr != nil {
+			return nil, fmt.Errorf("resolve naabu binary: %w", resolveErr)
+		}
+		binary = resolvedBinary
 	}
 
 	output, err := runner.Run(ctx, binary, BuildArgs(job))

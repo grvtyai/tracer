@@ -17,6 +17,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/engine"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/tracer/scanner-core/internal/platform"
 )
 
 var errSkipLine = errors.New("skip zgrab2 line")
@@ -77,6 +78,13 @@ func (p *Plugin) Run(ctx context.Context, job jobs.Job) ([]evidence.Record, erro
 	binary := p.binary
 	if binary == "" {
 		binary = "zgrab2"
+	}
+	if _, ok := runner.(ExecRunner); ok {
+		resolvedBinary, resolveErr := platform.ResolveExecutable(binary)
+		if resolveErr != nil {
+			return nil, fmt.Errorf("resolve zgrab2 binary: %w", resolveErr)
+		}
+		binary = resolvedBinary
 	}
 
 	inputFile, err := p.writeInputFile(job)
