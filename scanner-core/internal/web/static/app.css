@@ -980,6 +980,59 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
         rgba(255,255,255,0.02);
 }
 
+.search-panel .panel-head,
+.template-library .panel-head {
+    margin-bottom: 12px;
+}
+
+.template-library {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.template-card {
+    padding: 16px 18px;
+}
+
+.template-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.template-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.template-card-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transform: translateX(8px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.template-card:hover .template-card-actions,
+.template-card:focus-within .template-card-actions {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.template-action-button {
+    min-width: 96px;
+}
+
+.template-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .help-search-row {
     margin-top: 16px;
 }
@@ -1702,6 +1755,16 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     .table { display: block; overflow-x: auto; }
     .chart-grid { grid-template-columns: 1fr; }
     .inventory-network-canvas { height: 460px; }
+    .template-card-actions {
+        opacity: 1;
+        transform: none;
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+    .template-card-head {
+        flex-direction: column;
+    }
     .preflight-card {
         right: auto;
         left: 0;

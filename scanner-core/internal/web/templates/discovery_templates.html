@@ -1,0 +1,85 @@
+{{define "discovery_templates.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel">
+    <div class="panel-head">
+        <h2>Template Library</h2>
+        <span class="pill">{{len .DiscoveryTemplates}} templates</span>
+    </div>
+    <p class="empty-note">
+        Templates are the reusable Discovery building blocks. They mirror the run creation flow, but exist to be reused, adjusted and duplicated without rebuilding the same setup every time.
+    </p>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Search Templates</h2>
+        <span class="pill subtle">Discovery presets</span>
+    </div>
+    <label class="form-row">
+        <span class="form-label">Search by template name, owner, scope, description or port profile</span>
+        <input class="input" id="template-search" type="search" placeholder="Search Templates..." autocomplete="off" />
+    </label>
+</section>
+
+{{if .DiscoveryTemplates}}
+<section class="template-library">
+    {{range .DiscoveryTemplates}}
+    <article class="template-card panel" data-template-card data-search-text="{{.SearchText}}">
+        <div class="template-card-main">
+            <div class="template-card-head">
+                <div>
+                    <div class="list-title">{{.Name}}</div>
+                    <div class="list-meta">{{.Description}}</div>
+                </div>
+                <div class="template-card-actions">
+                    <a class="button button-secondary template-action-button" href="{{.EditURL}}">Edit</a>
+                    <a class="button button-secondary template-action-button" href="{{.DuplicateURL}}">Duplicate</a>
+                </div>
+            </div>
+            <div class="template-meta-row">
+                <span class="tag">Owner {{.Owner}}</span>
+                <span class="tag">ID {{.ID}}</span>
+                <span class="tag">Scope {{.Scope}}</span>
+                <span class="tag">Ports {{.PortProfile}}</span>
+            </div>
+        </div>
+    </article>
+    {{end}}
+</section>
+<section class="panel" id="template-search-empty" hidden>
+    <p class="empty-note">No templates match the current search.</p>
+</section>
+{{else}}
+<section class="panel">
+    <p class="empty-note">No Discovery templates are available yet.</p>
+</section>
+{{end}}
+
+<script>
+(() => {
+    const search = document.getElementById("template-search");
+    const cards = Array.from(document.querySelectorAll("[data-template-card]"));
+    const empty = document.getElementById("template-search-empty");
+    if (!search || cards.length === 0 || !empty) {
+        return;
+    }
+
+    const applyFilter = () => {
+        const query = search.value.trim().toLowerCase();
+        let visible = 0;
+        cards.forEach((card) => {
+            const text = (card.getAttribute("data-search-text") || "").toLowerCase();
+            const match = query === "" || text.includes(query);
+            card.hidden = !match;
+            if (match) {
+                visible++;
+            }
+        });
+        empty.hidden = visible !== 0;
+    };
+
+    search.addEventListener("input", applyFilter);
+})();
+</script>
+{{end}}

@@ -11,10 +11,21 @@
     </p>
 </section>
 
+<section class="panel">
+    <div class="panel-head">
+        <h2>Search Inventory</h2>
+        <span class="pill subtle">{{len .InventorySections}} subnets</span>
+    </div>
+    <label class="form-row">
+        <span class="form-label">Search subnets, hostnames, IPs, classes, tags or service previews</span>
+        <input class="input" id="inventory-search" type="search" placeholder="Search Inventory..." autocomplete="off" />
+    </label>
+</section>
+
 {{if .InventorySections}}
 <section class="inventory-subnet-stack">
     {{range .InventorySections}}
-    <details class="inventory-subnet-disclosure" {{if .ExpandByDefault}}open{{end}}>
+    <details class="inventory-subnet-disclosure" data-inventory-subnet {{if .ExpandByDefault}}open{{end}}>
         <summary class="inventory-subnet-summary">
             <div>
                 <div class="list-title">{{.Label}}</div>
@@ -27,14 +38,15 @@
         </summary>
         <div class="inventory-subnet-body">
             {{range .Categories}}
-            <article class="inventory-category-card">
+            <article class="inventory-category-card" data-inventory-category>
                 <div class="panel-head">
                     <h2>{{.Label}}</h2>
                     <span class="pill subtle">{{.HostCount}}</span>
                 </div>
                 <div class="list inventory-host-list">
                     {{range .Hosts}}
-                    <a class="list-item inventory-host-link" href="/assets/{{.ID}}">
+                    {{$searchText := printf "%s %s %s %s %s %s %s" .DisplayName .PrimaryTarget .CurrentOS .DeviceType .ConnectionType .DeviceTypeGuess .AdditionalServiceHint}}
+                    <a class="list-item inventory-host-link" href="/assets/{{.ID}}" data-inventory-host data-search-text="{{$searchText}}">
                         <div class="inventory-host-main">
                             <div class="inventory-host-header">
                                 <div>
@@ -75,9 +87,71 @@
     </details>
     {{end}}
 </section>
+<section class="panel" id="inventory-search-empty" hidden>
+    <p class="empty-note">No inventory entries match the current search.</p>
+</section>
 {{else}}
 <section class="panel">
     <p class="empty-note">No assets are available yet. Run a persisted scan first and the inventory will backfill from stored runs.</p>
 </section>
 {{end}}
+
+<script>
+(() => {
+    const search = document.getElementById("inventory-search");
+    const subnets = Array.from(document.querySelectorAll("[data-inventory-subnet]"));
+    const empty = document.getElementById("inventory-search-empty");
+    if (!search || subnets.length === 0 || !empty) {
+        return;
+    }
+
+    const applyFilter = () => {
+        const query = search.value.trim().toLowerCase();
+        let visibleSubnets = 0;
+
+        subnets.forEach((subnet) => {
+            let subnetVisible = false;
+            const categories = Array.from(subnet.querySelectorAll("[data-inventory-category]"));
+            categories.forEach((category) => {
+                let categoryVisible = false;
+                const hosts = Array.from(category.querySelectorAll("[data-inventory-host]"));
+                hosts.forEach((host) => {
+                    const text = (host.getAttribute("data-search-text") || "").toLowerCase();
+                    const match = query === "" || text.includes(query);
+                    host.hidden = !match;
+                    if (match) {
+                        categoryVisible = true;
+                    }
+                });
+                category.hidden = !categoryVisible;
+                if (categoryVisible) {
+                    subnetVisible = true;
+                }
+            });
+
+            if (!subnetVisible && query !== "") {
+                const subnetText = subnet.innerText.toLowerCase();
+                if (subnetText.includes(query)) {
+                    subnetVisible = true;
+                    categories.forEach((category) => {
+                        category.hidden = false;
+                        category.querySelectorAll("[data-inventory-host]").forEach((host) => {
+                            host.hidden = false;
+                        });
+                    });
+                }
+            }
+
+            subnet.hidden = !subnetVisible;
+            if (subnetVisible) {
+                visibleSubnets++;
+            }
+        });
+
+        empty.hidden = visibleSubnets !== 0;
+    };
+
+    search.addEventListener("input", applyFilter);
+})();
+</script>
 {{end}}

@@ -1,0 +1,2990 @@
+# test log
+getenv GOTMPDIR
+stat C:\Users\andre\AppData\Local\Temp\TestServerHealthAndProjectsAPI3444072019\001
+getenv SUDO_USER
+stat C:\Users\andre\AppData\Local\Temp\TestServerHealthAndProjectsAPI3444072019\001\projects\heimnetz-prj-9329dd7c
+stat C:\Users\andre\AppData\Local\Temp\TestServerHealthAndProjectsAPI3444072019\001\projects
+stat C:\Users\andre\AppData\Local\Temp\TestServerHealthAndProjectsAPI3444072019\001
+getenv SUDO_UID
+getenv SUDO_GID
+open C:\Users\andre\AppData\Local\Temp
+getenv GOTMPDIR
+stat C:\Users\andre\AppData\Local\Temp\TestServerRunPageRendersHostData1651188091\001
+getenv SUDO_USER
+stat C:\Users\andre\AppData\Local\Temp\TestServerRunPageRendersHostData1651188091\001\projects\heimnetz-prj-084806ce
+stat C:\Users\andre\AppData\Local\Temp\TestServerRunPageRendersHostData1651188091\001\projects
+stat C:\Users\andre\AppData\Local\Temp\TestServerRunPageRendersHostData1651188091\001
+getenv SUDO_UID
+getenv SUDO_GID
+getenv STARTRACE_NAABU_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat naabu.com
+stat naabu.exe
+stat naabu.bat
+stat naabu.cmd
+stat naabu.vbs
+stat naabu.vbe
+stat naabu.js
+stat naabu.jse
+stat naabu.wsf
+stat naabu.wsh
+stat naabu.msc
+stat naabu.cpl
+getenv path
+stat C:\Program Files\Go\bin\naabu.com
+stat C:\Program Files\Go\bin\naabu.exe
+stat C:\Program Files\Go\bin\naabu.bat
+stat C:\Program Files\Go\bin\naabu.cmd
+stat C:\Program Files\Go\bin\naabu.vbs
+stat C:\Program Files\Go\bin\naabu.vbe
+stat C:\Program Files\Go\bin\naabu.js
+stat C:\Program Files\Go\bin\naabu.jse
+stat C:\Program Files\Go\bin\naabu.wsf
+stat C:\Program Files\Go\bin\naabu.wsh
+stat C:\Program Files\Go\bin\naabu.msc
+stat C:\Program Files\Go\bin\naabu.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.cpl
+stat C:\WINDOWS\system32\naabu.com
+stat C:\WINDOWS\system32\naabu.exe
+stat C:\WINDOWS\system32\naabu.bat
+stat C:\WINDOWS\system32\naabu.cmd
+stat C:\WINDOWS\system32\naabu.vbs
+stat C:\WINDOWS\system32\naabu.vbe
+stat C:\WINDOWS\system32\naabu.js
+stat C:\WINDOWS\system32\naabu.jse
+stat C:\WINDOWS\system32\naabu.wsf
+stat C:\WINDOWS\system32\naabu.wsh
+stat C:\WINDOWS\system32\naabu.msc
+stat C:\WINDOWS\system32\naabu.cpl
+stat C:\WINDOWS\naabu.com
+stat C:\WINDOWS\naabu.exe
+stat C:\WINDOWS\naabu.bat
+stat C:\WINDOWS\naabu.cmd
+stat C:\WINDOWS\naabu.vbs
+stat C:\WINDOWS\naabu.vbe
+stat C:\WINDOWS\naabu.js
+stat C:\WINDOWS\naabu.jse
+stat C:\WINDOWS\naabu.wsf
+stat C:\WINDOWS\naabu.wsh
+stat C:\WINDOWS\naabu.msc
+stat C:\WINDOWS\naabu.cpl
+stat C:\WINDOWS\System32\Wbem\naabu.com
+stat C:\WINDOWS\System32\Wbem\naabu.exe
+stat C:\WINDOWS\System32\Wbem\naabu.bat
+stat C:\WINDOWS\System32\Wbem\naabu.cmd
+stat C:\WINDOWS\System32\Wbem\naabu.vbs
+stat C:\WINDOWS\System32\Wbem\naabu.vbe
+stat C:\WINDOWS\System32\Wbem\naabu.js
+stat C:\WINDOWS\System32\Wbem\naabu.jse
+stat C:\WINDOWS\System32\Wbem\naabu.wsf
+stat C:\WINDOWS\System32\Wbem\naabu.wsh
+stat C:\WINDOWS\System32\Wbem\naabu.msc
+stat C:\WINDOWS\System32\Wbem\naabu.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.cpl
+stat C:\WINDOWS\System32\OpenSSH\naabu.com
+stat C:\WINDOWS\System32\OpenSSH\naabu.exe
+stat C:\WINDOWS\System32\OpenSSH\naabu.bat
+stat C:\WINDOWS\System32\OpenSSH\naabu.cmd
+stat C:\WINDOWS\System32\OpenSSH\naabu.vbs
+stat C:\WINDOWS\System32\OpenSSH\naabu.vbe
+stat C:\WINDOWS\System32\OpenSSH\naabu.js
+stat C:\WINDOWS\System32\OpenSSH\naabu.jse
+stat C:\WINDOWS\System32\OpenSSH\naabu.wsf
+stat C:\WINDOWS\System32\OpenSSH\naabu.wsh
+stat C:\WINDOWS\System32\OpenSSH\naabu.msc
+stat C:\WINDOWS\System32\OpenSSH\naabu.cpl
+stat C:\Program Files\dotnet\naabu.com
+stat C:\Program Files\dotnet\naabu.exe
+stat C:\Program Files\dotnet\naabu.bat
+stat C:\Program Files\dotnet\naabu.cmd
+stat C:\Program Files\dotnet\naabu.vbs
+stat C:\Program Files\dotnet\naabu.vbe
+stat C:\Program Files\dotnet\naabu.js
+stat C:\Program Files\dotnet\naabu.jse
+stat C:\Program Files\dotnet\naabu.wsf
+stat C:\Program Files\dotnet\naabu.wsh
+stat C:\Program Files\dotnet\naabu.msc
+stat C:\Program Files\dotnet\naabu.cpl
+stat C:\Program Files\Git\cmd\naabu.com
+stat C:\Program Files\Git\cmd\naabu.exe
+stat C:\Program Files\Git\cmd\naabu.bat
+stat C:\Program Files\Git\cmd\naabu.cmd
+stat C:\Program Files\Git\cmd\naabu.vbs
+stat C:\Program Files\Git\cmd\naabu.vbe
+stat C:\Program Files\Git\cmd\naabu.js
+stat C:\Program Files\Git\cmd\naabu.jse
+stat C:\Program Files\Git\cmd\naabu.wsf
+stat C:\Program Files\Git\cmd\naabu.wsh
+stat C:\Program Files\Git\cmd\naabu.msc
+stat C:\Program Files\Git\cmd\naabu.cpl
+stat C:\Program Files\Go\bin\naabu.com
+stat C:\Program Files\Go\bin\naabu.exe
+stat C:\Program Files\Go\bin\naabu.bat
+stat C:\Program Files\Go\bin\naabu.cmd
+stat C:\Program Files\Go\bin\naabu.vbs
+stat C:\Program Files\Go\bin\naabu.vbe
+stat C:\Program Files\Go\bin\naabu.js
+stat C:\Program Files\Go\bin\naabu.jse
+stat C:\Program Files\Go\bin\naabu.wsf
+stat C:\Program Files\Go\bin\naabu.wsh
+stat C:\Program Files\Go\bin\naabu.msc
+stat C:\Program Files\Go\bin\naabu.cpl
+stat C:\Users\andre\.local\bin\naabu.com
+stat C:\Users\andre\.local\bin\naabu.exe
+stat C:\Users\andre\.local\bin\naabu.bat
+stat C:\Users\andre\.local\bin\naabu.cmd
+stat C:\Users\andre\.local\bin\naabu.vbs
+stat C:\Users\andre\.local\bin\naabu.vbe
+stat C:\Users\andre\.local\bin\naabu.js
+stat C:\Users\andre\.local\bin\naabu.jse
+stat C:\Users\andre\.local\bin\naabu.wsf
+stat C:\Users\andre\.local\bin\naabu.wsh
+stat C:\Users\andre\.local\bin\naabu.msc
+stat C:\Users\andre\.local\bin\naabu.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.cpl
+stat C:\Users\andre\go\bin\naabu.com
+stat C:\Users\andre\go\bin\naabu.exe
+stat C:\Users\andre\go\bin\naabu.bat
+stat C:\Users\andre\go\bin\naabu.cmd
+stat C:\Users\andre\go\bin\naabu.vbs
+stat C:\Users\andre\go\bin\naabu.vbe
+stat C:\Users\andre\go\bin\naabu.js
+stat C:\Users\andre\go\bin\naabu.jse
+stat C:\Users\andre\go\bin\naabu.wsf
+stat C:\Users\andre\go\bin\naabu.wsh
+stat C:\Users\andre\go\bin\naabu.msc
+stat C:\Users\andre\go\bin\naabu.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_NMAP_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat nmap.com
+stat nmap.exe
+stat nmap.bat
+stat nmap.cmd
+stat nmap.vbs
+stat nmap.vbe
+stat nmap.js
+stat nmap.jse
+stat nmap.wsf
+stat nmap.wsh
+stat nmap.msc
+stat nmap.cpl
+getenv path
+stat C:\Program Files\Go\bin\nmap.com
+stat C:\Program Files\Go\bin\nmap.exe
+stat C:\Program Files\Go\bin\nmap.bat
+stat C:\Program Files\Go\bin\nmap.cmd
+stat C:\Program Files\Go\bin\nmap.vbs
+stat C:\Program Files\Go\bin\nmap.vbe
+stat C:\Program Files\Go\bin\nmap.js
+stat C:\Program Files\Go\bin\nmap.jse
+stat C:\Program Files\Go\bin\nmap.wsf
+stat C:\Program Files\Go\bin\nmap.wsh
+stat C:\Program Files\Go\bin\nmap.msc
+stat C:\Program Files\Go\bin\nmap.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.cpl
+stat C:\WINDOWS\system32\nmap.com
+stat C:\WINDOWS\system32\nmap.exe
+stat C:\WINDOWS\system32\nmap.bat
+stat C:\WINDOWS\system32\nmap.cmd
+stat C:\WINDOWS\system32\nmap.vbs
+stat C:\WINDOWS\system32\nmap.vbe
+stat C:\WINDOWS\system32\nmap.js
+stat C:\WINDOWS\system32\nmap.jse
+stat C:\WINDOWS\system32\nmap.wsf
+stat C:\WINDOWS\system32\nmap.wsh
+stat C:\WINDOWS\system32\nmap.msc
+stat C:\WINDOWS\system32\nmap.cpl
+stat C:\WINDOWS\nmap.com
+stat C:\WINDOWS\nmap.exe
+stat C:\WINDOWS\nmap.bat
+stat C:\WINDOWS\nmap.cmd
+stat C:\WINDOWS\nmap.vbs
+stat C:\WINDOWS\nmap.vbe
+stat C:\WINDOWS\nmap.js
+stat C:\WINDOWS\nmap.jse
+stat C:\WINDOWS\nmap.wsf
+stat C:\WINDOWS\nmap.wsh
+stat C:\WINDOWS\nmap.msc
+stat C:\WINDOWS\nmap.cpl
+stat C:\WINDOWS\System32\Wbem\nmap.com
+stat C:\WINDOWS\System32\Wbem\nmap.exe
+stat C:\WINDOWS\System32\Wbem\nmap.bat
+stat C:\WINDOWS\System32\Wbem\nmap.cmd
+stat C:\WINDOWS\System32\Wbem\nmap.vbs
+stat C:\WINDOWS\System32\Wbem\nmap.vbe
+stat C:\WINDOWS\System32\Wbem\nmap.js
+stat C:\WINDOWS\System32\Wbem\nmap.jse
+stat C:\WINDOWS\System32\Wbem\nmap.wsf
+stat C:\WINDOWS\System32\Wbem\nmap.wsh
+stat C:\WINDOWS\System32\Wbem\nmap.msc
+stat C:\WINDOWS\System32\Wbem\nmap.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.cpl
+stat C:\WINDOWS\System32\OpenSSH\nmap.com
+stat C:\WINDOWS\System32\OpenSSH\nmap.exe
+stat C:\WINDOWS\System32\OpenSSH\nmap.bat
+stat C:\WINDOWS\System32\OpenSSH\nmap.cmd
+stat C:\WINDOWS\System32\OpenSSH\nmap.vbs
+stat C:\WINDOWS\System32\OpenSSH\nmap.vbe
+stat C:\WINDOWS\System32\OpenSSH\nmap.js
+stat C:\WINDOWS\System32\OpenSSH\nmap.jse
+stat C:\WINDOWS\System32\OpenSSH\nmap.wsf
+stat C:\WINDOWS\System32\OpenSSH\nmap.wsh
+stat C:\WINDOWS\System32\OpenSSH\nmap.msc
+stat C:\WINDOWS\System32\OpenSSH\nmap.cpl
+stat C:\Program Files\dotnet\nmap.com
+stat C:\Program Files\dotnet\nmap.exe
+stat C:\Program Files\dotnet\nmap.bat
+stat C:\Program Files\dotnet\nmap.cmd
+stat C:\Program Files\dotnet\nmap.vbs
+stat C:\Program Files\dotnet\nmap.vbe
+stat C:\Program Files\dotnet\nmap.js
+stat C:\Program Files\dotnet\nmap.jse
+stat C:\Program Files\dotnet\nmap.wsf
+stat C:\Program Files\dotnet\nmap.wsh
+stat C:\Program Files\dotnet\nmap.msc
+stat C:\Program Files\dotnet\nmap.cpl
+stat C:\Program Files\Git\cmd\nmap.com
+stat C:\Program Files\Git\cmd\nmap.exe
+stat C:\Program Files\Git\cmd\nmap.bat
+stat C:\Program Files\Git\cmd\nmap.cmd
+stat C:\Program Files\Git\cmd\nmap.vbs
+stat C:\Program Files\Git\cmd\nmap.vbe
+stat C:\Program Files\Git\cmd\nmap.js
+stat C:\Program Files\Git\cmd\nmap.jse
+stat C:\Program Files\Git\cmd\nmap.wsf
+stat C:\Program Files\Git\cmd\nmap.wsh
+stat C:\Program Files\Git\cmd\nmap.msc
+stat C:\Program Files\Git\cmd\nmap.cpl
+stat C:\Program Files\Go\bin\nmap.com
+stat C:\Program Files\Go\bin\nmap.exe
+stat C:\Program Files\Go\bin\nmap.bat
+stat C:\Program Files\Go\bin\nmap.cmd
+stat C:\Program Files\Go\bin\nmap.vbs
+stat C:\Program Files\Go\bin\nmap.vbe
+stat C:\Program Files\Go\bin\nmap.js
+stat C:\Program Files\Go\bin\nmap.jse
+stat C:\Program Files\Go\bin\nmap.wsf
+stat C:\Program Files\Go\bin\nmap.wsh
+stat C:\Program Files\Go\bin\nmap.msc
+stat C:\Program Files\Go\bin\nmap.cpl
+stat C:\Users\andre\.local\bin\nmap.com
+stat C:\Users\andre\.local\bin\nmap.exe
+stat C:\Users\andre\.local\bin\nmap.bat
+stat C:\Users\andre\.local\bin\nmap.cmd
+stat C:\Users\andre\.local\bin\nmap.vbs
+stat C:\Users\andre\.local\bin\nmap.vbe
+stat C:\Users\andre\.local\bin\nmap.js
+stat C:\Users\andre\.local\bin\nmap.jse
+stat C:\Users\andre\.local\bin\nmap.wsf
+stat C:\Users\andre\.local\bin\nmap.wsh
+stat C:\Users\andre\.local\bin\nmap.msc
+stat C:\Users\andre\.local\bin\nmap.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.cpl
+stat C:\Users\andre\go\bin\nmap.com
+stat C:\Users\andre\go\bin\nmap.exe
+stat C:\Users\andre\go\bin\nmap.bat
+stat C:\Users\andre\go\bin\nmap.cmd
+stat C:\Users\andre\go\bin\nmap.vbs
+stat C:\Users\andre\go\bin\nmap.vbe
+stat C:\Users\andre\go\bin\nmap.js
+stat C:\Users\andre\go\bin\nmap.jse
+stat C:\Users\andre\go\bin\nmap.wsf
+stat C:\Users\andre\go\bin\nmap.wsh
+stat C:\Users\andre\go\bin\nmap.msc
+stat C:\Users\andre\go\bin\nmap.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_HTTPX_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat httpx.com
+stat httpx.exe
+stat httpx.bat
+stat httpx.cmd
+stat httpx.vbs
+stat httpx.vbe
+stat httpx.js
+stat httpx.jse
+stat httpx.wsf
+stat httpx.wsh
+stat httpx.msc
+stat httpx.cpl
+getenv path
+stat C:\Program Files\Go\bin\httpx.com
+stat C:\Program Files\Go\bin\httpx.exe
+stat C:\Program Files\Go\bin\httpx.bat
+stat C:\Program Files\Go\bin\httpx.cmd
+stat C:\Program Files\Go\bin\httpx.vbs
+stat C:\Program Files\Go\bin\httpx.vbe
+stat C:\Program Files\Go\bin\httpx.js
+stat C:\Program Files\Go\bin\httpx.jse
+stat C:\Program Files\Go\bin\httpx.wsf
+stat C:\Program Files\Go\bin\httpx.wsh
+stat C:\Program Files\Go\bin\httpx.msc
+stat C:\Program Files\Go\bin\httpx.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.cpl
+stat C:\WINDOWS\system32\httpx.com
+stat C:\WINDOWS\system32\httpx.exe
+stat C:\WINDOWS\system32\httpx.bat
+stat C:\WINDOWS\system32\httpx.cmd
+stat C:\WINDOWS\system32\httpx.vbs
+stat C:\WINDOWS\system32\httpx.vbe
+stat C:\WINDOWS\system32\httpx.js
+stat C:\WINDOWS\system32\httpx.jse
+stat C:\WINDOWS\system32\httpx.wsf
+stat C:\WINDOWS\system32\httpx.wsh
+stat C:\WINDOWS\system32\httpx.msc
+stat C:\WINDOWS\system32\httpx.cpl
+stat C:\WINDOWS\httpx.com
+stat C:\WINDOWS\httpx.exe
+stat C:\WINDOWS\httpx.bat
+stat C:\WINDOWS\httpx.cmd
+stat C:\WINDOWS\httpx.vbs
+stat C:\WINDOWS\httpx.vbe
+stat C:\WINDOWS\httpx.js
+stat C:\WINDOWS\httpx.jse
+stat C:\WINDOWS\httpx.wsf
+stat C:\WINDOWS\httpx.wsh
+stat C:\WINDOWS\httpx.msc
+stat C:\WINDOWS\httpx.cpl
+stat C:\WINDOWS\System32\Wbem\httpx.com
+stat C:\WINDOWS\System32\Wbem\httpx.exe
+stat C:\WINDOWS\System32\Wbem\httpx.bat
+stat C:\WINDOWS\System32\Wbem\httpx.cmd
+stat C:\WINDOWS\System32\Wbem\httpx.vbs
+stat C:\WINDOWS\System32\Wbem\httpx.vbe
+stat C:\WINDOWS\System32\Wbem\httpx.js
+stat C:\WINDOWS\System32\Wbem\httpx.jse
+stat C:\WINDOWS\System32\Wbem\httpx.wsf
+stat C:\WINDOWS\System32\Wbem\httpx.wsh
+stat C:\WINDOWS\System32\Wbem\httpx.msc
+stat C:\WINDOWS\System32\Wbem\httpx.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.cpl
+stat C:\WINDOWS\System32\OpenSSH\httpx.com
+stat C:\WINDOWS\System32\OpenSSH\httpx.exe
+stat C:\WINDOWS\System32\OpenSSH\httpx.bat
+stat C:\WINDOWS\System32\OpenSSH\httpx.cmd
+stat C:\WINDOWS\System32\OpenSSH\httpx.vbs
+stat C:\WINDOWS\System32\OpenSSH\httpx.vbe
+stat C:\WINDOWS\System32\OpenSSH\httpx.js
+stat C:\WINDOWS\System32\OpenSSH\httpx.jse
+stat C:\WINDOWS\System32\OpenSSH\httpx.wsf
+stat C:\WINDOWS\System32\OpenSSH\httpx.wsh
+stat C:\WINDOWS\System32\OpenSSH\httpx.msc
+stat C:\WINDOWS\System32\OpenSSH\httpx.cpl
+stat C:\Program Files\dotnet\httpx.com
+stat C:\Program Files\dotnet\httpx.exe
+stat C:\Program Files\dotnet\httpx.bat
+stat C:\Program Files\dotnet\httpx.cmd
+stat C:\Program Files\dotnet\httpx.vbs
+stat C:\Program Files\dotnet\httpx.vbe
+stat C:\Program Files\dotnet\httpx.js
+stat C:\Program Files\dotnet\httpx.jse
+stat C:\Program Files\dotnet\httpx.wsf
+stat C:\Program Files\dotnet\httpx.wsh
+stat C:\Program Files\dotnet\httpx.msc
+stat C:\Program Files\dotnet\httpx.cpl
+stat C:\Program Files\Git\cmd\httpx.com
+stat C:\Program Files\Git\cmd\httpx.exe
+stat C:\Program Files\Git\cmd\httpx.bat
+stat C:\Program Files\Git\cmd\httpx.cmd
+stat C:\Program Files\Git\cmd\httpx.vbs
+stat C:\Program Files\Git\cmd\httpx.vbe
+stat C:\Program Files\Git\cmd\httpx.js
+stat C:\Program Files\Git\cmd\httpx.jse
+stat C:\Program Files\Git\cmd\httpx.wsf
+stat C:\Program Files\Git\cmd\httpx.wsh
+stat C:\Program Files\Git\cmd\httpx.msc
+stat C:\Program Files\Git\cmd\httpx.cpl
+stat C:\Program Files\Go\bin\httpx.com
+stat C:\Program Files\Go\bin\httpx.exe
+stat C:\Program Files\Go\bin\httpx.bat
+stat C:\Program Files\Go\bin\httpx.cmd
+stat C:\Program Files\Go\bin\httpx.vbs
+stat C:\Program Files\Go\bin\httpx.vbe
+stat C:\Program Files\Go\bin\httpx.js
+stat C:\Program Files\Go\bin\httpx.jse
+stat C:\Program Files\Go\bin\httpx.wsf
+stat C:\Program Files\Go\bin\httpx.wsh
+stat C:\Program Files\Go\bin\httpx.msc
+stat C:\Program Files\Go\bin\httpx.cpl
+stat C:\Users\andre\.local\bin\httpx.com
+stat C:\Users\andre\.local\bin\httpx.exe
+stat C:\Users\andre\.local\bin\httpx.bat
+stat C:\Users\andre\.local\bin\httpx.cmd
+stat C:\Users\andre\.local\bin\httpx.vbs
+stat C:\Users\andre\.local\bin\httpx.vbe
+stat C:\Users\andre\.local\bin\httpx.js
+stat C:\Users\andre\.local\bin\httpx.jse
+stat C:\Users\andre\.local\bin\httpx.wsf
+stat C:\Users\andre\.local\bin\httpx.wsh
+stat C:\Users\andre\.local\bin\httpx.msc
+stat C:\Users\andre\.local\bin\httpx.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.cpl
+stat C:\Users\andre\go\bin\httpx.com
+stat C:\Users\andre\go\bin\httpx.exe
+stat C:\Users\andre\go\bin\httpx.bat
+stat C:\Users\andre\go\bin\httpx.cmd
+stat C:\Users\andre\go\bin\httpx.vbs
+stat C:\Users\andre\go\bin\httpx.vbe
+stat C:\Users\andre\go\bin\httpx.js
+stat C:\Users\andre\go\bin\httpx.jse
+stat C:\Users\andre\go\bin\httpx.wsf
+stat C:\Users\andre\go\bin\httpx.wsh
+stat C:\Users\andre\go\bin\httpx.msc
+stat C:\Users\andre\go\bin\httpx.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_ZGRAB2_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat zgrab2.com
+stat zgrab2.exe
+stat zgrab2.bat
+stat zgrab2.cmd
+stat zgrab2.vbs
+stat zgrab2.vbe
+stat zgrab2.js
+stat zgrab2.jse
+stat zgrab2.wsf
+stat zgrab2.wsh
+stat zgrab2.msc
+stat zgrab2.cpl
+getenv path
+stat C:\Program Files\Go\bin\zgrab2.com
+stat C:\Program Files\Go\bin\zgrab2.exe
+stat C:\Program Files\Go\bin\zgrab2.bat
+stat C:\Program Files\Go\bin\zgrab2.cmd
+stat C:\Program Files\Go\bin\zgrab2.vbs
+stat C:\Program Files\Go\bin\zgrab2.vbe
+stat C:\Program Files\Go\bin\zgrab2.js
+stat C:\Program Files\Go\bin\zgrab2.jse
+stat C:\Program Files\Go\bin\zgrab2.wsf
+stat C:\Program Files\Go\bin\zgrab2.wsh
+stat C:\Program Files\Go\bin\zgrab2.msc
+stat C:\Program Files\Go\bin\zgrab2.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.cpl
+stat C:\WINDOWS\system32\zgrab2.com
+stat C:\WINDOWS\system32\zgrab2.exe
+stat C:\WINDOWS\system32\zgrab2.bat
+stat C:\WINDOWS\system32\zgrab2.cmd
+stat C:\WINDOWS\system32\zgrab2.vbs
+stat C:\WINDOWS\system32\zgrab2.vbe
+stat C:\WINDOWS\system32\zgrab2.js
+stat C:\WINDOWS\system32\zgrab2.jse
+stat C:\WINDOWS\system32\zgrab2.wsf
+stat C:\WINDOWS\system32\zgrab2.wsh
+stat C:\WINDOWS\system32\zgrab2.msc
+stat C:\WINDOWS\system32\zgrab2.cpl
+stat C:\WINDOWS\zgrab2.com
+stat C:\WINDOWS\zgrab2.exe
+stat C:\WINDOWS\zgrab2.bat
+stat C:\WINDOWS\zgrab2.cmd
+stat C:\WINDOWS\zgrab2.vbs
+stat C:\WINDOWS\zgrab2.vbe
+stat C:\WINDOWS\zgrab2.js
+stat C:\WINDOWS\zgrab2.jse
+stat C:\WINDOWS\zgrab2.wsf
+stat C:\WINDOWS\zgrab2.wsh
+stat C:\WINDOWS\zgrab2.msc
+stat C:\WINDOWS\zgrab2.cpl
+stat C:\WINDOWS\System32\Wbem\zgrab2.com
+stat C:\WINDOWS\System32\Wbem\zgrab2.exe
+stat C:\WINDOWS\System32\Wbem\zgrab2.bat
+stat C:\WINDOWS\System32\Wbem\zgrab2.cmd
+stat C:\WINDOWS\System32\Wbem\zgrab2.vbs
+stat C:\WINDOWS\System32\Wbem\zgrab2.vbe
+stat C:\WINDOWS\System32\Wbem\zgrab2.js
+stat C:\WINDOWS\System32\Wbem\zgrab2.jse
+stat C:\WINDOWS\System32\Wbem\zgrab2.wsf
+stat C:\WINDOWS\System32\Wbem\zgrab2.wsh
+stat C:\WINDOWS\System32\Wbem\zgrab2.msc
+stat C:\WINDOWS\System32\Wbem\zgrab2.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.cpl
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.com
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.exe
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.bat
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.cmd
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.vbs
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.vbe
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.js
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.jse
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.wsf
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.wsh
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.msc
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.cpl
+stat C:\Program Files\dotnet\zgrab2.com
+stat C:\Program Files\dotnet\zgrab2.exe
+stat C:\Program Files\dotnet\zgrab2.bat
+stat C:\Program Files\dotnet\zgrab2.cmd
+stat C:\Program Files\dotnet\zgrab2.vbs
+stat C:\Program Files\dotnet\zgrab2.vbe
+stat C:\Program Files\dotnet\zgrab2.js
+stat C:\Program Files\dotnet\zgrab2.jse
+stat C:\Program Files\dotnet\zgrab2.wsf
+stat C:\Program Files\dotnet\zgrab2.wsh
+stat C:\Program Files\dotnet\zgrab2.msc
+stat C:\Program Files\dotnet\zgrab2.cpl
+stat C:\Program Files\Git\cmd\zgrab2.com
+stat C:\Program Files\Git\cmd\zgrab2.exe
+stat C:\Program Files\Git\cmd\zgrab2.bat
+stat C:\Program Files\Git\cmd\zgrab2.cmd
+stat C:\Program Files\Git\cmd\zgrab2.vbs
+stat C:\Program Files\Git\cmd\zgrab2.vbe
+stat C:\Program Files\Git\cmd\zgrab2.js
+stat C:\Program Files\Git\cmd\zgrab2.jse
+stat C:\Program Files\Git\cmd\zgrab2.wsf
+stat C:\Program Files\Git\cmd\zgrab2.wsh
+stat C:\Program Files\Git\cmd\zgrab2.msc
+stat C:\Program Files\Git\cmd\zgrab2.cpl
+stat C:\Program Files\Go\bin\zgrab2.com
+stat C:\Program Files\Go\bin\zgrab2.exe
+stat C:\Program Files\Go\bin\zgrab2.bat
+stat C:\Program Files\Go\bin\zgrab2.cmd
+stat C:\Program Files\Go\bin\zgrab2.vbs
+stat C:\Program Files\Go\bin\zgrab2.vbe
+stat C:\Program Files\Go\bin\zgrab2.js
+stat C:\Program Files\Go\bin\zgrab2.jse
+stat C:\Program Files\Go\bin\zgrab2.wsf
+stat C:\Program Files\Go\bin\zgrab2.wsh
+stat C:\Program Files\Go\bin\zgrab2.msc
+stat C:\Program Files\Go\bin\zgrab2.cpl
+stat C:\Users\andre\.local\bin\zgrab2.com
+stat C:\Users\andre\.local\bin\zgrab2.exe
+stat C:\Users\andre\.local\bin\zgrab2.bat
+stat C:\Users\andre\.local\bin\zgrab2.cmd
+stat C:\Users\andre\.local\bin\zgrab2.vbs
+stat C:\Users\andre\.local\bin\zgrab2.vbe
+stat C:\Users\andre\.local\bin\zgrab2.js
+stat C:\Users\andre\.local\bin\zgrab2.jse
+stat C:\Users\andre\.local\bin\zgrab2.wsf
+stat C:\Users\andre\.local\bin\zgrab2.wsh
+stat C:\Users\andre\.local\bin\zgrab2.msc
+stat C:\Users\andre\.local\bin\zgrab2.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.cpl
+stat C:\Users\andre\go\bin\zgrab2.com
+stat C:\Users\andre\go\bin\zgrab2.exe
+stat C:\Users\andre\go\bin\zgrab2.bat
+stat C:\Users\andre\go\bin\zgrab2.cmd
+stat C:\Users\andre\go\bin\zgrab2.vbs
+stat C:\Users\andre\go\bin\zgrab2.vbe
+stat C:\Users\andre\go\bin\zgrab2.js
+stat C:\Users\andre\go\bin\zgrab2.jse
+stat C:\Users\andre\go\bin\zgrab2.wsf
+stat C:\Users\andre\go\bin\zgrab2.wsh
+stat C:\Users\andre\go\bin\zgrab2.msc
+stat C:\Users\andre\go\bin\zgrab2.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_SCAMPER_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat scamper.com
+stat scamper.exe
+stat scamper.bat
+stat scamper.cmd
+stat scamper.vbs
+stat scamper.vbe
+stat scamper.js
+stat scamper.jse
+stat scamper.wsf
+stat scamper.wsh
+stat scamper.msc
+stat scamper.cpl
+getenv path
+stat C:\Program Files\Go\bin\scamper.com
+stat C:\Program Files\Go\bin\scamper.exe
+stat C:\Program Files\Go\bin\scamper.bat
+stat C:\Program Files\Go\bin\scamper.cmd
+stat C:\Program Files\Go\bin\scamper.vbs
+stat C:\Program Files\Go\bin\scamper.vbe
+stat C:\Program Files\Go\bin\scamper.js
+stat C:\Program Files\Go\bin\scamper.jse
+stat C:\Program Files\Go\bin\scamper.wsf
+stat C:\Program Files\Go\bin\scamper.wsh
+stat C:\Program Files\Go\bin\scamper.msc
+stat C:\Program Files\Go\bin\scamper.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.cpl
+stat C:\WINDOWS\system32\scamper.com
+stat C:\WINDOWS\system32\scamper.exe
+stat C:\WINDOWS\system32\scamper.bat
+stat C:\WINDOWS\system32\scamper.cmd
+stat C:\WINDOWS\system32\scamper.vbs
+stat C:\WINDOWS\system32\scamper.vbe
+stat C:\WINDOWS\system32\scamper.js
+stat C:\WINDOWS\system32\scamper.jse
+stat C:\WINDOWS\system32\scamper.wsf
+stat C:\WINDOWS\system32\scamper.wsh
+stat C:\WINDOWS\system32\scamper.msc
+stat C:\WINDOWS\system32\scamper.cpl
+stat C:\WINDOWS\scamper.com
+stat C:\WINDOWS\scamper.exe
+stat C:\WINDOWS\scamper.bat
+stat C:\WINDOWS\scamper.cmd
+stat C:\WINDOWS\scamper.vbs
+stat C:\WINDOWS\scamper.vbe
+stat C:\WINDOWS\scamper.js
+stat C:\WINDOWS\scamper.jse
+stat C:\WINDOWS\scamper.wsf
+stat C:\WINDOWS\scamper.wsh
+stat C:\WINDOWS\scamper.msc
+stat C:\WINDOWS\scamper.cpl
+stat C:\WINDOWS\System32\Wbem\scamper.com
+stat C:\WINDOWS\System32\Wbem\scamper.exe
+stat C:\WINDOWS\System32\Wbem\scamper.bat
+stat C:\WINDOWS\System32\Wbem\scamper.cmd
+stat C:\WINDOWS\System32\Wbem\scamper.vbs
+stat C:\WINDOWS\System32\Wbem\scamper.vbe
+stat C:\WINDOWS\System32\Wbem\scamper.js
+stat C:\WINDOWS\System32\Wbem\scamper.jse
+stat C:\WINDOWS\System32\Wbem\scamper.wsf
+stat C:\WINDOWS\System32\Wbem\scamper.wsh
+stat C:\WINDOWS\System32\Wbem\scamper.msc
+stat C:\WINDOWS\System32\Wbem\scamper.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.cpl
+stat C:\WINDOWS\System32\OpenSSH\scamper.com
+stat C:\WINDOWS\System32\OpenSSH\scamper.exe
+stat C:\WINDOWS\System32\OpenSSH\scamper.bat
+stat C:\WINDOWS\System32\OpenSSH\scamper.cmd
+stat C:\WINDOWS\System32\OpenSSH\scamper.vbs
+stat C:\WINDOWS\System32\OpenSSH\scamper.vbe
+stat C:\WINDOWS\System32\OpenSSH\scamper.js
+stat C:\WINDOWS\System32\OpenSSH\scamper.jse
+stat C:\WINDOWS\System32\OpenSSH\scamper.wsf
+stat C:\WINDOWS\System32\OpenSSH\scamper.wsh
+stat C:\WINDOWS\System32\OpenSSH\scamper.msc
+stat C:\WINDOWS\System32\OpenSSH\scamper.cpl
+stat C:\Program Files\dotnet\scamper.com
+stat C:\Program Files\dotnet\scamper.exe
+stat C:\Program Files\dotnet\scamper.bat
+stat C:\Program Files\dotnet\scamper.cmd
+stat C:\Program Files\dotnet\scamper.vbs
+stat C:\Program Files\dotnet\scamper.vbe
+stat C:\Program Files\dotnet\scamper.js
+stat C:\Program Files\dotnet\scamper.jse
+stat C:\Program Files\dotnet\scamper.wsf
+stat C:\Program Files\dotnet\scamper.wsh
+stat C:\Program Files\dotnet\scamper.msc
+stat C:\Program Files\dotnet\scamper.cpl
+stat C:\Program Files\Git\cmd\scamper.com
+stat C:\Program Files\Git\cmd\scamper.exe
+stat C:\Program Files\Git\cmd\scamper.bat
+stat C:\Program Files\Git\cmd\scamper.cmd
+stat C:\Program Files\Git\cmd\scamper.vbs
+stat C:\Program Files\Git\cmd\scamper.vbe
+stat C:\Program Files\Git\cmd\scamper.js
+stat C:\Program Files\Git\cmd\scamper.jse
+stat C:\Program Files\Git\cmd\scamper.wsf
+stat C:\Program Files\Git\cmd\scamper.wsh
+stat C:\Program Files\Git\cmd\scamper.msc
+stat C:\Program Files\Git\cmd\scamper.cpl
+stat C:\Program Files\Go\bin\scamper.com
+stat C:\Program Files\Go\bin\scamper.exe
+stat C:\Program Files\Go\bin\scamper.bat
+stat C:\Program Files\Go\bin\scamper.cmd
+stat C:\Program Files\Go\bin\scamper.vbs
+stat C:\Program Files\Go\bin\scamper.vbe
+stat C:\Program Files\Go\bin\scamper.js
+stat C:\Program Files\Go\bin\scamper.jse
+stat C:\Program Files\Go\bin\scamper.wsf
+stat C:\Program Files\Go\bin\scamper.wsh
+stat C:\Program Files\Go\bin\scamper.msc
+stat C:\Program Files\Go\bin\scamper.cpl
+stat C:\Users\andre\.local\bin\scamper.com
+stat C:\Users\andre\.local\bin\scamper.exe
+stat C:\Users\andre\.local\bin\scamper.bat
+stat C:\Users\andre\.local\bin\scamper.cmd
+stat C:\Users\andre\.local\bin\scamper.vbs
+stat C:\Users\andre\.local\bin\scamper.vbe
+stat C:\Users\andre\.local\bin\scamper.js
+stat C:\Users\andre\.local\bin\scamper.jse
+stat C:\Users\andre\.local\bin\scamper.wsf
+stat C:\Users\andre\.local\bin\scamper.wsh
+stat C:\Users\andre\.local\bin\scamper.msc
+stat C:\Users\andre\.local\bin\scamper.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.cpl
+stat C:\Users\andre\go\bin\scamper.com
+stat C:\Users\andre\go\bin\scamper.exe
+stat C:\Users\andre\go\bin\scamper.bat
+stat C:\Users\andre\go\bin\scamper.cmd
+stat C:\Users\andre\go\bin\scamper.vbs
+stat C:\Users\andre\go\bin\scamper.vbe
+stat C:\Users\andre\go\bin\scamper.js
+stat C:\Users\andre\go\bin\scamper.jse
+stat C:\Users\andre\go\bin\scamper.wsf
+stat C:\Users\andre\go\bin\scamper.wsh
+stat C:\Users\andre\go\bin\scamper.msc
+stat C:\Users\andre\go\bin\scamper.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_ARP_SCAN_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat arp-scan.com
+stat arp-scan.exe
+stat arp-scan.bat
+stat arp-scan.cmd
+stat arp-scan.vbs
+stat arp-scan.vbe
+stat arp-scan.js
+stat arp-scan.jse
+stat arp-scan.wsf
+stat arp-scan.wsh
+stat arp-scan.msc
+stat arp-scan.cpl
+getenv path
+stat C:\Program Files\Go\bin\arp-scan.com
+stat C:\Program Files\Go\bin\arp-scan.exe
+stat C:\Program Files\Go\bin\arp-scan.bat
+stat C:\Program Files\Go\bin\arp-scan.cmd
+stat C:\Program Files\Go\bin\arp-scan.vbs
+stat C:\Program Files\Go\bin\arp-scan.vbe
+stat C:\Program Files\Go\bin\arp-scan.js
+stat C:\Program Files\Go\bin\arp-scan.jse
+stat C:\Program Files\Go\bin\arp-scan.wsf
+stat C:\Program Files\Go\bin\arp-scan.wsh
+stat C:\Program Files\Go\bin\arp-scan.msc
+stat C:\Program Files\Go\bin\arp-scan.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.cpl
+stat C:\WINDOWS\system32\arp-scan.com
+stat C:\WINDOWS\system32\arp-scan.exe
+stat C:\WINDOWS\system32\arp-scan.bat
+stat C:\WINDOWS\system32\arp-scan.cmd
+stat C:\WINDOWS\system32\arp-scan.vbs
+stat C:\WINDOWS\system32\arp-scan.vbe
+stat C:\WINDOWS\system32\arp-scan.js
+stat C:\WINDOWS\system32\arp-scan.jse
+stat C:\WINDOWS\system32\arp-scan.wsf
+stat C:\WINDOWS\system32\arp-scan.wsh
+stat C:\WINDOWS\system32\arp-scan.msc
+stat C:\WINDOWS\system32\arp-scan.cpl
+stat C:\WINDOWS\arp-scan.com
+stat C:\WINDOWS\arp-scan.exe
+stat C:\WINDOWS\arp-scan.bat
+stat C:\WINDOWS\arp-scan.cmd
+stat C:\WINDOWS\arp-scan.vbs
+stat C:\WINDOWS\arp-scan.vbe
+stat C:\WINDOWS\arp-scan.js
+stat C:\WINDOWS\arp-scan.jse
+stat C:\WINDOWS\arp-scan.wsf
+stat C:\WINDOWS\arp-scan.wsh
+stat C:\WINDOWS\arp-scan.msc
+stat C:\WINDOWS\arp-scan.cpl
+stat C:\WINDOWS\System32\Wbem\arp-scan.com
+stat C:\WINDOWS\System32\Wbem\arp-scan.exe
+stat C:\WINDOWS\System32\Wbem\arp-scan.bat
+stat C:\WINDOWS\System32\Wbem\arp-scan.cmd
+stat C:\WINDOWS\System32\Wbem\arp-scan.vbs
+stat C:\WINDOWS\System32\Wbem\arp-scan.vbe
+stat C:\WINDOWS\System32\Wbem\arp-scan.js
+stat C:\WINDOWS\System32\Wbem\arp-scan.jse
+stat C:\WINDOWS\System32\Wbem\arp-scan.wsf
+stat C:\WINDOWS\System32\Wbem\arp-scan.wsh
+stat C:\WINDOWS\System32\Wbem\arp-scan.msc
+stat C:\WINDOWS\System32\Wbem\arp-scan.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.cpl
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.com
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.exe
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.bat
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.cmd
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.vbs
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.vbe
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.js
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.jse
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.wsf
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.wsh
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.msc
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.cpl
+stat C:\Program Files\dotnet\arp-scan.com
+stat C:\Program Files\dotnet\arp-scan.exe
+stat C:\Program Files\dotnet\arp-scan.bat
+stat C:\Program Files\dotnet\arp-scan.cmd
+stat C:\Program Files\dotnet\arp-scan.vbs
+stat C:\Program Files\dotnet\arp-scan.vbe
+stat C:\Program Files\dotnet\arp-scan.js
+stat C:\Program Files\dotnet\arp-scan.jse
+stat C:\Program Files\dotnet\arp-scan.wsf
+stat C:\Program Files\dotnet\arp-scan.wsh
+stat C:\Program Files\dotnet\arp-scan.msc
+stat C:\Program Files\dotnet\arp-scan.cpl
+stat C:\Program Files\Git\cmd\arp-scan.com
+stat C:\Program Files\Git\cmd\arp-scan.exe
+stat C:\Program Files\Git\cmd\arp-scan.bat
+stat C:\Program Files\Git\cmd\arp-scan.cmd
+stat C:\Program Files\Git\cmd\arp-scan.vbs
+stat C:\Program Files\Git\cmd\arp-scan.vbe
+stat C:\Program Files\Git\cmd\arp-scan.js
+stat C:\Program Files\Git\cmd\arp-scan.jse
+stat C:\Program Files\Git\cmd\arp-scan.wsf
+stat C:\Program Files\Git\cmd\arp-scan.wsh
+stat C:\Program Files\Git\cmd\arp-scan.msc
+stat C:\Program Files\Git\cmd\arp-scan.cpl
+stat C:\Program Files\Go\bin\arp-scan.com
+stat C:\Program Files\Go\bin\arp-scan.exe
+stat C:\Program Files\Go\bin\arp-scan.bat
+stat C:\Program Files\Go\bin\arp-scan.cmd
+stat C:\Program Files\Go\bin\arp-scan.vbs
+stat C:\Program Files\Go\bin\arp-scan.vbe
+stat C:\Program Files\Go\bin\arp-scan.js
+stat C:\Program Files\Go\bin\arp-scan.jse
+stat C:\Program Files\Go\bin\arp-scan.wsf
+stat C:\Program Files\Go\bin\arp-scan.wsh
+stat C:\Program Files\Go\bin\arp-scan.msc
+stat C:\Program Files\Go\bin\arp-scan.cpl
+stat C:\Users\andre\.local\bin\arp-scan.com
+stat C:\Users\andre\.local\bin\arp-scan.exe
+stat C:\Users\andre\.local\bin\arp-scan.bat
+stat C:\Users\andre\.local\bin\arp-scan.cmd
+stat C:\Users\andre\.local\bin\arp-scan.vbs
+stat C:\Users\andre\.local\bin\arp-scan.vbe
+stat C:\Users\andre\.local\bin\arp-scan.js
+stat C:\Users\andre\.local\bin\arp-scan.jse
+stat C:\Users\andre\.local\bin\arp-scan.wsf
+stat C:\Users\andre\.local\bin\arp-scan.wsh
+stat C:\Users\andre\.local\bin\arp-scan.msc
+stat C:\Users\andre\.local\bin\arp-scan.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.cpl
+stat C:\Users\andre\go\bin\arp-scan.com
+stat C:\Users\andre\go\bin\arp-scan.exe
+stat C:\Users\andre\go\bin\arp-scan.bat
+stat C:\Users\andre\go\bin\arp-scan.cmd
+stat C:\Users\andre\go\bin\arp-scan.vbs
+stat C:\Users\andre\go\bin\arp-scan.vbe
+stat C:\Users\andre\go\bin\arp-scan.js
+stat C:\Users\andre\go\bin\arp-scan.jse
+stat C:\Users\andre\go\bin\arp-scan.wsf
+stat C:\Users\andre\go\bin\arp-scan.wsh
+stat C:\Users\andre\go\bin\arp-scan.msc
+stat C:\Users\andre\go\bin\arp-scan.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_ZEEKCTL_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat zeekctl.com
+stat zeekctl.exe
+stat zeekctl.bat
+stat zeekctl.cmd
+stat zeekctl.vbs
+stat zeekctl.vbe
+stat zeekctl.js
+stat zeekctl.jse
+stat zeekctl.wsf
+stat zeekctl.wsh
+stat zeekctl.msc
+stat zeekctl.cpl
+getenv path
+stat C:\Program Files\Go\bin\zeekctl.com
+stat C:\Program Files\Go\bin\zeekctl.exe
+stat C:\Program Files\Go\bin\zeekctl.bat
+stat C:\Program Files\Go\bin\zeekctl.cmd
+stat C:\Program Files\Go\bin\zeekctl.vbs
+stat C:\Program Files\Go\bin\zeekctl.vbe
+stat C:\Program Files\Go\bin\zeekctl.js
+stat C:\Program Files\Go\bin\zeekctl.jse
+stat C:\Program Files\Go\bin\zeekctl.wsf
+stat C:\Program Files\Go\bin\zeekctl.wsh
+stat C:\Program Files\Go\bin\zeekctl.msc
+stat C:\Program Files\Go\bin\zeekctl.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.cpl
+stat C:\WINDOWS\system32\zeekctl.com
+stat C:\WINDOWS\system32\zeekctl.exe
+stat C:\WINDOWS\system32\zeekctl.bat
+stat C:\WINDOWS\system32\zeekctl.cmd
+stat C:\WINDOWS\system32\zeekctl.vbs
+stat C:\WINDOWS\system32\zeekctl.vbe
+stat C:\WINDOWS\system32\zeekctl.js
+stat C:\WINDOWS\system32\zeekctl.jse
+stat C:\WINDOWS\system32\zeekctl.wsf
+stat C:\WINDOWS\system32\zeekctl.wsh
+stat C:\WINDOWS\system32\zeekctl.msc
+stat C:\WINDOWS\system32\zeekctl.cpl
+stat C:\WINDOWS\zeekctl.com
+stat C:\WINDOWS\zeekctl.exe
+stat C:\WINDOWS\zeekctl.bat
+stat C:\WINDOWS\zeekctl.cmd
+stat C:\WINDOWS\zeekctl.vbs
+stat C:\WINDOWS\zeekctl.vbe
+stat C:\WINDOWS\zeekctl.js
+stat C:\WINDOWS\zeekctl.jse
+stat C:\WINDOWS\zeekctl.wsf
+stat C:\WINDOWS\zeekctl.wsh
+stat C:\WINDOWS\zeekctl.msc
+stat C:\WINDOWS\zeekctl.cpl
+stat C:\WINDOWS\System32\Wbem\zeekctl.com
+stat C:\WINDOWS\System32\Wbem\zeekctl.exe
+stat C:\WINDOWS\System32\Wbem\zeekctl.bat
+stat C:\WINDOWS\System32\Wbem\zeekctl.cmd
+stat C:\WINDOWS\System32\Wbem\zeekctl.vbs
+stat C:\WINDOWS\System32\Wbem\zeekctl.vbe
+stat C:\WINDOWS\System32\Wbem\zeekctl.js
+stat C:\WINDOWS\System32\Wbem\zeekctl.jse
+stat C:\WINDOWS\System32\Wbem\zeekctl.wsf
+stat C:\WINDOWS\System32\Wbem\zeekctl.wsh
+stat C:\WINDOWS\System32\Wbem\zeekctl.msc
+stat C:\WINDOWS\System32\Wbem\zeekctl.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.cpl
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.com
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.exe
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.bat
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.cmd
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.vbs
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.vbe
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.js
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.jse
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.wsf
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.wsh
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.msc
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.cpl
+stat C:\Program Files\dotnet\zeekctl.com
+stat C:\Program Files\dotnet\zeekctl.exe
+stat C:\Program Files\dotnet\zeekctl.bat
+stat C:\Program Files\dotnet\zeekctl.cmd
+stat C:\Program Files\dotnet\zeekctl.vbs
+stat C:\Program Files\dotnet\zeekctl.vbe
+stat C:\Program Files\dotnet\zeekctl.js
+stat C:\Program Files\dotnet\zeekctl.jse
+stat C:\Program Files\dotnet\zeekctl.wsf
+stat C:\Program Files\dotnet\zeekctl.wsh
+stat C:\Program Files\dotnet\zeekctl.msc
+stat C:\Program Files\dotnet\zeekctl.cpl
+stat C:\Program Files\Git\cmd\zeekctl.com
+stat C:\Program Files\Git\cmd\zeekctl.exe
+stat C:\Program Files\Git\cmd\zeekctl.bat
+stat C:\Program Files\Git\cmd\zeekctl.cmd
+stat C:\Program Files\Git\cmd\zeekctl.vbs
+stat C:\Program Files\Git\cmd\zeekctl.vbe
+stat C:\Program Files\Git\cmd\zeekctl.js
+stat C:\Program Files\Git\cmd\zeekctl.jse
+stat C:\Program Files\Git\cmd\zeekctl.wsf
+stat C:\Program Files\Git\cmd\zeekctl.wsh
+stat C:\Program Files\Git\cmd\zeekctl.msc
+stat C:\Program Files\Git\cmd\zeekctl.cpl
+stat C:\Program Files\Go\bin\zeekctl.com
+stat C:\Program Files\Go\bin\zeekctl.exe
+stat C:\Program Files\Go\bin\zeekctl.bat
+stat C:\Program Files\Go\bin\zeekctl.cmd
+stat C:\Program Files\Go\bin\zeekctl.vbs
+stat C:\Program Files\Go\bin\zeekctl.vbe
+stat C:\Program Files\Go\bin\zeekctl.js
+stat C:\Program Files\Go\bin\zeekctl.jse
+stat C:\Program Files\Go\bin\zeekctl.wsf
+stat C:\Program Files\Go\bin\zeekctl.wsh
+stat C:\Program Files\Go\bin\zeekctl.msc
+stat C:\Program Files\Go\bin\zeekctl.cpl
+stat C:\Users\andre\.local\bin\zeekctl.com
+stat C:\Users\andre\.local\bin\zeekctl.exe
+stat C:\Users\andre\.local\bin\zeekctl.bat
+stat C:\Users\andre\.local\bin\zeekctl.cmd
+stat C:\Users\andre\.local\bin\zeekctl.vbs
+stat C:\Users\andre\.local\bin\zeekctl.vbe
+stat C:\Users\andre\.local\bin\zeekctl.js
+stat C:\Users\andre\.local\bin\zeekctl.jse
+stat C:\Users\andre\.local\bin\zeekctl.wsf
+stat C:\Users\andre\.local\bin\zeekctl.wsh
+stat C:\Users\andre\.local\bin\zeekctl.msc
+stat C:\Users\andre\.local\bin\zeekctl.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.cpl
+stat C:\Users\andre\go\bin\zeekctl.com
+stat C:\Users\andre\go\bin\zeekctl.exe
+stat C:\Users\andre\go\bin\zeekctl.bat
+stat C:\Users\andre\go\bin\zeekctl.cmd
+stat C:\Users\andre\go\bin\zeekctl.vbs
+stat C:\Users\andre\go\bin\zeekctl.vbe
+stat C:\Users\andre\go\bin\zeekctl.js
+stat C:\Users\andre\go\bin\zeekctl.jse
+stat C:\Users\andre\go\bin\zeekctl.wsf
+stat C:\Users\andre\go\bin\zeekctl.wsh
+stat C:\Users\andre\go\bin\zeekctl.msc
+stat C:\Users\andre\go\bin\zeekctl.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.cpl
+getenv HOME
+getenv SUDO_USER
+stat C:\Users\andre\AppData\Local\Temp\TestServerRunPageRendersHostData1651188091\001
+open C:\Users\andre\AppData\Local\Temp\TestServerRunPageRendersHostData1651188091\001\write-check-1430947241
+open C:\Users\andre\AppData\Local\Temp
+getenv GOTMPDIR
+stat C:\Users\andre\AppData\Local\Temp\TestProjectRunsAPIIncludesRunItems3097606468\001
+getenv SUDO_USER
+stat C:\Users\andre\AppData\Local\Temp\TestProjectRunsAPIIncludesRunItems3097606468\001\projects\heimnetz-prj-de982a9f
+stat C:\Users\andre\AppData\Local\Temp\TestProjectRunsAPIIncludesRunItems3097606468\001\projects
+stat C:\Users\andre\AppData\Local\Temp\TestProjectRunsAPIIncludesRunItems3097606468\001
+getenv SUDO_UID
+getenv SUDO_GID
+open C:\Users\andre\AppData\Local\Temp
+getenv GOTMPDIR
+stat C:\Users\andre\AppData\Local\Temp\TestServerAssetsAPIAndPageSupportManualOverrides1738677784\001
+getenv SUDO_USER
+stat C:\Users\andre\AppData\Local\Temp\TestServerAssetsAPIAndPageSupportManualOverrides1738677784\001\projects\heimnetz-assets-prj-7642b1ca
+stat C:\Users\andre\AppData\Local\Temp\TestServerAssetsAPIAndPageSupportManualOverrides1738677784\001\projects
+stat C:\Users\andre\AppData\Local\Temp\TestServerAssetsAPIAndPageSupportManualOverrides1738677784\001
+getenv SUDO_UID
+getenv SUDO_GID
+getenv STARTRACE_NAABU_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat naabu.com
+stat naabu.exe
+stat naabu.bat
+stat naabu.cmd
+stat naabu.vbs
+stat naabu.vbe
+stat naabu.js
+stat naabu.jse
+stat naabu.wsf
+stat naabu.wsh
+stat naabu.msc
+stat naabu.cpl
+getenv path
+stat C:\Program Files\Go\bin\naabu.com
+stat C:\Program Files\Go\bin\naabu.exe
+stat C:\Program Files\Go\bin\naabu.bat
+stat C:\Program Files\Go\bin\naabu.cmd
+stat C:\Program Files\Go\bin\naabu.vbs
+stat C:\Program Files\Go\bin\naabu.vbe
+stat C:\Program Files\Go\bin\naabu.js
+stat C:\Program Files\Go\bin\naabu.jse
+stat C:\Program Files\Go\bin\naabu.wsf
+stat C:\Program Files\Go\bin\naabu.wsh
+stat C:\Program Files\Go\bin\naabu.msc
+stat C:\Program Files\Go\bin\naabu.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\naabu.cpl
+stat C:\WINDOWS\system32\naabu.com
+stat C:\WINDOWS\system32\naabu.exe
+stat C:\WINDOWS\system32\naabu.bat
+stat C:\WINDOWS\system32\naabu.cmd
+stat C:\WINDOWS\system32\naabu.vbs
+stat C:\WINDOWS\system32\naabu.vbe
+stat C:\WINDOWS\system32\naabu.js
+stat C:\WINDOWS\system32\naabu.jse
+stat C:\WINDOWS\system32\naabu.wsf
+stat C:\WINDOWS\system32\naabu.wsh
+stat C:\WINDOWS\system32\naabu.msc
+stat C:\WINDOWS\system32\naabu.cpl
+stat C:\WINDOWS\naabu.com
+stat C:\WINDOWS\naabu.exe
+stat C:\WINDOWS\naabu.bat
+stat C:\WINDOWS\naabu.cmd
+stat C:\WINDOWS\naabu.vbs
+stat C:\WINDOWS\naabu.vbe
+stat C:\WINDOWS\naabu.js
+stat C:\WINDOWS\naabu.jse
+stat C:\WINDOWS\naabu.wsf
+stat C:\WINDOWS\naabu.wsh
+stat C:\WINDOWS\naabu.msc
+stat C:\WINDOWS\naabu.cpl
+stat C:\WINDOWS\System32\Wbem\naabu.com
+stat C:\WINDOWS\System32\Wbem\naabu.exe
+stat C:\WINDOWS\System32\Wbem\naabu.bat
+stat C:\WINDOWS\System32\Wbem\naabu.cmd
+stat C:\WINDOWS\System32\Wbem\naabu.vbs
+stat C:\WINDOWS\System32\Wbem\naabu.vbe
+stat C:\WINDOWS\System32\Wbem\naabu.js
+stat C:\WINDOWS\System32\Wbem\naabu.jse
+stat C:\WINDOWS\System32\Wbem\naabu.wsf
+stat C:\WINDOWS\System32\Wbem\naabu.wsh
+stat C:\WINDOWS\System32\Wbem\naabu.msc
+stat C:\WINDOWS\System32\Wbem\naabu.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\naabu.cpl
+stat C:\WINDOWS\System32\OpenSSH\naabu.com
+stat C:\WINDOWS\System32\OpenSSH\naabu.exe
+stat C:\WINDOWS\System32\OpenSSH\naabu.bat
+stat C:\WINDOWS\System32\OpenSSH\naabu.cmd
+stat C:\WINDOWS\System32\OpenSSH\naabu.vbs
+stat C:\WINDOWS\System32\OpenSSH\naabu.vbe
+stat C:\WINDOWS\System32\OpenSSH\naabu.js
+stat C:\WINDOWS\System32\OpenSSH\naabu.jse
+stat C:\WINDOWS\System32\OpenSSH\naabu.wsf
+stat C:\WINDOWS\System32\OpenSSH\naabu.wsh
+stat C:\WINDOWS\System32\OpenSSH\naabu.msc
+stat C:\WINDOWS\System32\OpenSSH\naabu.cpl
+stat C:\Program Files\dotnet\naabu.com
+stat C:\Program Files\dotnet\naabu.exe
+stat C:\Program Files\dotnet\naabu.bat
+stat C:\Program Files\dotnet\naabu.cmd
+stat C:\Program Files\dotnet\naabu.vbs
+stat C:\Program Files\dotnet\naabu.vbe
+stat C:\Program Files\dotnet\naabu.js
+stat C:\Program Files\dotnet\naabu.jse
+stat C:\Program Files\dotnet\naabu.wsf
+stat C:\Program Files\dotnet\naabu.wsh
+stat C:\Program Files\dotnet\naabu.msc
+stat C:\Program Files\dotnet\naabu.cpl
+stat C:\Program Files\Git\cmd\naabu.com
+stat C:\Program Files\Git\cmd\naabu.exe
+stat C:\Program Files\Git\cmd\naabu.bat
+stat C:\Program Files\Git\cmd\naabu.cmd
+stat C:\Program Files\Git\cmd\naabu.vbs
+stat C:\Program Files\Git\cmd\naabu.vbe
+stat C:\Program Files\Git\cmd\naabu.js
+stat C:\Program Files\Git\cmd\naabu.jse
+stat C:\Program Files\Git\cmd\naabu.wsf
+stat C:\Program Files\Git\cmd\naabu.wsh
+stat C:\Program Files\Git\cmd\naabu.msc
+stat C:\Program Files\Git\cmd\naabu.cpl
+stat C:\Program Files\Go\bin\naabu.com
+stat C:\Program Files\Go\bin\naabu.exe
+stat C:\Program Files\Go\bin\naabu.bat
+stat C:\Program Files\Go\bin\naabu.cmd
+stat C:\Program Files\Go\bin\naabu.vbs
+stat C:\Program Files\Go\bin\naabu.vbe
+stat C:\Program Files\Go\bin\naabu.js
+stat C:\Program Files\Go\bin\naabu.jse
+stat C:\Program Files\Go\bin\naabu.wsf
+stat C:\Program Files\Go\bin\naabu.wsh
+stat C:\Program Files\Go\bin\naabu.msc
+stat C:\Program Files\Go\bin\naabu.cpl
+stat C:\Users\andre\.local\bin\naabu.com
+stat C:\Users\andre\.local\bin\naabu.exe
+stat C:\Users\andre\.local\bin\naabu.bat
+stat C:\Users\andre\.local\bin\naabu.cmd
+stat C:\Users\andre\.local\bin\naabu.vbs
+stat C:\Users\andre\.local\bin\naabu.vbe
+stat C:\Users\andre\.local\bin\naabu.js
+stat C:\Users\andre\.local\bin\naabu.jse
+stat C:\Users\andre\.local\bin\naabu.wsf
+stat C:\Users\andre\.local\bin\naabu.wsh
+stat C:\Users\andre\.local\bin\naabu.msc
+stat C:\Users\andre\.local\bin\naabu.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\naabu.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\naabu.cpl
+stat C:\Users\andre\go\bin\naabu.com
+stat C:\Users\andre\go\bin\naabu.exe
+stat C:\Users\andre\go\bin\naabu.bat
+stat C:\Users\andre\go\bin\naabu.cmd
+stat C:\Users\andre\go\bin\naabu.vbs
+stat C:\Users\andre\go\bin\naabu.vbe
+stat C:\Users\andre\go\bin\naabu.js
+stat C:\Users\andre\go\bin\naabu.jse
+stat C:\Users\andre\go\bin\naabu.wsf
+stat C:\Users\andre\go\bin\naabu.wsh
+stat C:\Users\andre\go\bin\naabu.msc
+stat C:\Users\andre\go\bin\naabu.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\naabu.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\naabu.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_NMAP_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat nmap.com
+stat nmap.exe
+stat nmap.bat
+stat nmap.cmd
+stat nmap.vbs
+stat nmap.vbe
+stat nmap.js
+stat nmap.jse
+stat nmap.wsf
+stat nmap.wsh
+stat nmap.msc
+stat nmap.cpl
+getenv path
+stat C:\Program Files\Go\bin\nmap.com
+stat C:\Program Files\Go\bin\nmap.exe
+stat C:\Program Files\Go\bin\nmap.bat
+stat C:\Program Files\Go\bin\nmap.cmd
+stat C:\Program Files\Go\bin\nmap.vbs
+stat C:\Program Files\Go\bin\nmap.vbe
+stat C:\Program Files\Go\bin\nmap.js
+stat C:\Program Files\Go\bin\nmap.jse
+stat C:\Program Files\Go\bin\nmap.wsf
+stat C:\Program Files\Go\bin\nmap.wsh
+stat C:\Program Files\Go\bin\nmap.msc
+stat C:\Program Files\Go\bin\nmap.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\nmap.cpl
+stat C:\WINDOWS\system32\nmap.com
+stat C:\WINDOWS\system32\nmap.exe
+stat C:\WINDOWS\system32\nmap.bat
+stat C:\WINDOWS\system32\nmap.cmd
+stat C:\WINDOWS\system32\nmap.vbs
+stat C:\WINDOWS\system32\nmap.vbe
+stat C:\WINDOWS\system32\nmap.js
+stat C:\WINDOWS\system32\nmap.jse
+stat C:\WINDOWS\system32\nmap.wsf
+stat C:\WINDOWS\system32\nmap.wsh
+stat C:\WINDOWS\system32\nmap.msc
+stat C:\WINDOWS\system32\nmap.cpl
+stat C:\WINDOWS\nmap.com
+stat C:\WINDOWS\nmap.exe
+stat C:\WINDOWS\nmap.bat
+stat C:\WINDOWS\nmap.cmd
+stat C:\WINDOWS\nmap.vbs
+stat C:\WINDOWS\nmap.vbe
+stat C:\WINDOWS\nmap.js
+stat C:\WINDOWS\nmap.jse
+stat C:\WINDOWS\nmap.wsf
+stat C:\WINDOWS\nmap.wsh
+stat C:\WINDOWS\nmap.msc
+stat C:\WINDOWS\nmap.cpl
+stat C:\WINDOWS\System32\Wbem\nmap.com
+stat C:\WINDOWS\System32\Wbem\nmap.exe
+stat C:\WINDOWS\System32\Wbem\nmap.bat
+stat C:\WINDOWS\System32\Wbem\nmap.cmd
+stat C:\WINDOWS\System32\Wbem\nmap.vbs
+stat C:\WINDOWS\System32\Wbem\nmap.vbe
+stat C:\WINDOWS\System32\Wbem\nmap.js
+stat C:\WINDOWS\System32\Wbem\nmap.jse
+stat C:\WINDOWS\System32\Wbem\nmap.wsf
+stat C:\WINDOWS\System32\Wbem\nmap.wsh
+stat C:\WINDOWS\System32\Wbem\nmap.msc
+stat C:\WINDOWS\System32\Wbem\nmap.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\nmap.cpl
+stat C:\WINDOWS\System32\OpenSSH\nmap.com
+stat C:\WINDOWS\System32\OpenSSH\nmap.exe
+stat C:\WINDOWS\System32\OpenSSH\nmap.bat
+stat C:\WINDOWS\System32\OpenSSH\nmap.cmd
+stat C:\WINDOWS\System32\OpenSSH\nmap.vbs
+stat C:\WINDOWS\System32\OpenSSH\nmap.vbe
+stat C:\WINDOWS\System32\OpenSSH\nmap.js
+stat C:\WINDOWS\System32\OpenSSH\nmap.jse
+stat C:\WINDOWS\System32\OpenSSH\nmap.wsf
+stat C:\WINDOWS\System32\OpenSSH\nmap.wsh
+stat C:\WINDOWS\System32\OpenSSH\nmap.msc
+stat C:\WINDOWS\System32\OpenSSH\nmap.cpl
+stat C:\Program Files\dotnet\nmap.com
+stat C:\Program Files\dotnet\nmap.exe
+stat C:\Program Files\dotnet\nmap.bat
+stat C:\Program Files\dotnet\nmap.cmd
+stat C:\Program Files\dotnet\nmap.vbs
+stat C:\Program Files\dotnet\nmap.vbe
+stat C:\Program Files\dotnet\nmap.js
+stat C:\Program Files\dotnet\nmap.jse
+stat C:\Program Files\dotnet\nmap.wsf
+stat C:\Program Files\dotnet\nmap.wsh
+stat C:\Program Files\dotnet\nmap.msc
+stat C:\Program Files\dotnet\nmap.cpl
+stat C:\Program Files\Git\cmd\nmap.com
+stat C:\Program Files\Git\cmd\nmap.exe
+stat C:\Program Files\Git\cmd\nmap.bat
+stat C:\Program Files\Git\cmd\nmap.cmd
+stat C:\Program Files\Git\cmd\nmap.vbs
+stat C:\Program Files\Git\cmd\nmap.vbe
+stat C:\Program Files\Git\cmd\nmap.js
+stat C:\Program Files\Git\cmd\nmap.jse
+stat C:\Program Files\Git\cmd\nmap.wsf
+stat C:\Program Files\Git\cmd\nmap.wsh
+stat C:\Program Files\Git\cmd\nmap.msc
+stat C:\Program Files\Git\cmd\nmap.cpl
+stat C:\Program Files\Go\bin\nmap.com
+stat C:\Program Files\Go\bin\nmap.exe
+stat C:\Program Files\Go\bin\nmap.bat
+stat C:\Program Files\Go\bin\nmap.cmd
+stat C:\Program Files\Go\bin\nmap.vbs
+stat C:\Program Files\Go\bin\nmap.vbe
+stat C:\Program Files\Go\bin\nmap.js
+stat C:\Program Files\Go\bin\nmap.jse
+stat C:\Program Files\Go\bin\nmap.wsf
+stat C:\Program Files\Go\bin\nmap.wsh
+stat C:\Program Files\Go\bin\nmap.msc
+stat C:\Program Files\Go\bin\nmap.cpl
+stat C:\Users\andre\.local\bin\nmap.com
+stat C:\Users\andre\.local\bin\nmap.exe
+stat C:\Users\andre\.local\bin\nmap.bat
+stat C:\Users\andre\.local\bin\nmap.cmd
+stat C:\Users\andre\.local\bin\nmap.vbs
+stat C:\Users\andre\.local\bin\nmap.vbe
+stat C:\Users\andre\.local\bin\nmap.js
+stat C:\Users\andre\.local\bin\nmap.jse
+stat C:\Users\andre\.local\bin\nmap.wsf
+stat C:\Users\andre\.local\bin\nmap.wsh
+stat C:\Users\andre\.local\bin\nmap.msc
+stat C:\Users\andre\.local\bin\nmap.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\nmap.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\nmap.cpl
+stat C:\Users\andre\go\bin\nmap.com
+stat C:\Users\andre\go\bin\nmap.exe
+stat C:\Users\andre\go\bin\nmap.bat
+stat C:\Users\andre\go\bin\nmap.cmd
+stat C:\Users\andre\go\bin\nmap.vbs
+stat C:\Users\andre\go\bin\nmap.vbe
+stat C:\Users\andre\go\bin\nmap.js
+stat C:\Users\andre\go\bin\nmap.jse
+stat C:\Users\andre\go\bin\nmap.wsf
+stat C:\Users\andre\go\bin\nmap.wsh
+stat C:\Users\andre\go\bin\nmap.msc
+stat C:\Users\andre\go\bin\nmap.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\nmap.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\nmap.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_HTTPX_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat httpx.com
+stat httpx.exe
+stat httpx.bat
+stat httpx.cmd
+stat httpx.vbs
+stat httpx.vbe
+stat httpx.js
+stat httpx.jse
+stat httpx.wsf
+stat httpx.wsh
+stat httpx.msc
+stat httpx.cpl
+getenv path
+stat C:\Program Files\Go\bin\httpx.com
+stat C:\Program Files\Go\bin\httpx.exe
+stat C:\Program Files\Go\bin\httpx.bat
+stat C:\Program Files\Go\bin\httpx.cmd
+stat C:\Program Files\Go\bin\httpx.vbs
+stat C:\Program Files\Go\bin\httpx.vbe
+stat C:\Program Files\Go\bin\httpx.js
+stat C:\Program Files\Go\bin\httpx.jse
+stat C:\Program Files\Go\bin\httpx.wsf
+stat C:\Program Files\Go\bin\httpx.wsh
+stat C:\Program Files\Go\bin\httpx.msc
+stat C:\Program Files\Go\bin\httpx.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\httpx.cpl
+stat C:\WINDOWS\system32\httpx.com
+stat C:\WINDOWS\system32\httpx.exe
+stat C:\WINDOWS\system32\httpx.bat
+stat C:\WINDOWS\system32\httpx.cmd
+stat C:\WINDOWS\system32\httpx.vbs
+stat C:\WINDOWS\system32\httpx.vbe
+stat C:\WINDOWS\system32\httpx.js
+stat C:\WINDOWS\system32\httpx.jse
+stat C:\WINDOWS\system32\httpx.wsf
+stat C:\WINDOWS\system32\httpx.wsh
+stat C:\WINDOWS\system32\httpx.msc
+stat C:\WINDOWS\system32\httpx.cpl
+stat C:\WINDOWS\httpx.com
+stat C:\WINDOWS\httpx.exe
+stat C:\WINDOWS\httpx.bat
+stat C:\WINDOWS\httpx.cmd
+stat C:\WINDOWS\httpx.vbs
+stat C:\WINDOWS\httpx.vbe
+stat C:\WINDOWS\httpx.js
+stat C:\WINDOWS\httpx.jse
+stat C:\WINDOWS\httpx.wsf
+stat C:\WINDOWS\httpx.wsh
+stat C:\WINDOWS\httpx.msc
+stat C:\WINDOWS\httpx.cpl
+stat C:\WINDOWS\System32\Wbem\httpx.com
+stat C:\WINDOWS\System32\Wbem\httpx.exe
+stat C:\WINDOWS\System32\Wbem\httpx.bat
+stat C:\WINDOWS\System32\Wbem\httpx.cmd
+stat C:\WINDOWS\System32\Wbem\httpx.vbs
+stat C:\WINDOWS\System32\Wbem\httpx.vbe
+stat C:\WINDOWS\System32\Wbem\httpx.js
+stat C:\WINDOWS\System32\Wbem\httpx.jse
+stat C:\WINDOWS\System32\Wbem\httpx.wsf
+stat C:\WINDOWS\System32\Wbem\httpx.wsh
+stat C:\WINDOWS\System32\Wbem\httpx.msc
+stat C:\WINDOWS\System32\Wbem\httpx.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\httpx.cpl
+stat C:\WINDOWS\System32\OpenSSH\httpx.com
+stat C:\WINDOWS\System32\OpenSSH\httpx.exe
+stat C:\WINDOWS\System32\OpenSSH\httpx.bat
+stat C:\WINDOWS\System32\OpenSSH\httpx.cmd
+stat C:\WINDOWS\System32\OpenSSH\httpx.vbs
+stat C:\WINDOWS\System32\OpenSSH\httpx.vbe
+stat C:\WINDOWS\System32\OpenSSH\httpx.js
+stat C:\WINDOWS\System32\OpenSSH\httpx.jse
+stat C:\WINDOWS\System32\OpenSSH\httpx.wsf
+stat C:\WINDOWS\System32\OpenSSH\httpx.wsh
+stat C:\WINDOWS\System32\OpenSSH\httpx.msc
+stat C:\WINDOWS\System32\OpenSSH\httpx.cpl
+stat C:\Program Files\dotnet\httpx.com
+stat C:\Program Files\dotnet\httpx.exe
+stat C:\Program Files\dotnet\httpx.bat
+stat C:\Program Files\dotnet\httpx.cmd
+stat C:\Program Files\dotnet\httpx.vbs
+stat C:\Program Files\dotnet\httpx.vbe
+stat C:\Program Files\dotnet\httpx.js
+stat C:\Program Files\dotnet\httpx.jse
+stat C:\Program Files\dotnet\httpx.wsf
+stat C:\Program Files\dotnet\httpx.wsh
+stat C:\Program Files\dotnet\httpx.msc
+stat C:\Program Files\dotnet\httpx.cpl
+stat C:\Program Files\Git\cmd\httpx.com
+stat C:\Program Files\Git\cmd\httpx.exe
+stat C:\Program Files\Git\cmd\httpx.bat
+stat C:\Program Files\Git\cmd\httpx.cmd
+stat C:\Program Files\Git\cmd\httpx.vbs
+stat C:\Program Files\Git\cmd\httpx.vbe
+stat C:\Program Files\Git\cmd\httpx.js
+stat C:\Program Files\Git\cmd\httpx.jse
+stat C:\Program Files\Git\cmd\httpx.wsf
+stat C:\Program Files\Git\cmd\httpx.wsh
+stat C:\Program Files\Git\cmd\httpx.msc
+stat C:\Program Files\Git\cmd\httpx.cpl
+stat C:\Program Files\Go\bin\httpx.com
+stat C:\Program Files\Go\bin\httpx.exe
+stat C:\Program Files\Go\bin\httpx.bat
+stat C:\Program Files\Go\bin\httpx.cmd
+stat C:\Program Files\Go\bin\httpx.vbs
+stat C:\Program Files\Go\bin\httpx.vbe
+stat C:\Program Files\Go\bin\httpx.js
+stat C:\Program Files\Go\bin\httpx.jse
+stat C:\Program Files\Go\bin\httpx.wsf
+stat C:\Program Files\Go\bin\httpx.wsh
+stat C:\Program Files\Go\bin\httpx.msc
+stat C:\Program Files\Go\bin\httpx.cpl
+stat C:\Users\andre\.local\bin\httpx.com
+stat C:\Users\andre\.local\bin\httpx.exe
+stat C:\Users\andre\.local\bin\httpx.bat
+stat C:\Users\andre\.local\bin\httpx.cmd
+stat C:\Users\andre\.local\bin\httpx.vbs
+stat C:\Users\andre\.local\bin\httpx.vbe
+stat C:\Users\andre\.local\bin\httpx.js
+stat C:\Users\andre\.local\bin\httpx.jse
+stat C:\Users\andre\.local\bin\httpx.wsf
+stat C:\Users\andre\.local\bin\httpx.wsh
+stat C:\Users\andre\.local\bin\httpx.msc
+stat C:\Users\andre\.local\bin\httpx.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\httpx.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\httpx.cpl
+stat C:\Users\andre\go\bin\httpx.com
+stat C:\Users\andre\go\bin\httpx.exe
+stat C:\Users\andre\go\bin\httpx.bat
+stat C:\Users\andre\go\bin\httpx.cmd
+stat C:\Users\andre\go\bin\httpx.vbs
+stat C:\Users\andre\go\bin\httpx.vbe
+stat C:\Users\andre\go\bin\httpx.js
+stat C:\Users\andre\go\bin\httpx.jse
+stat C:\Users\andre\go\bin\httpx.wsf
+stat C:\Users\andre\go\bin\httpx.wsh
+stat C:\Users\andre\go\bin\httpx.msc
+stat C:\Users\andre\go\bin\httpx.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\httpx.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\httpx.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_ZGRAB2_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat zgrab2.com
+stat zgrab2.exe
+stat zgrab2.bat
+stat zgrab2.cmd
+stat zgrab2.vbs
+stat zgrab2.vbe
+stat zgrab2.js
+stat zgrab2.jse
+stat zgrab2.wsf
+stat zgrab2.wsh
+stat zgrab2.msc
+stat zgrab2.cpl
+getenv path
+stat C:\Program Files\Go\bin\zgrab2.com
+stat C:\Program Files\Go\bin\zgrab2.exe
+stat C:\Program Files\Go\bin\zgrab2.bat
+stat C:\Program Files\Go\bin\zgrab2.cmd
+stat C:\Program Files\Go\bin\zgrab2.vbs
+stat C:\Program Files\Go\bin\zgrab2.vbe
+stat C:\Program Files\Go\bin\zgrab2.js
+stat C:\Program Files\Go\bin\zgrab2.jse
+stat C:\Program Files\Go\bin\zgrab2.wsf
+stat C:\Program Files\Go\bin\zgrab2.wsh
+stat C:\Program Files\Go\bin\zgrab2.msc
+stat C:\Program Files\Go\bin\zgrab2.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zgrab2.cpl
+stat C:\WINDOWS\system32\zgrab2.com
+stat C:\WINDOWS\system32\zgrab2.exe
+stat C:\WINDOWS\system32\zgrab2.bat
+stat C:\WINDOWS\system32\zgrab2.cmd
+stat C:\WINDOWS\system32\zgrab2.vbs
+stat C:\WINDOWS\system32\zgrab2.vbe
+stat C:\WINDOWS\system32\zgrab2.js
+stat C:\WINDOWS\system32\zgrab2.jse
+stat C:\WINDOWS\system32\zgrab2.wsf
+stat C:\WINDOWS\system32\zgrab2.wsh
+stat C:\WINDOWS\system32\zgrab2.msc
+stat C:\WINDOWS\system32\zgrab2.cpl
+stat C:\WINDOWS\zgrab2.com
+stat C:\WINDOWS\zgrab2.exe
+stat C:\WINDOWS\zgrab2.bat
+stat C:\WINDOWS\zgrab2.cmd
+stat C:\WINDOWS\zgrab2.vbs
+stat C:\WINDOWS\zgrab2.vbe
+stat C:\WINDOWS\zgrab2.js
+stat C:\WINDOWS\zgrab2.jse
+stat C:\WINDOWS\zgrab2.wsf
+stat C:\WINDOWS\zgrab2.wsh
+stat C:\WINDOWS\zgrab2.msc
+stat C:\WINDOWS\zgrab2.cpl
+stat C:\WINDOWS\System32\Wbem\zgrab2.com
+stat C:\WINDOWS\System32\Wbem\zgrab2.exe
+stat C:\WINDOWS\System32\Wbem\zgrab2.bat
+stat C:\WINDOWS\System32\Wbem\zgrab2.cmd
+stat C:\WINDOWS\System32\Wbem\zgrab2.vbs
+stat C:\WINDOWS\System32\Wbem\zgrab2.vbe
+stat C:\WINDOWS\System32\Wbem\zgrab2.js
+stat C:\WINDOWS\System32\Wbem\zgrab2.jse
+stat C:\WINDOWS\System32\Wbem\zgrab2.wsf
+stat C:\WINDOWS\System32\Wbem\zgrab2.wsh
+stat C:\WINDOWS\System32\Wbem\zgrab2.msc
+stat C:\WINDOWS\System32\Wbem\zgrab2.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zgrab2.cpl
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.com
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.exe
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.bat
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.cmd
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.vbs
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.vbe
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.js
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.jse
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.wsf
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.wsh
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.msc
+stat C:\WINDOWS\System32\OpenSSH\zgrab2.cpl
+stat C:\Program Files\dotnet\zgrab2.com
+stat C:\Program Files\dotnet\zgrab2.exe
+stat C:\Program Files\dotnet\zgrab2.bat
+stat C:\Program Files\dotnet\zgrab2.cmd
+stat C:\Program Files\dotnet\zgrab2.vbs
+stat C:\Program Files\dotnet\zgrab2.vbe
+stat C:\Program Files\dotnet\zgrab2.js
+stat C:\Program Files\dotnet\zgrab2.jse
+stat C:\Program Files\dotnet\zgrab2.wsf
+stat C:\Program Files\dotnet\zgrab2.wsh
+stat C:\Program Files\dotnet\zgrab2.msc
+stat C:\Program Files\dotnet\zgrab2.cpl
+stat C:\Program Files\Git\cmd\zgrab2.com
+stat C:\Program Files\Git\cmd\zgrab2.exe
+stat C:\Program Files\Git\cmd\zgrab2.bat
+stat C:\Program Files\Git\cmd\zgrab2.cmd
+stat C:\Program Files\Git\cmd\zgrab2.vbs
+stat C:\Program Files\Git\cmd\zgrab2.vbe
+stat C:\Program Files\Git\cmd\zgrab2.js
+stat C:\Program Files\Git\cmd\zgrab2.jse
+stat C:\Program Files\Git\cmd\zgrab2.wsf
+stat C:\Program Files\Git\cmd\zgrab2.wsh
+stat C:\Program Files\Git\cmd\zgrab2.msc
+stat C:\Program Files\Git\cmd\zgrab2.cpl
+stat C:\Program Files\Go\bin\zgrab2.com
+stat C:\Program Files\Go\bin\zgrab2.exe
+stat C:\Program Files\Go\bin\zgrab2.bat
+stat C:\Program Files\Go\bin\zgrab2.cmd
+stat C:\Program Files\Go\bin\zgrab2.vbs
+stat C:\Program Files\Go\bin\zgrab2.vbe
+stat C:\Program Files\Go\bin\zgrab2.js
+stat C:\Program Files\Go\bin\zgrab2.jse
+stat C:\Program Files\Go\bin\zgrab2.wsf
+stat C:\Program Files\Go\bin\zgrab2.wsh
+stat C:\Program Files\Go\bin\zgrab2.msc
+stat C:\Program Files\Go\bin\zgrab2.cpl
+stat C:\Users\andre\.local\bin\zgrab2.com
+stat C:\Users\andre\.local\bin\zgrab2.exe
+stat C:\Users\andre\.local\bin\zgrab2.bat
+stat C:\Users\andre\.local\bin\zgrab2.cmd
+stat C:\Users\andre\.local\bin\zgrab2.vbs
+stat C:\Users\andre\.local\bin\zgrab2.vbe
+stat C:\Users\andre\.local\bin\zgrab2.js
+stat C:\Users\andre\.local\bin\zgrab2.jse
+stat C:\Users\andre\.local\bin\zgrab2.wsf
+stat C:\Users\andre\.local\bin\zgrab2.wsh
+stat C:\Users\andre\.local\bin\zgrab2.msc
+stat C:\Users\andre\.local\bin\zgrab2.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zgrab2.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zgrab2.cpl
+stat C:\Users\andre\go\bin\zgrab2.com
+stat C:\Users\andre\go\bin\zgrab2.exe
+stat C:\Users\andre\go\bin\zgrab2.bat
+stat C:\Users\andre\go\bin\zgrab2.cmd
+stat C:\Users\andre\go\bin\zgrab2.vbs
+stat C:\Users\andre\go\bin\zgrab2.vbe
+stat C:\Users\andre\go\bin\zgrab2.js
+stat C:\Users\andre\go\bin\zgrab2.jse
+stat C:\Users\andre\go\bin\zgrab2.wsf
+stat C:\Users\andre\go\bin\zgrab2.wsh
+stat C:\Users\andre\go\bin\zgrab2.msc
+stat C:\Users\andre\go\bin\zgrab2.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zgrab2.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zgrab2.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_SCAMPER_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat scamper.com
+stat scamper.exe
+stat scamper.bat
+stat scamper.cmd
+stat scamper.vbs
+stat scamper.vbe
+stat scamper.js
+stat scamper.jse
+stat scamper.wsf
+stat scamper.wsh
+stat scamper.msc
+stat scamper.cpl
+getenv path
+stat C:\Program Files\Go\bin\scamper.com
+stat C:\Program Files\Go\bin\scamper.exe
+stat C:\Program Files\Go\bin\scamper.bat
+stat C:\Program Files\Go\bin\scamper.cmd
+stat C:\Program Files\Go\bin\scamper.vbs
+stat C:\Program Files\Go\bin\scamper.vbe
+stat C:\Program Files\Go\bin\scamper.js
+stat C:\Program Files\Go\bin\scamper.jse
+stat C:\Program Files\Go\bin\scamper.wsf
+stat C:\Program Files\Go\bin\scamper.wsh
+stat C:\Program Files\Go\bin\scamper.msc
+stat C:\Program Files\Go\bin\scamper.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\scamper.cpl
+stat C:\WINDOWS\system32\scamper.com
+stat C:\WINDOWS\system32\scamper.exe
+stat C:\WINDOWS\system32\scamper.bat
+stat C:\WINDOWS\system32\scamper.cmd
+stat C:\WINDOWS\system32\scamper.vbs
+stat C:\WINDOWS\system32\scamper.vbe
+stat C:\WINDOWS\system32\scamper.js
+stat C:\WINDOWS\system32\scamper.jse
+stat C:\WINDOWS\system32\scamper.wsf
+stat C:\WINDOWS\system32\scamper.wsh
+stat C:\WINDOWS\system32\scamper.msc
+stat C:\WINDOWS\system32\scamper.cpl
+stat C:\WINDOWS\scamper.com
+stat C:\WINDOWS\scamper.exe
+stat C:\WINDOWS\scamper.bat
+stat C:\WINDOWS\scamper.cmd
+stat C:\WINDOWS\scamper.vbs
+stat C:\WINDOWS\scamper.vbe
+stat C:\WINDOWS\scamper.js
+stat C:\WINDOWS\scamper.jse
+stat C:\WINDOWS\scamper.wsf
+stat C:\WINDOWS\scamper.wsh
+stat C:\WINDOWS\scamper.msc
+stat C:\WINDOWS\scamper.cpl
+stat C:\WINDOWS\System32\Wbem\scamper.com
+stat C:\WINDOWS\System32\Wbem\scamper.exe
+stat C:\WINDOWS\System32\Wbem\scamper.bat
+stat C:\WINDOWS\System32\Wbem\scamper.cmd
+stat C:\WINDOWS\System32\Wbem\scamper.vbs
+stat C:\WINDOWS\System32\Wbem\scamper.vbe
+stat C:\WINDOWS\System32\Wbem\scamper.js
+stat C:\WINDOWS\System32\Wbem\scamper.jse
+stat C:\WINDOWS\System32\Wbem\scamper.wsf
+stat C:\WINDOWS\System32\Wbem\scamper.wsh
+stat C:\WINDOWS\System32\Wbem\scamper.msc
+stat C:\WINDOWS\System32\Wbem\scamper.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\scamper.cpl
+stat C:\WINDOWS\System32\OpenSSH\scamper.com
+stat C:\WINDOWS\System32\OpenSSH\scamper.exe
+stat C:\WINDOWS\System32\OpenSSH\scamper.bat
+stat C:\WINDOWS\System32\OpenSSH\scamper.cmd
+stat C:\WINDOWS\System32\OpenSSH\scamper.vbs
+stat C:\WINDOWS\System32\OpenSSH\scamper.vbe
+stat C:\WINDOWS\System32\OpenSSH\scamper.js
+stat C:\WINDOWS\System32\OpenSSH\scamper.jse
+stat C:\WINDOWS\System32\OpenSSH\scamper.wsf
+stat C:\WINDOWS\System32\OpenSSH\scamper.wsh
+stat C:\WINDOWS\System32\OpenSSH\scamper.msc
+stat C:\WINDOWS\System32\OpenSSH\scamper.cpl
+stat C:\Program Files\dotnet\scamper.com
+stat C:\Program Files\dotnet\scamper.exe
+stat C:\Program Files\dotnet\scamper.bat
+stat C:\Program Files\dotnet\scamper.cmd
+stat C:\Program Files\dotnet\scamper.vbs
+stat C:\Program Files\dotnet\scamper.vbe
+stat C:\Program Files\dotnet\scamper.js
+stat C:\Program Files\dotnet\scamper.jse
+stat C:\Program Files\dotnet\scamper.wsf
+stat C:\Program Files\dotnet\scamper.wsh
+stat C:\Program Files\dotnet\scamper.msc
+stat C:\Program Files\dotnet\scamper.cpl
+stat C:\Program Files\Git\cmd\scamper.com
+stat C:\Program Files\Git\cmd\scamper.exe
+stat C:\Program Files\Git\cmd\scamper.bat
+stat C:\Program Files\Git\cmd\scamper.cmd
+stat C:\Program Files\Git\cmd\scamper.vbs
+stat C:\Program Files\Git\cmd\scamper.vbe
+stat C:\Program Files\Git\cmd\scamper.js
+stat C:\Program Files\Git\cmd\scamper.jse
+stat C:\Program Files\Git\cmd\scamper.wsf
+stat C:\Program Files\Git\cmd\scamper.wsh
+stat C:\Program Files\Git\cmd\scamper.msc
+stat C:\Program Files\Git\cmd\scamper.cpl
+stat C:\Program Files\Go\bin\scamper.com
+stat C:\Program Files\Go\bin\scamper.exe
+stat C:\Program Files\Go\bin\scamper.bat
+stat C:\Program Files\Go\bin\scamper.cmd
+stat C:\Program Files\Go\bin\scamper.vbs
+stat C:\Program Files\Go\bin\scamper.vbe
+stat C:\Program Files\Go\bin\scamper.js
+stat C:\Program Files\Go\bin\scamper.jse
+stat C:\Program Files\Go\bin\scamper.wsf
+stat C:\Program Files\Go\bin\scamper.wsh
+stat C:\Program Files\Go\bin\scamper.msc
+stat C:\Program Files\Go\bin\scamper.cpl
+stat C:\Users\andre\.local\bin\scamper.com
+stat C:\Users\andre\.local\bin\scamper.exe
+stat C:\Users\andre\.local\bin\scamper.bat
+stat C:\Users\andre\.local\bin\scamper.cmd
+stat C:\Users\andre\.local\bin\scamper.vbs
+stat C:\Users\andre\.local\bin\scamper.vbe
+stat C:\Users\andre\.local\bin\scamper.js
+stat C:\Users\andre\.local\bin\scamper.jse
+stat C:\Users\andre\.local\bin\scamper.wsf
+stat C:\Users\andre\.local\bin\scamper.wsh
+stat C:\Users\andre\.local\bin\scamper.msc
+stat C:\Users\andre\.local\bin\scamper.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\scamper.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\scamper.cpl
+stat C:\Users\andre\go\bin\scamper.com
+stat C:\Users\andre\go\bin\scamper.exe
+stat C:\Users\andre\go\bin\scamper.bat
+stat C:\Users\andre\go\bin\scamper.cmd
+stat C:\Users\andre\go\bin\scamper.vbs
+stat C:\Users\andre\go\bin\scamper.vbe
+stat C:\Users\andre\go\bin\scamper.js
+stat C:\Users\andre\go\bin\scamper.jse
+stat C:\Users\andre\go\bin\scamper.wsf
+stat C:\Users\andre\go\bin\scamper.wsh
+stat C:\Users\andre\go\bin\scamper.msc
+stat C:\Users\andre\go\bin\scamper.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\scamper.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\scamper.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_ARP_SCAN_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat arp-scan.com
+stat arp-scan.exe
+stat arp-scan.bat
+stat arp-scan.cmd
+stat arp-scan.vbs
+stat arp-scan.vbe
+stat arp-scan.js
+stat arp-scan.jse
+stat arp-scan.wsf
+stat arp-scan.wsh
+stat arp-scan.msc
+stat arp-scan.cpl
+getenv path
+stat C:\Program Files\Go\bin\arp-scan.com
+stat C:\Program Files\Go\bin\arp-scan.exe
+stat C:\Program Files\Go\bin\arp-scan.bat
+stat C:\Program Files\Go\bin\arp-scan.cmd
+stat C:\Program Files\Go\bin\arp-scan.vbs
+stat C:\Program Files\Go\bin\arp-scan.vbe
+stat C:\Program Files\Go\bin\arp-scan.js
+stat C:\Program Files\Go\bin\arp-scan.jse
+stat C:\Program Files\Go\bin\arp-scan.wsf
+stat C:\Program Files\Go\bin\arp-scan.wsh
+stat C:\Program Files\Go\bin\arp-scan.msc
+stat C:\Program Files\Go\bin\arp-scan.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\arp-scan.cpl
+stat C:\WINDOWS\system32\arp-scan.com
+stat C:\WINDOWS\system32\arp-scan.exe
+stat C:\WINDOWS\system32\arp-scan.bat
+stat C:\WINDOWS\system32\arp-scan.cmd
+stat C:\WINDOWS\system32\arp-scan.vbs
+stat C:\WINDOWS\system32\arp-scan.vbe
+stat C:\WINDOWS\system32\arp-scan.js
+stat C:\WINDOWS\system32\arp-scan.jse
+stat C:\WINDOWS\system32\arp-scan.wsf
+stat C:\WINDOWS\system32\arp-scan.wsh
+stat C:\WINDOWS\system32\arp-scan.msc
+stat C:\WINDOWS\system32\arp-scan.cpl
+stat C:\WINDOWS\arp-scan.com
+stat C:\WINDOWS\arp-scan.exe
+stat C:\WINDOWS\arp-scan.bat
+stat C:\WINDOWS\arp-scan.cmd
+stat C:\WINDOWS\arp-scan.vbs
+stat C:\WINDOWS\arp-scan.vbe
+stat C:\WINDOWS\arp-scan.js
+stat C:\WINDOWS\arp-scan.jse
+stat C:\WINDOWS\arp-scan.wsf
+stat C:\WINDOWS\arp-scan.wsh
+stat C:\WINDOWS\arp-scan.msc
+stat C:\WINDOWS\arp-scan.cpl
+stat C:\WINDOWS\System32\Wbem\arp-scan.com
+stat C:\WINDOWS\System32\Wbem\arp-scan.exe
+stat C:\WINDOWS\System32\Wbem\arp-scan.bat
+stat C:\WINDOWS\System32\Wbem\arp-scan.cmd
+stat C:\WINDOWS\System32\Wbem\arp-scan.vbs
+stat C:\WINDOWS\System32\Wbem\arp-scan.vbe
+stat C:\WINDOWS\System32\Wbem\arp-scan.js
+stat C:\WINDOWS\System32\Wbem\arp-scan.jse
+stat C:\WINDOWS\System32\Wbem\arp-scan.wsf
+stat C:\WINDOWS\System32\Wbem\arp-scan.wsh
+stat C:\WINDOWS\System32\Wbem\arp-scan.msc
+stat C:\WINDOWS\System32\Wbem\arp-scan.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\arp-scan.cpl
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.com
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.exe
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.bat
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.cmd
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.vbs
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.vbe
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.js
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.jse
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.wsf
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.wsh
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.msc
+stat C:\WINDOWS\System32\OpenSSH\arp-scan.cpl
+stat C:\Program Files\dotnet\arp-scan.com
+stat C:\Program Files\dotnet\arp-scan.exe
+stat C:\Program Files\dotnet\arp-scan.bat
+stat C:\Program Files\dotnet\arp-scan.cmd
+stat C:\Program Files\dotnet\arp-scan.vbs
+stat C:\Program Files\dotnet\arp-scan.vbe
+stat C:\Program Files\dotnet\arp-scan.js
+stat C:\Program Files\dotnet\arp-scan.jse
+stat C:\Program Files\dotnet\arp-scan.wsf
+stat C:\Program Files\dotnet\arp-scan.wsh
+stat C:\Program Files\dotnet\arp-scan.msc
+stat C:\Program Files\dotnet\arp-scan.cpl
+stat C:\Program Files\Git\cmd\arp-scan.com
+stat C:\Program Files\Git\cmd\arp-scan.exe
+stat C:\Program Files\Git\cmd\arp-scan.bat
+stat C:\Program Files\Git\cmd\arp-scan.cmd
+stat C:\Program Files\Git\cmd\arp-scan.vbs
+stat C:\Program Files\Git\cmd\arp-scan.vbe
+stat C:\Program Files\Git\cmd\arp-scan.js
+stat C:\Program Files\Git\cmd\arp-scan.jse
+stat C:\Program Files\Git\cmd\arp-scan.wsf
+stat C:\Program Files\Git\cmd\arp-scan.wsh
+stat C:\Program Files\Git\cmd\arp-scan.msc
+stat C:\Program Files\Git\cmd\arp-scan.cpl
+stat C:\Program Files\Go\bin\arp-scan.com
+stat C:\Program Files\Go\bin\arp-scan.exe
+stat C:\Program Files\Go\bin\arp-scan.bat
+stat C:\Program Files\Go\bin\arp-scan.cmd
+stat C:\Program Files\Go\bin\arp-scan.vbs
+stat C:\Program Files\Go\bin\arp-scan.vbe
+stat C:\Program Files\Go\bin\arp-scan.js
+stat C:\Program Files\Go\bin\arp-scan.jse
+stat C:\Program Files\Go\bin\arp-scan.wsf
+stat C:\Program Files\Go\bin\arp-scan.wsh
+stat C:\Program Files\Go\bin\arp-scan.msc
+stat C:\Program Files\Go\bin\arp-scan.cpl
+stat C:\Users\andre\.local\bin\arp-scan.com
+stat C:\Users\andre\.local\bin\arp-scan.exe
+stat C:\Users\andre\.local\bin\arp-scan.bat
+stat C:\Users\andre\.local\bin\arp-scan.cmd
+stat C:\Users\andre\.local\bin\arp-scan.vbs
+stat C:\Users\andre\.local\bin\arp-scan.vbe
+stat C:\Users\andre\.local\bin\arp-scan.js
+stat C:\Users\andre\.local\bin\arp-scan.jse
+stat C:\Users\andre\.local\bin\arp-scan.wsf
+stat C:\Users\andre\.local\bin\arp-scan.wsh
+stat C:\Users\andre\.local\bin\arp-scan.msc
+stat C:\Users\andre\.local\bin\arp-scan.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\arp-scan.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\arp-scan.cpl
+stat C:\Users\andre\go\bin\arp-scan.com
+stat C:\Users\andre\go\bin\arp-scan.exe
+stat C:\Users\andre\go\bin\arp-scan.bat
+stat C:\Users\andre\go\bin\arp-scan.cmd
+stat C:\Users\andre\go\bin\arp-scan.vbs
+stat C:\Users\andre\go\bin\arp-scan.vbe
+stat C:\Users\andre\go\bin\arp-scan.js
+stat C:\Users\andre\go\bin\arp-scan.jse
+stat C:\Users\andre\go\bin\arp-scan.wsf
+stat C:\Users\andre\go\bin\arp-scan.wsh
+stat C:\Users\andre\go\bin\arp-scan.msc
+stat C:\Users\andre\go\bin\arp-scan.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\arp-scan.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\arp-scan.cpl
+getenv HOME
+getenv SUDO_USER
+getenv STARTRACE_ZEEKCTL_PATH
+getenv PATHEXT
+getenv NoDefaultCurrentDirectoryInExePath
+stat zeekctl.com
+stat zeekctl.exe
+stat zeekctl.bat
+stat zeekctl.cmd
+stat zeekctl.vbs
+stat zeekctl.vbe
+stat zeekctl.js
+stat zeekctl.jse
+stat zeekctl.wsf
+stat zeekctl.wsh
+stat zeekctl.msc
+stat zeekctl.cpl
+getenv path
+stat C:\Program Files\Go\bin\zeekctl.com
+stat C:\Program Files\Go\bin\zeekctl.exe
+stat C:\Program Files\Go\bin\zeekctl.bat
+stat C:\Program Files\Go\bin\zeekctl.cmd
+stat C:\Program Files\Go\bin\zeekctl.vbs
+stat C:\Program Files\Go\bin\zeekctl.vbe
+stat C:\Program Files\Go\bin\zeekctl.js
+stat C:\Program Files\Go\bin\zeekctl.jse
+stat C:\Program Files\Go\bin\zeekctl.wsf
+stat C:\Program Files\Go\bin\zeekctl.wsh
+stat C:\Program Files\Go\bin\zeekctl.msc
+stat C:\Program Files\Go\bin\zeekctl.cpl
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.com
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.exe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.bat
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.cmd
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.vbs
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.vbe
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.js
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.jse
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.wsf
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.wsh
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.msc
+stat C:\Users\andre\.codex\tmp\arg0\codex-arg0ECZzdR\zeekctl.cpl
+stat C:\WINDOWS\system32\zeekctl.com
+stat C:\WINDOWS\system32\zeekctl.exe
+stat C:\WINDOWS\system32\zeekctl.bat
+stat C:\WINDOWS\system32\zeekctl.cmd
+stat C:\WINDOWS\system32\zeekctl.vbs
+stat C:\WINDOWS\system32\zeekctl.vbe
+stat C:\WINDOWS\system32\zeekctl.js
+stat C:\WINDOWS\system32\zeekctl.jse
+stat C:\WINDOWS\system32\zeekctl.wsf
+stat C:\WINDOWS\system32\zeekctl.wsh
+stat C:\WINDOWS\system32\zeekctl.msc
+stat C:\WINDOWS\system32\zeekctl.cpl
+stat C:\WINDOWS\zeekctl.com
+stat C:\WINDOWS\zeekctl.exe
+stat C:\WINDOWS\zeekctl.bat
+stat C:\WINDOWS\zeekctl.cmd
+stat C:\WINDOWS\zeekctl.vbs
+stat C:\WINDOWS\zeekctl.vbe
+stat C:\WINDOWS\zeekctl.js
+stat C:\WINDOWS\zeekctl.jse
+stat C:\WINDOWS\zeekctl.wsf
+stat C:\WINDOWS\zeekctl.wsh
+stat C:\WINDOWS\zeekctl.msc
+stat C:\WINDOWS\zeekctl.cpl
+stat C:\WINDOWS\System32\Wbem\zeekctl.com
+stat C:\WINDOWS\System32\Wbem\zeekctl.exe
+stat C:\WINDOWS\System32\Wbem\zeekctl.bat
+stat C:\WINDOWS\System32\Wbem\zeekctl.cmd
+stat C:\WINDOWS\System32\Wbem\zeekctl.vbs
+stat C:\WINDOWS\System32\Wbem\zeekctl.vbe
+stat C:\WINDOWS\System32\Wbem\zeekctl.js
+stat C:\WINDOWS\System32\Wbem\zeekctl.jse
+stat C:\WINDOWS\System32\Wbem\zeekctl.wsf
+stat C:\WINDOWS\System32\Wbem\zeekctl.wsh
+stat C:\WINDOWS\System32\Wbem\zeekctl.msc
+stat C:\WINDOWS\System32\Wbem\zeekctl.cpl
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.com
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.exe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.bat
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.cmd
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.vbs
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.vbe
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.js
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.jse
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.wsf
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.wsh
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.msc
+stat C:\WINDOWS\System32\WindowsPowerShell\v1.0\zeekctl.cpl
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.com
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.exe
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.bat
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.cmd
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.vbs
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.vbe
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.js
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.jse
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.wsf
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.wsh
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.msc
+stat C:\WINDOWS\System32\OpenSSH\zeekctl.cpl
+stat C:\Program Files\dotnet\zeekctl.com
+stat C:\Program Files\dotnet\zeekctl.exe
+stat C:\Program Files\dotnet\zeekctl.bat
+stat C:\Program Files\dotnet\zeekctl.cmd
+stat C:\Program Files\dotnet\zeekctl.vbs
+stat C:\Program Files\dotnet\zeekctl.vbe
+stat C:\Program Files\dotnet\zeekctl.js
+stat C:\Program Files\dotnet\zeekctl.jse
+stat C:\Program Files\dotnet\zeekctl.wsf
+stat C:\Program Files\dotnet\zeekctl.wsh
+stat C:\Program Files\dotnet\zeekctl.msc
+stat C:\Program Files\dotnet\zeekctl.cpl
+stat C:\Program Files\Git\cmd\zeekctl.com
+stat C:\Program Files\Git\cmd\zeekctl.exe
+stat C:\Program Files\Git\cmd\zeekctl.bat
+stat C:\Program Files\Git\cmd\zeekctl.cmd
+stat C:\Program Files\Git\cmd\zeekctl.vbs
+stat C:\Program Files\Git\cmd\zeekctl.vbe
+stat C:\Program Files\Git\cmd\zeekctl.js
+stat C:\Program Files\Git\cmd\zeekctl.jse
+stat C:\Program Files\Git\cmd\zeekctl.wsf
+stat C:\Program Files\Git\cmd\zeekctl.wsh
+stat C:\Program Files\Git\cmd\zeekctl.msc
+stat C:\Program Files\Git\cmd\zeekctl.cpl
+stat C:\Program Files\Go\bin\zeekctl.com
+stat C:\Program Files\Go\bin\zeekctl.exe
+stat C:\Program Files\Go\bin\zeekctl.bat
+stat C:\Program Files\Go\bin\zeekctl.cmd
+stat C:\Program Files\Go\bin\zeekctl.vbs
+stat C:\Program Files\Go\bin\zeekctl.vbe
+stat C:\Program Files\Go\bin\zeekctl.js
+stat C:\Program Files\Go\bin\zeekctl.jse
+stat C:\Program Files\Go\bin\zeekctl.wsf
+stat C:\Program Files\Go\bin\zeekctl.wsh
+stat C:\Program Files\Go\bin\zeekctl.msc
+stat C:\Program Files\Go\bin\zeekctl.cpl
+stat C:\Users\andre\.local\bin\zeekctl.com
+stat C:\Users\andre\.local\bin\zeekctl.exe
+stat C:\Users\andre\.local\bin\zeekctl.bat
+stat C:\Users\andre\.local\bin\zeekctl.cmd
+stat C:\Users\andre\.local\bin\zeekctl.vbs
+stat C:\Users\andre\.local\bin\zeekctl.vbe
+stat C:\Users\andre\.local\bin\zeekctl.js
+stat C:\Users\andre\.local\bin\zeekctl.jse
+stat C:\Users\andre\.local\bin\zeekctl.wsf
+stat C:\Users\andre\.local\bin\zeekctl.wsh
+stat C:\Users\andre\.local\bin\zeekctl.msc
+stat C:\Users\andre\.local\bin\zeekctl.cpl
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.com
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.exe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.bat
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.cmd
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.vbs
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.vbe
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.js
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.jse
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.wsf
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.wsh
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.msc
+stat C:\Users\andre\AppData\Local\Microsoft\WindowsApps\zeekctl.cpl
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.com
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.exe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.bat
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.cmd
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.vbs
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.vbe
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.js
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.jse
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.wsf
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.wsh
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.msc
+stat C:\Users\andre\AppData\Local\Programs\Microsoft VS Code\bin\zeekctl.cpl
+stat C:\Users\andre\go\bin\zeekctl.com
+stat C:\Users\andre\go\bin\zeekctl.exe
+stat C:\Users\andre\go\bin\zeekctl.bat
+stat C:\Users\andre\go\bin\zeekctl.cmd
+stat C:\Users\andre\go\bin\zeekctl.vbs
+stat C:\Users\andre\go\bin\zeekctl.vbe
+stat C:\Users\andre\go\bin\zeekctl.js
+stat C:\Users\andre\go\bin\zeekctl.jse
+stat C:\Users\andre\go\bin\zeekctl.wsf
+stat C:\Users\andre\go\bin\zeekctl.wsh
+stat C:\Users\andre\go\bin\zeekctl.msc
+stat C:\Users\andre\go\bin\zeekctl.cpl
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.com
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.exe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.bat
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.cmd
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.vbs
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.vbe
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.js
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.jse
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.wsf
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.wsh
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.msc
+stat C:\Users\andre\AppData\Local\OpenAI\Codex\bin\zeekctl.cpl
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.com
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.exe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.bat
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.cmd
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.vbs
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.vbe
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.js
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.jse
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.wsf
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.wsh
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.msc
+stat C:\Program Files\WindowsApps\OpenAI.Codex_26.325.3894.0_x64__2p2nqsd0c76g0\app\resources\zeekctl.cpl
+getenv HOME
+getenv SUDO_USER
+stat C:\Users\andre\AppData\Local\Temp\TestServerAssetsAPIAndPageSupportManualOverrides1738677784\001
+open C:\Users\andre\AppData\Local\Temp\TestServerAssetsAPIAndPageSupportManualOverrides1738677784\001\write-check-822297442
+open C:\Users\andre\AppData\Local\Temp
+getenv GOTMPDIR
+stat C:\Users\andre\AppData\Local\Temp\TestServerCanCreateProjectAndPersistDefaultProject2757747886\001
+getenv SUDO_USER
+stat C:\Users\andre\AppData\Local\Temp\TestServerCanCreateProjectAndPersistDefaultProject2757747886\001\projects\standort-a-prj-3f1a314e
+stat C:\Users\andre\AppData\Local\Temp\TestServerCanCreateProjectAndPersistDefaultProject2757747886\001\projects
+stat C:\Users\andre\AppData\Local\Temp\TestServerCanCreateProjectAndPersistDefaultProject2757747886\001
+getenv SUDO_UID
+getenv SUDO_GID
+open C:\Users\andre\AppData\Local\Temp

@@ -37,14 +37,26 @@
 
 <section class="panel">
     <div class="panel-head">
+        <h2>Search Discovery</h2>
+        <span class="pill subtle">{{len .RecentRunItems}} runs indexed</span>
+    </div>
+    <label class="form-row">
+        <span class="form-label">Search runs, template names, statuses or host counts</span>
+        <input class="input" id="discovery-search" type="search" placeholder="Search Discovery history..." autocomplete="off" />
+    </label>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
         <h2>Latest Discovery Runs History</h2>
         <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Run History</a>
     </div>
     {{if .RecentRunItems}}
-    <div class="list">
+    <div class="list" id="discovery-run-list">
         {{range .RecentRunItems}}
+        {{$searchText := printf "%s %s %s %d hosts %s" .Run.TemplateName .StatusLabel (.Run.StartedAt.Format "2006-01-02 15:04") .HostCount .Run.ID}}
         {{if .Clickable}}
-        <a href="/runs/{{.Run.ID}}" class="list-item">
+        <a href="/runs/{{.Run.ID}}" class="list-item" data-discovery-item="{{$searchText}}">
             <div>
                 <div class="list-title">{{.Run.TemplateName}}</div>
                 <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts</div>
@@ -52,7 +64,7 @@
             <span class="pill {{.StatusClass}}">{{.StatusLabel}}</span>
         </a>
         {{else}}
-        <div class="list-item disabled">
+        <div class="list-item disabled" data-discovery-item="{{$searchText}}">
             <div>
                 <div class="list-title">{{.Run.TemplateName}}</div>
                 <div class="list-meta">{{.StatusLabel}} | {{.Run.StartedAt.Format "2006-01-02 15:04"}} | {{.HostCount}} hosts</div>
@@ -62,8 +74,36 @@
         {{end}}
         {{end}}
     </div>
+    <p class="empty-note" id="discovery-search-empty" hidden>No runs match the current Discovery search.</p>
     {{else}}
     <p class="empty-note">No discovery runs are stored for this project yet.</p>
     {{end}}
 </section>
+
+<script>
+(() => {
+    const search = document.getElementById("discovery-search");
+    const items = Array.from(document.querySelectorAll("[data-discovery-item]"));
+    const empty = document.getElementById("discovery-search-empty");
+    if (!search || items.length === 0 || !empty) {
+        return;
+    }
+
+    const applyFilter = () => {
+        const query = search.value.trim().toLowerCase();
+        let visible = 0;
+        items.forEach((item) => {
+            const text = item.getAttribute("data-discovery-item") || "";
+            const match = query === "" || text.includes(query);
+            item.hidden = !match;
+            if (match) {
+                visible++;
+            }
+        });
+        empty.hidden = visible !== 0;
+    };
+
+    search.addEventListener("input", applyFilter);
+})();
+</script>
 {{end}}

@@ -87,10 +87,37 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 	if value := strings.TrimSpace(r.URL.Query().Get("scan_name")); value != "" {
 		form.ScanName = value
 	}
+	if value := strings.TrimSpace(r.URL.Query().Get("port_template")); value != "" {
+		form.PortTemplate = value
+	}
+	if value := strings.TrimSpace(r.URL.Query().Get("scan_tag")); value != "" {
+		form.ScanTag = value
+	}
+	if value := strings.TrimSpace(r.URL.Query().Get("active_interface")); value != "" {
+		form.ActiveInterface = value
+	}
+	if value := strings.TrimSpace(r.URL.Query().Get("passive_interface")); value != "" {
+		form.PassiveInterface = value
+	}
+	if value := strings.TrimSpace(r.URL.Query().Get("passive_mode")); value != "" {
+		form.PassiveMode = value
+	}
+	if value := strings.TrimSpace(r.URL.Query().Get("zeek_log_dir")); value != "" {
+		form.ZeekLogDir = value
+	}
 	if value := strings.TrimSpace(r.URL.Query().Get("reevaluate_after")); value != "" {
 		form.ReevaluatePreset, form.ReevaluateCustom, form.ReevaluateAmbiguous = reevaluatePreset(value)
 		form.ReevaluateAfter = value
 	}
+	form.EnableRouteSampling = queryBoolDefault(r.URL.Query().Get("enable_route_sampling"), form.EnableRouteSampling)
+	form.EnableServiceScan = queryBoolDefault(r.URL.Query().Get("enable_service_scan"), form.EnableServiceScan)
+	form.EnablePassiveIngest = queryBoolDefault(r.URL.Query().Get("enable_passive_ingest"), form.EnablePassiveIngest)
+	form.EnableOSDetection = queryBoolDefault(r.URL.Query().Get("enable_os_detection"), form.EnableOSDetection)
+	form.EnableLayer2 = queryBoolDefault(r.URL.Query().Get("enable_layer2"), form.EnableLayer2)
+	form.UseLargeRangeStrategy = queryBoolDefault(r.URL.Query().Get("use_large_range_strategy"), form.UseLargeRangeStrategy)
+	form.ZeekAutoStart = queryBoolDefault(r.URL.Query().Get("zeek_auto_start"), form.ZeekAutoStart)
+	form.ContinueOnError = queryBoolDefault(r.URL.Query().Get("continue_on_error"), form.ContinueOnError)
+	form.RetainPartialResults = queryBoolDefault(r.URL.Query().Get("retain_partial_results"), form.RetainPartialResults)
 
 	preflightChecks := collectPreflightChecks(s.options.DBPath)
 	data := pageData{
@@ -668,6 +695,14 @@ func isChecked(value string) bool {
 	default:
 		return false
 	}
+}
+
+func queryBoolDefault(value string, fallback bool) bool {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return fallback
+	}
+	return isChecked(trimmed)
 }
 
 func firstNonEmptyWeb(values ...string) string {

@@ -1,0 +1,5 @@
+./discovery_templates.go
+./helpdata.go
+./scans.go
+./server.go
+./suite.go

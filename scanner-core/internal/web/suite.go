@@ -94,13 +94,13 @@ func buildModuleNav(activeNav string, activeSection string, currentProject *stor
 			{section: "discovery-launch", label: "Start Run", url: "/scans/new"},
 			{section: "discovery-overview", label: "Overview", url: "/discovery"},
 			{section: "discovery-runs", label: "Runs", url: "/runs"},
-			{section: "discovery-assets", label: "Assets", url: "/discovery/assets"},
 			{section: "discovery-compare", label: "Compare", url: "/discovery/compare"},
+			{section: "discovery-templates", label: "Templates", url: "/discovery/templates"},
 		}
 	case "inventory":
 		candidates = []candidate{
 			{section: "inventory-overview", label: "Overview", url: "/inventory"},
-			{section: "inventory-network", label: "Netzwerkansicht", url: "/inventory/network"},
+			{section: "inventory-network", label: "Network View", url: "/inventory/network"},
 		}
 	case "security":
 		candidates = []candidate{

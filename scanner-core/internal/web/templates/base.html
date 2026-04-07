@@ -46,14 +46,14 @@
                             {{else}}
                                 <option value="">No projects yet</option>
                             {{end}}
-                            <option value="__new__">Neues Projekt +</option>
+                            <option value="__new__">New Project +</option>
                         </select>
                         <div class="preflight-indicator state-{{.PreflightState}}" aria-label="Preflight {{.PreflightState}}">
                             <span class="preflight-dot"></span>
                             <div class="preflight-card">
                                 <div class="preflight-card-head">
                                     <strong>System Check</strong>
-                                    <span class="pill subtle">{{if eq .PreflightState "ok"}}bereit{{else if eq .PreflightState "warning"}}Hinweis{{else}}Problem{{end}}</span>
+                                    <span class="pill subtle">{{if eq .PreflightState "ok"}}ready{{else if eq .PreflightState "warning"}}warning{{else}}error{{end}}</span>
                                 </div>
                                 <div class="preflight-mini-list">
                                     {{range .PreflightChecks}}
