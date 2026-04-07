@@ -22,10 +22,11 @@ Current top-level areas in the UI:
 - `Security`
 - `Workbench`
 - `Automation`
+- `Help`
 - `Settings`
 
 Right now, `Discovery` and `Inventory` are the most developed areas.
-`Security`, `Workbench` and `Automation` already exist as suite-level module spaces so future tools can be built directly inside the real product shell instead of being bolted on later.
+`Security`, `Workbench` and `Automation` already exist as suite-level module spaces so future tools can be built directly inside the real product shell instead of being bolted on later. `Help` is now a dedicated module space instead of being buried under settings.
 
 ## Current State
 
@@ -43,6 +44,7 @@ Right now, `Discovery` and `Inventory` are the most developed areas.
 - passive ingest through `Zeek`
 - browser-launched scans
 - run history and run detail views
+- run comparison (`Discovery -> Compare`)
 - reevaluation scheduling records
 - run acknowledgement workflows
 
@@ -54,8 +56,49 @@ The suite already maintains a shared inventory model above individual runs:
 - observed ports and host metadata
 - manual overrides for display name, type, tags and notes
 - historical asset observations per run
+- subnet-first inventory grouping with collapsible sections
+- compact port and service summaries per host
+- a network view with graph-based topology rendering
 
 This is important because future modules such as `Security` or `Workbench` should reuse the same assets and project context instead of creating isolated data silos.
+
+### Device classification
+
+Asset grouping is no longer only simple keyword matching.
+
+`Startrace` now uses a small scoring-based classification pass that weighs:
+
+- operating system fingerprints
+- service and port patterns
+- vendor / product clues
+- hostname hints
+
+This helps reduce bad guesses such as treating a workstation as a router just because its hostname contains `fritz` or another misleading label.
+
+### Inventory network view
+
+`Inventory -> Netzwerkansicht` now renders the shared topology with role-aware graph nodes:
+
+- origin / scan host as a red satellite node
+- subnets as blue rounded rectangles
+- routers, switches and gateways as yellow triangles
+- firewalls as green triangles
+- DNS servers as purple triangles
+- domain controllers as white rectangles
+- regular hosts as larger blue host nodes
+
+The graph also exposes route context, gateway inference and per-host port/service detail cards so the view is useful as an operator surface instead of just a picture.
+
+### Help center
+
+`Help` is now a first-class suite area and currently provides:
+
+- a searchable help start page
+- links to the main repository and local workspace
+- latest help entries
+- starter sections for installation, basics, plugins, runs, reevaluation, troubleshooting, inventory and best practices
+
+The intent is to grow these pages alongside the suite instead of leaving knowledge trapped in commits and chat history.
 
 ### Suite shell
 
@@ -66,6 +109,8 @@ The web UI now has:
 - suite-level left navigation
 - module-level horizontal navigation
 - discovery-specific pages under the `Discovery` module
+- dashboard charts for shared inventory and port state
+- a stronger sci-fi / glass / glow visual language across navigation and primary views
 
 ## Linux / Ubuntu Runtime Model
 
@@ -80,6 +125,14 @@ This applies to:
 - `tracer`
 
 The web UI no longer tries to silently escalate in the background for discovery runs. Instead, the suite itself should already be running with the required privileges.
+
+The runtime also resolves tools more defensively across common root and user install locations, including paths such as:
+
+- `/usr/bin`
+- `/usr/local/bin`
+- `/opt/zeek/bin`
+- `~/.local/bin`
+- `~/go/bin`
 
 ## Ubuntu Quick Start
 
@@ -113,10 +166,13 @@ Typical flow:
 
 1. Open the browser UI
 2. Create or select a project
-3. Enter `Discovery`
-4. Start a run from `Discovery -> Start Run`
-5. Review `Discovery -> Runs`
-6. Review the shared `Inventory`
+3. Review the `Dashboard`
+4. Enter `Discovery`
+5. Start a run from `Discovery -> Start Run`
+6. Review `Discovery -> Runs` or `Discovery -> Compare`
+7. Review the shared `Inventory`
+8. Open `Inventory -> Netzwerkansicht`
+9. Use `Help` for setup notes, plugin references and troubleshooting
 
 ## CLI Usage
 
@@ -153,8 +209,9 @@ Priority order:
 1. keep `Discovery` improving without letting it dominate the whole product structure
 2. strengthen the shared suite shell and shared data model
 3. turn scheduled discovery records into a generic automation runner
-4. make `Security`, `Workbench` and `Automation` real module homes
-5. introduce the next concrete module inside the suite, likely a focused workbench-style tool
+4. continue improving classification, topology and shared inventory quality
+5. make `Security`, `Workbench` and `Automation` real module homes
+6. introduce the next concrete module inside the suite, likely a focused workbench-style tool
 
 ## Planned Module Direction
 
@@ -163,11 +220,13 @@ Priority order:
 - continue improving the scanner
 - improve repeatable run setup
 - later execute scheduled discovery tasks automatically
+- continue enriching comparison, path and scan result interpretation
 
 ### Inventory
 
 - remain the shared cross-module asset model
 - become the place where all modules enrich the same hosts and devices
+- improve graph semantics for infrastructure devices and path visualization
 
 ### Security
 
@@ -183,6 +242,16 @@ Priority order:
 
 - generic scheduler and task execution
 - not discovery-only logic
+
+### Help
+
+- central operator documentation inside the suite
+- plugin references, troubleshooting, run explanations and best practices
+
+## Repository And Links
+
+- GitHub: [grvtyai/tracer](https://github.com/grvtyai/tracer)
+- Root workspace: `C:\Users\andre\Desktop\repos\tracer\tracer`
 
 ## More Documentation
 
