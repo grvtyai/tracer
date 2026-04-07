@@ -27,22 +27,20 @@ The current UI modules are:
 
 Only `Radar` and `Inventory` are meaningfully developed today. The other module areas already exist so new capabilities can be added inside the real product structure instead of being bolted on later.
 
-## Architecture Direction
+## Architecture
 
-`Startrace` follows a suite-first structure:
+`Startrace` is built as a modular system:
 
 - `suite`: owns the browser UI, routing, layout, templates, components and styling
 - `shared`: owns canonical data, persistence and shared runtime/platform helpers
 - `modules`: own capabilities, workflows, integrations and data preparation
 
-That boundary matters:
+The boundary is:
 
 - modules are not separate mini frontends by default
 - the suite renders the UI
 - modules feed the suite with actions, data and workflow logic
 - shared packages stay above individual modules
-
-In other words: `Startrace` is better thought of as a modular suite than as a single scanner application.
 
 ## Current State
 
