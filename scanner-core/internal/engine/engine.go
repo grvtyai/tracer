@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	"github.com/grvtyai/tracer/scanner-core/internal/storage"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
 )
 
 // Engine dispatches jobs to matching plugins and stores normalized evidence.

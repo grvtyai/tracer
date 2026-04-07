@@ -1,6 +1,6 @@
-package web
+package suite
 
-import "github.com/grvtyai/tracer/scanner-core/internal/storage"
+import "github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
 
 type suiteModule struct {
 	Key    string

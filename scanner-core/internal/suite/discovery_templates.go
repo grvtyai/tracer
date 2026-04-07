@@ -1,4 +1,4 @@
-package web
+package suite
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/storage"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
 )
 
 type discoveryTemplateCard struct {

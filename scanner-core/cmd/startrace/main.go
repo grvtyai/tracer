@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/platform"
-	"github.com/grvtyai/tracer/scanner-core/internal/storage"
-	"github.com/grvtyai/tracer/scanner-core/internal/web"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
+	"github.com/grvtyai/tracer/scanner-core/internal/suite"
 )
 
 func main() {
@@ -40,7 +40,7 @@ func main() {
 	}
 	defer repository.Close()
 
-	server, err := web.NewServer(repository, web.Options{
+	server, err := suite.NewServer(repository, suite.Options{
 		DBPath:   resolvedDBPath,
 		DataDir:  resolvedDataDir,
 		AppName:  "Startrace",

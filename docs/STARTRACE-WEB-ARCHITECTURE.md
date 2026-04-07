@@ -1,11 +1,11 @@
 # Startrace Web Architecture
 
-This document captures the first web-facing architecture that will sit on top of `tracer` while we are still working only inside this repository.
+This document captures the current Startrace suite architecture inside the real `Startrace` repository.
 
 ## Goal
 
-`tracer` remains the scanning core.
-The future product surface for operators will be `startrace`, but the first implementation work happens here so the merge later is mechanical instead of architectural.
+`Startrace` is the product surface for operators.
+`Radar` is the first major module inside it and still contains the current discovery/scanner runtime.
 
 ## Recommended Runtime Model
 
@@ -25,9 +25,9 @@ This gives us:
 
 ## Planned Layers
 
-### 1. scanner-core
+### 1. shared core
 
-The core remains responsible for:
+Shared foundations remain responsible for:
 
 - template loading
 - option resolution
@@ -38,30 +38,37 @@ The core remains responsible for:
 - reevaluation hints
 - SQLite persistence
 - run diffs
+- project, run and asset data access
+- platform/runtime helpers used by multiple modules
 
-### 2. startrace web app
+### 2. suite shell
 
-The first product layer is a Go HTTP server that wraps the core.
+The product shell is a Go HTTP server that wraps shared services and registered modules.
 It is responsible for:
 
 - rendering operator-facing pages
 - exposing a JSON API for browser interactions
-- reading projects, runs and run details from SQLite
-- later starting scans and tracking progress
+- project-aware navigation and shell layout
+- shared templates and styling
+- composing views from module and shared data
 
-### 3. web UI
+### 3. modules
 
-The first UI stays intentionally simple:
+Each module owns its own workflow area inside the suite.
+Right now the first live module is `Radar`, but the same split should later apply to `Inventory`, `Security`, `Workbench`, `Automation` and `Help`.
 
-- HTML templates
-- shared CSS theme
-- a small amount of JavaScript for progressive enhancement
+Each module can carry:
 
-This keeps the product easy to evolve while we are still settling the operator flows.
+- HTTP handlers / module routes
+- service or runtime logic
+- module-specific templates
+- module-specific static assets
+
+This keeps the product easy to evolve without letting one module become the entire app structure.
 
 ## Initial Repository Shape
 
-Inside `scanner-core/` we add a product-facing web layer:
+Inside `scanner-core/` the structure now trends toward:
 
 ```text
 scanner-core/
@@ -69,9 +76,13 @@ scanner-core/
 |   |-- tracer/
 |   `-- startrace/
 |-- internal/
-|   |-- app/
-|   |-- storage/
-|   `-- web/
+|   |-- modules/
+|   |   `-- radar/
+|   |       `-- runtime/
+|   |-- shared/
+|   |   |-- platform/
+|   |   `-- storage/
+|   `-- suite/
 |       |-- server.go
 |       |-- server_test.go
 |       |-- templates/
@@ -128,17 +139,11 @@ The rule of thumb is:
 - enrich with targeted JavaScript
 - only split into a separate frontend project if the interaction model genuinely demands it
 
-## Merge Direction
+## Boundary Rules
 
-Later, when `tracer` and `startrace` are merged, the intended result is:
+To keep the suite maintainable as more modules arrive:
 
-- `tracer` contributes the mature scanning core and persistence model
-- `startrace` contributes the product identity, branding and operator workflows
-- both meet in a single Go-hosted application
-
-That means the work done here should stay:
-
-- modular
-- reusable
-- product-shaped
-- but still independent from the current Python/FastAPI prototype
+- the suite shell owns navigation, layout and global UI concerns
+- shared packages own canonical data models and persistence
+- modules own workflows and module-specific presentation
+- modules should depend on shared foundations, not directly on each other

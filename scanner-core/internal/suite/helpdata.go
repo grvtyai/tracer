@@ -1,4 +1,4 @@
-package web
+package suite
 
 type helpTopicCard struct {
 	Slug     string
