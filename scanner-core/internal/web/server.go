@@ -11,6 +11,7 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -200,8 +201,9 @@ type dashboardChartSegment struct {
 }
 
 type inventoryNetworkData struct {
-	RootLabel string                  `json:"root_label"`
-	Networks  []inventoryNetworkGroup `json:"networks"`
+	RootLabel    string                  `json:"root_label"`
+	RootSubLabel string                  `json:"root_sub_label,omitempty"`
+	Networks     []inventoryNetworkGroup `json:"networks"`
 }
 
 type inventoryNetworkGroup struct {
@@ -231,6 +233,9 @@ type inventoryNetworkHost struct {
 	RouteMode        string                `json:"route_mode,omitempty"`
 	RouteSummary     string                `json:"route_summary,omitempty"`
 	IsGateway        bool                  `json:"is_gateway,omitempty"`
+	Infrastructure   bool                  `json:"infrastructure,omitempty"`
+	GraphRole        string                `json:"graph_role,omitempty"`
+	GraphRoleLabel   string                `json:"graph_role_label,omitempty"`
 }
 
 type inventoryPortDetail struct {
@@ -1961,6 +1966,7 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 		}
 		portDetails := buildInventoryPortDetails(asset, lastRun)
 		routePath, routeMode, routeSummary := buildInventoryRouteInfo(asset, lastRun)
+		graphRole, graphRoleLabel, infrastructure := detectInventoryGraphRole(asset, routePath)
 
 		hosts = append(hosts, pendingHost{
 			groupID:    groupID,
@@ -1983,6 +1989,9 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 				RoutePath:        routePath,
 				RouteMode:        routeMode,
 				RouteSummary:     routeSummary,
+				Infrastructure:   infrastructure,
+				GraphRole:        graphRole,
+				GraphRoleLabel:   graphRoleLabel,
 			},
 		})
 	}
@@ -2007,8 +2016,9 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 	sort.Strings(keys)
 
 	out := inventoryNetworkData{
-		RootLabel: firstNonEmptyWeb(strings.TrimSpace(project.PublicID), strings.TrimSpace(project.Name), "Startrace"),
-		Networks:  make([]inventoryNetworkGroup, 0, len(keys)),
+		RootLabel:    "Origin",
+		RootSubLabel: inventoryOriginHostname(),
+		Networks:     make([]inventoryNetworkGroup, 0, len(keys)),
 	}
 	for _, key := range keys {
 		group := grouped[key]
@@ -2404,6 +2414,50 @@ func buildInventoryRouteInfo(asset storage.AssetSummary, run *storage.RunDetails
 	return nil, "", ""
 }
 
+func detectInventoryGraphRole(asset storage.AssetSummary, routePath []string) (string, string, bool) {
+	joined := strings.ToLower(strings.Join([]string{
+		asset.DisplayName,
+		asset.PrimaryTarget,
+		asset.CurrentHostname,
+		asset.CurrentOS,
+		asset.CurrentVendor,
+		asset.CurrentProduct,
+	}, " "))
+
+	hasPort := func(port int) bool {
+		return slices.Contains(asset.CurrentOpenPorts, port)
+	}
+
+	switch {
+	case containsAny(joined, "pfsense", "opnsense", "firewall", "fortigate", "fortinet", "sophos", "checkpoint", "netgate", "utm"):
+		return "firewall", "Firewall", true
+	case containsAny(joined, "domain controller", "active directory") || ((hasPort(88) || hasPort(389) || hasPort(636) || hasPort(3268)) && (containsAny(joined, "windows server", "microsoft") || hasPort(445))):
+		return "domain_controller", "Domain Controller", true
+	case normalizedInventoryCategory(asset.EffectiveDeviceType) == "router":
+		return "router", "Router", true
+	case containsAny(joined, "switch", "catalyst", "aruba", "procurve", "netgear", "unifi switch", "edge switch", "mikrotik switch"):
+		return "switch", "Switch", true
+	case hasPort(53) && (hasPort(53) || hasPort(853)) && normalizedInventoryCategory(asset.EffectiveDeviceType) != "router":
+		return "dns", "DNS Server", true
+	case len(routePath) > 1:
+		return "gateway", "Gateway", true
+	default:
+		return "host", inventoryCategoryLabel(asset.EffectiveDeviceType), false
+	}
+}
+
+func inventoryOriginHostname() string {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "startrace-host"
+	}
+	trimmed := strings.TrimSpace(hostname)
+	if trimmed == "" {
+		return "startrace-host"
+	}
+	return trimmed
+}
+
 func markInventoryGateway(group *inventoryNetworkGroup) {
 	if group == nil || len(group.Hosts) == 0 {
 		return
@@ -2432,6 +2486,11 @@ func markInventoryGateway(group *inventoryNetworkGroup) {
 
 	group.GatewayID = group.Hosts[bestIndex].ID
 	group.Hosts[bestIndex].IsGateway = true
+	group.Hosts[bestIndex].Infrastructure = true
+	if strings.TrimSpace(group.Hosts[bestIndex].GraphRole) == "" || group.Hosts[bestIndex].GraphRole == "host" {
+		group.Hosts[bestIndex].GraphRole = "gateway"
+		group.Hosts[bestIndex].GraphRoleLabel = "Gateway"
+	}
 	for index := range group.Hosts {
 		if index == bestIndex {
 			if len(group.Hosts[index].RoutePath) == 0 {
@@ -2451,6 +2510,9 @@ func markInventoryGateway(group *inventoryNetworkGroup) {
 
 func inventoryGatewayScore(host inventoryNetworkHost) int {
 	score := 0
+	if host.Infrastructure {
+		score += 4
+	}
 	switch normalizedInventoryCategory(host.DeviceType) {
 	case "router":
 		score += 14
@@ -2497,6 +2559,15 @@ func splitCSVList(value string) []string {
 		}
 	}
 	return out
+}
+
+func containsAny(joined string, needles ...string) bool {
+	for _, needle := range needles {
+		if needle != "" && strings.Contains(joined, strings.ToLower(strings.TrimSpace(needle))) {
+			return true
+		}
+	}
+	return false
 }
 
 func countAssetProperty(projectAssets []storage.AssetSummary, selector func(storage.AssetSummary) string) []labelCount {

@@ -10,7 +10,7 @@
         </div>
     </div>
     <p class="empty-note">
-        Interaktive Netzwerkansicht des Shared Inventory. Subnetze bleiben eigene Knotenpunkte und ein Host-Klick hebt den Pfad hervor.
+        Interaktive Netzwerkansicht des Shared Inventory. Infrastruktur-Knoten werden vor Endgeraeten hervorgehoben und Pfade orientieren sich an echten Route-Daten oder an einer sinnvollen Gateway-Inferenz.
     </p>
 </section>
 
@@ -36,6 +36,39 @@
         </div>
         <div id="inventory-network-canvas" class="inventory-network-canvas"></div>
     </article>
+</section>
+
+<section class="panel">
+    <div class="inventory-graph-legend">
+        <div class="inventory-legend-item">
+            <span class="inventory-legend-symbol legend-root"></span>
+            <span class="list-meta">Origin / Scan Host</span>
+        </div>
+        <div class="inventory-legend-item">
+            <span class="inventory-legend-symbol legend-subnet"></span>
+            <span class="list-meta">Subnet</span>
+        </div>
+        <div class="inventory-legend-item">
+            <span class="inventory-legend-symbol legend-host"></span>
+            <span class="list-meta">Host</span>
+        </div>
+        <div class="inventory-legend-item">
+            <span class="inventory-legend-symbol legend-router"></span>
+            <span class="list-meta">Router / Switch / Gateway</span>
+        </div>
+        <div class="inventory-legend-item">
+            <span class="inventory-legend-symbol legend-firewall"></span>
+            <span class="list-meta">Firewall</span>
+        </div>
+        <div class="inventory-legend-item">
+            <span class="inventory-legend-symbol legend-dns"></span>
+            <span class="list-meta">DNS Server</span>
+        </div>
+        <div class="inventory-legend-item">
+            <span class="inventory-legend-symbol legend-dc"></span>
+            <span class="list-meta">Domain Controller</span>
+        </div>
+    </div>
 </section>
 
 <section class="panel">
@@ -73,6 +106,32 @@
         return '<span class="pill subtle">UNKNOWN</span>';
     }
 
+    function nodeVisual(type, role) {
+        if (type === "root") {
+            return { shape: "satellite", sublabel: networkData.root_sub_label || "scan-host" };
+        }
+        if (type === "group") {
+            return { shape: "subnet", sublabelPrefix: "Subnet" };
+        }
+
+        switch ((role || "host").toLowerCase()) {
+            case "firewall":
+                return { shape: "triangle", fillClass: "firewall", roleLabel: "Firewall" };
+            case "dns":
+                return { shape: "triangle", fillClass: "dns", roleLabel: "DNS Server" };
+            case "domain_controller":
+                return { shape: "dc", fillClass: "domain-controller", roleLabel: "Domain Controller" };
+            case "router":
+                return { shape: "triangle", fillClass: "router", roleLabel: "Router" };
+            case "switch":
+                return { shape: "triangle", fillClass: "router", roleLabel: "Switch" };
+            case "gateway":
+                return { shape: "triangle", fillClass: "router", roleLabel: "Gateway" };
+            default:
+                return { shape: "host", fillClass: "host", roleLabel: "Host" };
+        }
+    }
+
     function renderSidebar() {
         const networks = Array.isArray(networkData?.networks) ? networkData.networks : [];
         if (networks.length === 0) {
@@ -90,7 +149,7 @@
             header.innerHTML = `
                 <div>
                     <div class="list-title">${group.label}</div>
-                    <div class="list-meta">${group.host_count} Host${group.host_count === 1 ? "" : "s"}</div>
+                    <div class="list-meta">${group.host_count} Host${group.host_count === 1 ? "" : "s"} | Subnet</div>
                 </div>
                 <span class="pill subtle">${group.host_count}</span>
             `;
@@ -110,7 +169,7 @@
                         <div class="list-title">${host.target}</div>
                         ${getHostBadge(host.status)}
                     </div>
-                    <div class="list-meta">${host.display_name} | ${host.device_type || "unknown"} | ${(host.open_ports || []).length} ports</div>
+                    <div class="list-meta">${host.display_name} | ${host.graph_role_label || host.device_type || "unknown"} | ${(host.open_ports || []).length} ports</div>
                 `;
                 item.addEventListener("click", () => selectHost(host));
                 hostList.appendChild(item);
@@ -174,8 +233,8 @@
                     <div class="kv-grid">
                         <div class="kv-key">Target</div>
                         <div class="kv-value mono">${host.target}</div>
-                        <div class="kv-key">Device Type</div>
-                        <div class="kv-value">${host.device_type || "unknown"}</div>
+                        <div class="kv-key">Node Role</div>
+                        <div class="kv-value">${host.graph_role_label || host.device_type || "unknown"}</div>
                         <div class="kv-key">Connection</div>
                         <div class="kv-value">${host.connection_type || "unknown"}</div>
                         <div class="kv-key">Operating System</div>
@@ -242,15 +301,18 @@
 
         const groupId = networkByHost[host.id];
         const groupNode = groupId ? document.querySelector(`.network-svg-node[data-node-id="${groupId}"]`) : null;
-        const gatewayId = groupNode ? groupNode.getAttribute("data-gateway-id") : "";
+        const transitId = groupNode ? groupNode.getAttribute("data-gateway-id") : "";
+
         document.querySelectorAll(".network-svg-node, .network-svg-edge").forEach((element) => {
             element.classList.add("dimmed");
         });
+
         const activeNodes = ["suite-root", groupId];
-        if (gatewayId && gatewayId !== host.id) {
-            activeNodes.push(gatewayId);
+        if (transitId && transitId !== host.id) {
+            activeNodes.push(transitId);
         }
         activeNodes.push(host.id);
+
         activeNodes.forEach((nodeId) => {
             const node = document.querySelector(`.network-svg-node[data-node-id="${nodeId}"]`);
             if (node) {
@@ -258,10 +320,13 @@
                 node.classList.remove("dimmed");
             }
         });
-        const activeEdges = [`edge_root_${groupId}`, `edge_${host.id}`];
-        if (gatewayId && gatewayId !== host.id) {
-            activeEdges.push(`edge_${gatewayId}`);
+
+        const activeEdges = [`edge_root_${groupId}`];
+        if (transitId && transitId !== host.id) {
+            activeEdges.push(`edge_${transitId}`);
         }
+        activeEdges.push(`edge_${host.id}`);
+
         activeEdges.forEach((edgeId) => {
             const edge = document.querySelector(`.network-svg-edge[data-edge-id="${edgeId}"]`);
             if (edge) {
@@ -272,56 +337,72 @@
     }
 
     function layoutGraph(data) {
-        const root = { id: "suite-root", label: data.root_label || "Startrace", x: 0, y: 0 };
+        const root = {
+            id: "suite-root",
+            label: data.root_label || "Origin",
+            sublabel: data.root_sub_label || "scan-host",
+            x: 0,
+            y: 90,
+            kind: "root",
+        };
         const groups = [];
         const edges = [];
-        let cursorX = 120;
-        const topY = 90;
-        const groupY = 240;
-        const hostStartY = 390;
-        const columnWidth = 165;
-        const rowHeight = 105;
-        const maxColumns = 4;
+        let cursorX = 140;
+        const groupY = 250;
+        const transitY = 385;
+        const hostStartY = 560;
+        const hostColumnWidth = 150;
+        const hostRowHeight = 120;
+        const maxHostColumns = 4;
 
         (data.networks || []).forEach((group) => {
-            const columns = Math.min(maxColumns, Math.max((group.hosts || []).length, 1));
-            const rows = Math.max(1, Math.ceil((group.hosts || []).length / maxColumns));
-            const groupWidth = Math.max(220, columns * columnWidth);
+            const infraHosts = (group.hosts || []).filter((host) => host.infrastructure || host.is_gateway || (host.graph_role && host.graph_role !== "host"));
+            const regularHosts = (group.hosts || []).filter((host) => !(host.infrastructure || host.is_gateway || (host.graph_role && host.graph_role !== "host")));
+            const hostColumns = Math.min(maxHostColumns, Math.max(regularHosts.length, 1));
+            const hostRows = Math.max(1, Math.ceil(regularHosts.length / maxHostColumns));
+            const infraColumns = Math.max(infraHosts.length, 1);
+            const groupWidth = Math.max(280, infraColumns * 160, hostColumns * hostColumnWidth + 60);
             const groupCenterX = cursorX + groupWidth / 2;
 
             const groupNode = {
                 id: group.id,
                 label: group.label,
+                sublabel: `Subnet | ${group.host_count} hosts`,
                 x: groupCenterX,
                 y: groupY,
                 kind: "group",
             };
-            groups.push({ node: groupNode, hosts: [], gatewayId: group.gateway_id || "" });
+
+            const laidOutGroup = { node: groupNode, infraHosts: [], regularHosts: [], gatewayId: group.gateway_id || "" };
+            groups.push(laidOutGroup);
             edges.push({ id: `edge_root_${group.id}`, from: "suite-root", to: group.id });
 
-            (group.hosts || []).forEach((host, index) => {
-                const column = index % maxColumns;
-                const row = Math.floor(index / maxColumns);
-                const hostX = cursorX + column * columnWidth + 80;
-                const hostY = hostStartY + row * rowHeight;
-                groups[groups.length - 1].hosts.push({
-                    ...host,
-                    x: hostX,
-                    y: hostY,
-                });
-                const edgeFrom = group.gateway_id && group.gateway_id !== host.id ? group.gateway_id : group.id;
+            infraHosts.forEach((host, index) => {
+                const span = Math.max(infraHosts.length - 1, 1);
+                const offset = infraHosts.length === 1 ? 0 : ((index / span) - 0.5) * Math.max(180, (infraHosts.length - 1) * 165);
+                const hostX = groupCenterX + offset;
+                laidOutGroup.infraHosts.push({ ...host, x: hostX, y: transitY });
+                edges.push({ id: `edge_${host.id}`, from: group.id, to: host.id });
+            });
+
+            regularHosts.forEach((host, index) => {
+                const column = index % maxHostColumns;
+                const row = Math.floor(index / maxHostColumns);
+                const hostX = cursorX + column * hostColumnWidth + 75;
+                const hostY = hostStartY + row * hostRowHeight;
+                laidOutGroup.regularHosts.push({ ...host, x: hostX, y: hostY });
+                const edgeFrom = group.gateway_id ? group.gateway_id : group.id;
                 edges.push({ id: `edge_${host.id}`, from: edgeFrom, to: host.id });
             });
 
-            cursorX += groupWidth + 120;
+            cursorX += groupWidth + 140;
         });
 
-        const width = Math.max(920, cursorX);
+        const width = Math.max(1100, cursorX);
         root.x = width / 2;
-        root.y = topY;
-        const rowCounts = groups.map((group) => Math.max(1, Math.ceil(group.hosts.length / maxColumns)));
-        const maxRows = rowCounts.length ? Math.max(...rowCounts) : 1;
-        const height = Math.max(620, hostStartY + maxRows * rowHeight + 120);
+        const hostRows = groups.map((group) => Math.max(1, Math.ceil(group.regularHosts.length / maxHostColumns)));
+        const maxRows = hostRows.length ? Math.max(...hostRows) : 1;
+        const height = Math.max(760, hostStartY + maxRows * hostRowHeight + 140);
         return { root, groups, edges, width, height };
     }
 
@@ -342,7 +423,7 @@
 
         layout.groups.forEach((group) => {
             nodeById[group.node.id] = group.node;
-            group.hosts.forEach((host) => {
+            [...group.infraHosts, ...group.regularHosts].forEach((host) => {
                 nodeById[host.id] = host;
                 hostMap[host.id] = host;
                 networkByHost[host.id] = group.node.id;
@@ -360,72 +441,112 @@
         layout.edges.forEach((edge) => {
             const from = nodeById[edge.from];
             const to = nodeById[edge.to];
+            if (!from || !to) return;
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             line.setAttribute("x1", `${from.x}`);
-            line.setAttribute("y1", `${from.y}`);
+            line.setAttribute("y1", `${from.y + (from.kind === "group" ? 28 : 0)}`);
             line.setAttribute("x2", `${to.x}`);
-            line.setAttribute("y2", `${to.y}`);
+            line.setAttribute("y2", `${to.y - 12}`);
             line.setAttribute("class", "network-svg-edge");
             line.setAttribute("data-edge-id", edge.id);
             viewport.appendChild(line);
         });
 
-        const renderNode = (x, y, label, type, nodeId, sublabel = "") => {
-            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            group.setAttribute("class", `network-svg-node node-${type}`);
-            group.setAttribute("data-node-id", nodeId);
-            group.setAttribute("transform", `translate(${x}, ${y})`);
-
-            const shape = document.createElementNS("http://www.w3.org/2000/svg", type === "host" ? "circle" : "rect");
-            if (type === "host") {
-                shape.setAttribute("r", "28");
-                shape.setAttribute("cx", "0");
-                shape.setAttribute("cy", "0");
-            } else {
-                shape.setAttribute("x", type === "root" ? "-92" : "-88");
-                shape.setAttribute("y", "-28");
-                shape.setAttribute("rx", "18");
-                shape.setAttribute("ry", "18");
-                shape.setAttribute("width", type === "root" ? "184" : "176");
-                shape.setAttribute("height", "56");
-            }
-            group.appendChild(shape);
-
+        function appendText(parent, textValue, className, x, y) {
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("class", "network-svg-label");
+            text.setAttribute("class", className);
             text.setAttribute("text-anchor", "middle");
-            text.setAttribute("x", "0");
-            text.setAttribute("y", type === "host" ? "4" : "-2");
-            text.textContent = label;
-            group.appendChild(text);
+            text.setAttribute("x", `${x}`);
+            text.setAttribute("y", `${y}`);
+            text.textContent = textValue;
+            parent.appendChild(text);
+        }
 
-            if (sublabel) {
-                const small = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                small.setAttribute("class", "network-svg-sublabel");
-                small.setAttribute("text-anchor", "middle");
-                small.setAttribute("x", "0");
-                small.setAttribute("y", type === "host" ? "18" : "16");
-                small.textContent = sublabel;
-                group.appendChild(small);
+        function renderNode(node, type) {
+            const visual = nodeVisual(type, node.graph_role || node.role);
+            const wrapper = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            wrapper.setAttribute("class", `network-svg-node node-${type} role-${visual.fillClass || "host"}`);
+            wrapper.setAttribute("data-node-id", node.id);
+            wrapper.setAttribute("transform", `translate(${node.x}, ${node.y})`);
+
+            if (type === "group") {
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", "-104");
+                rect.setAttribute("y", "-34");
+                rect.setAttribute("rx", "20");
+                rect.setAttribute("ry", "20");
+                rect.setAttribute("width", "208");
+                rect.setAttribute("height", "68");
+                wrapper.appendChild(rect);
+                appendText(wrapper, node.label, "network-svg-label", 0, -4);
+                appendText(wrapper, node.sublabel || "Subnet", "network-svg-sublabel", 0, 18);
+            } else if (type === "root") {
+                const orbit = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                orbit.setAttribute("cx", "0");
+                orbit.setAttribute("cy", "0");
+                orbit.setAttribute("r", "24");
+                orbit.setAttribute("class", "network-root-orbit");
+                wrapper.appendChild(orbit);
+                const core = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                core.setAttribute("cx", "0");
+                core.setAttribute("cy", "0");
+                core.setAttribute("r", "10");
+                core.setAttribute("class", "network-root-core");
+                wrapper.appendChild(core);
+                const sat = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                sat.setAttribute("cx", "19");
+                sat.setAttribute("cy", "-12");
+                sat.setAttribute("r", "4");
+                sat.setAttribute("class", "network-root-satellite");
+                wrapper.appendChild(sat);
+                appendText(wrapper, node.label, "network-svg-label", 0, 46);
+                appendText(wrapper, node.sublabel || "", "network-svg-sublabel", 0, 64);
+            } else if (visual.shape === "triangle") {
+                const triangle = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                triangle.setAttribute("d", "M 0 -42 L 42 34 L -42 34 Z");
+                triangle.setAttribute("class", "network-triangle-shape");
+                wrapper.appendChild(triangle);
+                appendText(wrapper, node.target || node.label, "network-svg-label", 0, 4);
+                appendText(wrapper, node.graph_role_label || visual.roleLabel || "", "network-svg-sublabel", 0, 56);
+            } else if (visual.shape === "dc") {
+                const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                rect.setAttribute("x", "-72");
+                rect.setAttribute("y", "-30");
+                rect.setAttribute("rx", "14");
+                rect.setAttribute("ry", "14");
+                rect.setAttribute("width", "144");
+                rect.setAttribute("height", "60");
+                wrapper.appendChild(rect);
+                appendText(wrapper, node.target || node.label, "network-svg-label", 0, -2);
+                appendText(wrapper, node.graph_role_label || visual.roleLabel || "", "network-svg-sublabel", 0, 18);
+            } else {
+                const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+                ellipse.setAttribute("cx", "0");
+                ellipse.setAttribute("cy", "0");
+                ellipse.setAttribute("rx", "58");
+                ellipse.setAttribute("ry", "36");
+                wrapper.appendChild(ellipse);
+                appendText(wrapper, node.target || node.label, "network-svg-label network-host-label", 0, 2);
+                appendText(wrapper, node.graph_role_label || node.device_type || visual.roleLabel || "", "network-svg-sublabel", 0, 22);
             }
 
-            if (type === "host") {
-                group.addEventListener("click", () => selectHost(hostMap[nodeId]));
-                group.style.cursor = "pointer";
+            if (type !== "root" && type !== "group") {
+                wrapper.addEventListener("click", () => selectHost(hostMap[node.id]));
+                wrapper.style.cursor = "pointer";
             }
-            viewport.appendChild(group);
-        };
 
-        renderNode(layout.root.x, layout.root.y, layout.root.label, "root", "suite-root", "N0");
+            viewport.appendChild(wrapper);
+        }
+
+        renderNode(layout.root, "root");
         layout.groups.forEach((group) => {
-            renderNode(group.node.x, group.node.y, group.node.label, "group", group.node.id, `${group.hosts.length} hosts`);
+            renderNode(group.node, "group");
             const groupElement = viewport.querySelector(`.network-svg-node[data-node-id="${group.node.id}"]`);
             if (groupElement && group.gatewayId) {
                 groupElement.setAttribute("data-gateway-id", group.gatewayId);
             }
-            group.hosts.forEach((host) => {
-                renderNode(host.x, host.y, host.target, "host", host.id, host.is_gateway ? "gateway" : (host.device_type || "unknown"));
-            });
+            group.infraHosts.forEach((host) => renderNode(host, "infra"));
+            group.regularHosts.forEach((host) => renderNode(host, "host"));
         });
 
         canvas.appendChild(svg);

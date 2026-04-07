@@ -1112,6 +1112,87 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     height: 100%;
 }
 
+.inventory-graph-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 18px;
+}
+
+.inventory-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+}
+
+.inventory-legend-symbol {
+    display: inline-block;
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.inventory-legend-symbol.legend-root {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ff6b6b;
+    border-radius: 999px;
+}
+
+.inventory-legend-symbol.legend-root::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    top: 1px;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #ff6b6b;
+    box-shadow: 0 0 10px rgba(255,107,107,0.45);
+}
+
+.inventory-legend-symbol.legend-subnet {
+    width: 24px;
+    height: 16px;
+    border-radius: 8px;
+    background: rgba(103,162,255,0.18);
+    border: 1px solid #67a2ff;
+}
+
+.inventory-legend-symbol.legend-host {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(55,227,255,0.18);
+    border: 1px solid #37e3ff;
+}
+
+.inventory-legend-symbol.legend-router,
+.inventory-legend-symbol.legend-firewall,
+.inventory-legend-symbol.legend-dns {
+    width: 0;
+    height: 0;
+    border-left: 11px solid transparent;
+    border-right: 11px solid transparent;
+    border-bottom: 20px solid #ffcf5a;
+}
+
+.inventory-legend-symbol.legend-firewall {
+    border-bottom-color: #3fdc7a;
+}
+
+.inventory-legend-symbol.legend-dns {
+    border-bottom-color: #b47dff;
+}
+
+.inventory-legend-symbol.legend-dc {
+    width: 24px;
+    height: 16px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(255,255,255,0.4);
+}
+
 .network-svg-edge {
     stroke: rgba(103,162,255,0.28);
     stroke-width: 2;
@@ -1140,15 +1221,25 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
 }
 
 .network-svg-node circle,
-.network-svg-node rect {
+.network-svg-node rect,
+.network-svg-node ellipse,
+.network-svg-node path {
     fill: rgba(81,98,127,0.88);
     stroke: rgba(149,167,197,0.9);
     stroke-width: 2;
 }
 
-.network-svg-node.node-root rect {
-    fill: rgba(255,173,92,0.18);
-    stroke: #ffad5c;
+.network-root-orbit {
+    fill: rgba(255,107,107,0.06);
+    stroke: #ff6b6b;
+    stroke-width: 2;
+}
+
+.network-root-core,
+.network-root-satellite {
+    fill: #ff6b6b;
+    stroke: rgba(255,255,255,0.4);
+    stroke-width: 1.5;
 }
 
 .network-svg-node.node-group rect {
@@ -1156,13 +1247,37 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     stroke: #67a2ff;
 }
 
-.network-svg-node.node-host circle {
+.network-svg-node.node-host ellipse,
+.network-svg-node.node-infra ellipse {
     fill: rgba(55,227,255,0.12);
     stroke: #37e3ff;
 }
 
+.network-svg-node.role-router path,
+.network-svg-node.role-gateway path {
+    fill: rgba(255,207,90,0.18);
+    stroke: #ffcf5a;
+}
+
+.network-svg-node.role-firewall path {
+    fill: rgba(63,220,122,0.18);
+    stroke: #3fdc7a;
+}
+
+.network-svg-node.role-dns path {
+    fill: rgba(180,125,255,0.18);
+    stroke: #b47dff;
+}
+
+.network-svg-node.role-domain-controller rect {
+    fill: rgba(255,255,255,0.9);
+    stroke: rgba(255,255,255,0.42);
+}
+
 .network-svg-node.active circle,
-.network-svg-node.active rect {
+.network-svg-node.active rect,
+.network-svg-node.active ellipse,
+.network-svg-node.active path {
     fill: rgba(55,227,255,0.18);
     stroke: #ffffff;
 }
@@ -1172,6 +1287,10 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     font-family: "Bahnschrift", "Segoe UI", Arial, sans-serif;
     font-size: 13px;
     font-weight: 600;
+}
+
+.network-host-label {
+    font-size: 11px;
 }
 
 .network-svg-sublabel {
