@@ -3,7 +3,7 @@
 {{define "page"}}
 <section class="panel">
     <div class="panel-head">
-        <h2>Current Satelite Discovery State</h2>
+        <h2>Current Radar State</h2>
         {{if .SecondaryAction}}
         <div class="hero-actions compact-actions">
             <a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>
@@ -52,7 +52,7 @@
 
 <section class="panel">
     <div class="panel-head">
-        <h2>Search Satelite Discovery</h2>
+        <h2>Search Radar</h2>
         <span class="pill subtle">{{len .RecentRunItems}} runs indexed</span>
     </div>
     <label class="form-row">
@@ -63,7 +63,7 @@
 
 <section class="panel">
     <div class="panel-head">
-        <h2>Latest Satelite Discovery Run History</h2>
+        <h2>Latest Radar Run History</h2>
         <a class="button button-secondary" href="/runs?project={{.CurrentProject.ID}}">Run History</a>
     </div>
     {{if .RecentRunItems}}

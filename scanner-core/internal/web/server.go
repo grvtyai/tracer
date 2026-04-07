@@ -454,7 +454,7 @@ func (s *Server) handleDiscovery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := pageData{
-		Title:              "Satelite Discovery",
+		Title:              "Radar",
 		AppName:            s.options.AppName,
 		ActiveNav:          "discovery",
 		ActiveSection:      "discovery-overview",
@@ -520,7 +520,7 @@ func (s *Server) handleDiscoveryTemplates(w http.ResponseWriter, r *http.Request
 	}
 
 	data := pageData{
-		Title:              "Satelite Discovery Templates",
+		Title:              "Radar Templates",
 		AppName:            s.options.AppName,
 		ActiveNav:          "discovery",
 		ActiveSection:      "discovery-templates",
@@ -571,7 +571,7 @@ func (s *Server) handleDiscoveryCompare(w http.ResponseWriter, r *http.Request) 
 	}
 
 	data := pageData{
-		Title:                 "Compare Satelite Discovery Runs",
+		Title:                 "Compare Radar Runs",
 		AppName:               s.options.AppName,
 		ActiveNav:             "discovery",
 		ActiveSection:         "discovery-compare",

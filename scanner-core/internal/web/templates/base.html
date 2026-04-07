@@ -34,7 +34,20 @@
 
         <main class="content">
             <header class="topbar">
-                <div><h1>{{.Title}}</h1></div>
+                <div>
+                    {{if eq .ActiveNav "discovery"}}
+                    <div class="module-header">
+                        <h1>Startrace - Radar Module</h1>
+                        <span
+                            class="module-status-indicator {{if eq .PreflightState "ok"}}online{{else}}offline{{end}}"
+                            data-status-label="{{if eq .PreflightState "ok"}}Online{{else}}Offline{{end}}"
+                            aria-label="Radar module {{if eq .PreflightState "ok"}}online{{else}}offline{{end}}"
+                        ></span>
+                    </div>
+                    {{else}}
+                    <h1>{{.Title}}</h1>
+                    {{end}}
+                </div>
                 <div class="topbar-meta">
                     <label class="switcher-label" for="project-switcher">Project</label>
                     <div class="project-status">

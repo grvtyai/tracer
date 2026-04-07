@@ -38,7 +38,7 @@ func buildSuiteModules(activeNav string, currentProject *storage.ProjectSummary)
 	}{
 		{key: "dashboard", label: "Dashboard", path: "/"},
 		{key: "inventory", label: "Inventory", path: "/inventory"},
-		{key: "discovery", label: "Satelite Discovery", path: "/discovery"},
+		{key: "discovery", label: "Radar", path: "/discovery"},
 		{key: "security", label: "Security", path: "/security"},
 		{key: "workbench", label: "Workbench", path: "/workbench"},
 		{key: "automation", label: "Automation", path: "/automation"},
