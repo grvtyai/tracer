@@ -6,11 +6,11 @@
         <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Netzwerkansicht</h2>
         <div class="hero-actions compact-actions">
             <button class="button button-secondary" id="network-fit-btn" type="button">Fit View</button>
-            <span class="pill" id="network-status-pill">Lade Netzwerkdaten</span>
+            <span class="pill" id="network-status-pill">Netzwerkdaten bereit</span>
         </div>
     </div>
     <p class="empty-note">
-        Interaktive Netzwerkansicht des Shared Inventory. Klick auf einen Host hebt den Pfad durch das Netz hervor.
+        Interaktive Netzwerkansicht des Shared Inventory. Subnetze bleiben eigene Knotenpunkte und ein Host-Klick hebt den Pfad hervor.
     </p>
 </section>
 
@@ -21,7 +21,7 @@
             <span class="pill subtle" id="network-host-count">0 Hosts</span>
         </div>
         <div id="inventory-network-sidebar" class="inventory-network-sidebar">
-            <div class="empty-note">Netzwerkdaten werden geladen.</div>
+            <div class="empty-note">Netzwerkdaten werden vorbereitet.</div>
         </div>
     </article>
 
@@ -44,13 +44,13 @@
         <span class="pill subtle" id="selected-host-pill">Keine Auswahl</span>
     </div>
     <div id="inventory-network-details">
-        <p class="empty-note">Wähle einen Host im Graphen oder in der Seitenleiste aus, um Details und Pfad zu sehen.</p>
+        <p class="empty-note">Waehle einen Host im Graphen oder in der Seitenleiste aus, um Details und Pfad zu sehen.</p>
     </div>
 </section>
 
 <script>
 (() => {
-    const networkApi = {{printf "%q" .InventoryNetworkAPI}};
+    const networkData = {{.InventoryNetworkJSON}};
     const statusPill = document.getElementById("network-status-pill");
     const hostCountPill = document.getElementById("network-host-count");
     const selectedHostPill = document.getElementById("selected-host-pill");
@@ -61,9 +61,7 @@
     const zoomOutBtn = document.getElementById("network-zoom-out-btn");
     const resetBtn = document.getElementById("network-reset-btn");
     const canvas = document.getElementById("inventory-network-canvas");
-    const canvasId = "inventory-network-canvas";
 
-    let networkData = null;
     let hostMap = {};
     let selectedHost = null;
     let networkByHost = {};
@@ -75,34 +73,15 @@
         return '<span class="pill subtle">UNKNOWN</span>';
     }
 
-    function hostColor(host) {
-        switch ((host.device_type || "").toLowerCase()) {
-            case "router":
-                return { background: "#ffad5c", border: "#ffd3a3" };
-            case "server":
-                return { background: "#67a2ff", border: "#9dc7ff" };
-            case "workstation":
-                return { background: "#37e3ff", border: "#9af4ff" };
-            case "printer":
-                return { background: "#b47dff", border: "#dcc2ff" };
-            case "smartphone":
-            case "tablet":
-                return { background: "#3fdc7a", border: "#9df2bb" };
-            case "iot":
-                return { background: "#ff6b6b", border: "#ffb0b0" };
-            default:
-                return { background: "#51627f", border: "#95a7c5" };
-        }
-    }
-
     function renderSidebar() {
-        if (!networkData || !Array.isArray(networkData.networks) || networkData.networks.length === 0) {
+        const networks = Array.isArray(networkData?.networks) ? networkData.networks : [];
+        if (networks.length === 0) {
             sidebar.innerHTML = '<div class="empty-note">Keine Assets im Inventory gefunden.</div>';
             return;
         }
 
         sidebar.innerHTML = "";
-        networkData.networks.forEach((group) => {
+        networks.forEach((group) => {
             const groupEl = document.createElement("div");
             groupEl.className = "inventory-network-group";
 
@@ -119,7 +98,7 @@
             const hostList = document.createElement("div");
             hostList.className = "inventory-network-host-list";
 
-            group.hosts.forEach((host) => {
+            (group.hosts || []).forEach((host) => {
                 const item = document.createElement("button");
                 item.type = "button";
                 item.className = "inventory-network-host-item";
@@ -131,7 +110,7 @@
                         <div class="list-title">${host.target}</div>
                         ${getHostBadge(host.status)}
                     </div>
-                    <div class="list-meta">${host.display_name} | ${host.device_type || "unknown"} | ${host.open_ports?.length || 0} ports</div>
+                    <div class="list-meta">${host.display_name} | ${host.device_type || "unknown"} | ${(host.open_ports || []).length} ports</div>
                 `;
                 item.addEventListener("click", () => selectHost(host));
                 hostList.appendChild(item);
@@ -145,7 +124,7 @@
 
     function renderDetails(host) {
         if (!host) {
-            details.innerHTML = '<p class="empty-note">Wähle einen Host im Graphen oder in der Seitenleiste aus, um Details und Pfad zu sehen.</p>';
+            details.innerHTML = '<p class="empty-note">Waehle einen Host im Graphen oder in der Seitenleiste aus, um Details und Pfad zu sehen.</p>';
             selectedHostPill.textContent = "Keine Auswahl";
             return;
         }
@@ -257,8 +236,8 @@
         const maxColumns = 4;
 
         (data.networks || []).forEach((group) => {
-            const columns = Math.min(maxColumns, Math.max(group.hosts.length, 1));
-            const rows = Math.max(1, Math.ceil(group.hosts.length / maxColumns));
+            const columns = Math.min(maxColumns, Math.max((group.hosts || []).length, 1));
+            const rows = Math.max(1, Math.ceil((group.hosts || []).length / maxColumns));
             const groupWidth = Math.max(220, columns * columnWidth);
             const groupCenterX = cursorX + groupWidth / 2;
 
@@ -272,7 +251,7 @@
             groups.push({ node: groupNode, hosts: [] });
             edges.push({ id: `edge_root_${group.id}`, from: "suite-root", to: group.id });
 
-            group.hosts.forEach((host, index) => {
+            (group.hosts || []).forEach((host, index) => {
                 const column = index % maxColumns;
                 const row = Math.floor(index / maxColumns);
                 const hostX = cursorX + column * columnWidth + 80;
@@ -291,7 +270,9 @@
         const width = Math.max(920, cursorX);
         root.x = width / 2;
         root.y = topY;
-        const height = Math.max(620, hostStartY + Math.max(...groups.map((group) => Math.max(1, Math.ceil(group.hosts.length / maxColumns))) , 1) * rowHeight + 120);
+        const rowCounts = groups.map((group) => Math.max(1, Math.ceil(group.hosts.length / maxColumns)));
+        const maxRows = rowCounts.length ? Math.max(...rowCounts) : 1;
+        const height = Math.max(620, hostStartY + maxRows * rowHeight + 120);
         return { root, groups, edges, width, height };
     }
 
@@ -299,13 +280,17 @@
         if (!canvas) return;
         canvas.innerHTML = "";
 
-        if (!networkData || !Array.isArray(networkData.networks) || networkData.networks.length === 0) {
-            canvas.innerHTML = '<div class="empty-note">Keine Inventory-Assets für die Netzwerkansicht verfügbar.</div>';
+        const networks = Array.isArray(networkData?.networks) ? networkData.networks : [];
+        if (networks.length === 0) {
+            canvas.innerHTML = '<div class="empty-note">Keine Inventory-Assets fuer die Netzwerkansicht verfuegbar.</div>';
             return;
         }
 
         const layout = layoutGraph(networkData);
         const nodeById = { "suite-root": layout.root };
+        hostMap = {};
+        networkByHost = {};
+
         layout.groups.forEach((group) => {
             nodeById[group.node.id] = group.node;
             group.hosts.forEach((host) => {
@@ -425,33 +410,24 @@
         highlightPath(selectedHost);
     }
 
-    async function loadNetworkView() {
-        statusPill.textContent = "Lade Netzwerkdaten";
+    function bootstrap() {
         try {
-            const response = await fetch(networkApi, { headers: { "Accept": "application/json" }, cache: "no-store" });
-            if (!response.ok) {
-                throw new Error("network api failed");
-            }
-            networkData = await response.json();
-            hostMap = {};
-            networkByHost = {};
-            const hostCount = (networkData.networks || []).reduce((sum, group) => sum + (group.host_count || 0), 0);
+            const networks = Array.isArray(networkData?.networks) ? networkData.networks : [];
+            const hostCount = networks.reduce((sum, group) => sum + (group.host_count || 0), 0);
             hostCountPill.textContent = `${hostCount} Host${hostCount === 1 ? "" : "s"}`;
             statusPill.textContent = hostCount > 0 ? `${hostCount} Hosts geladen` : "Keine Inventory-Hosts";
-
             renderSidebar();
             renderDetails(null);
             renderGraph();
-        } catch (_) {
+        } catch (error) {
             statusPill.textContent = "Fehler";
-            sidebar.innerHTML = '<div class="empty-note">Die Netzwerkdaten konnten nicht geladen werden.</div>';
-            document.getElementById(canvasId).innerHTML = '<div class="empty-note">Netzwerkansicht nicht verfügbar.</div>';
+            sidebar.innerHTML = '<div class="empty-note">Die Netzwerkdaten konnten nicht gerendert werden.</div>';
+            canvas.innerHTML = '<div class="empty-note">Netzwerkansicht nicht verfuegbar.</div>';
+            console.error("inventory network render failed", error);
         }
     }
 
-    fitBtn.addEventListener("click", () => {
-        resetGraphView();
-    });
+    fitBtn.addEventListener("click", resetGraphView);
     zoomInBtn.addEventListener("click", () => {
         graphState.scale = Math.min(2.2, graphState.scale + 0.12);
         applyGraphTransform();
@@ -462,7 +438,7 @@
     });
     resetBtn.addEventListener("click", resetGraphView);
 
-    loadNetworkView();
+    bootstrap();
 })();
 </script>
 {{end}}

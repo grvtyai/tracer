@@ -7,43 +7,72 @@
         <span class="pill">{{len .Assets}} assets</span>
     </div>
     <p class="empty-note">
-        Inventory entries sit above individual tools and runs. Discovery observations already feed this view, while manual names, tags and classifications can be layered on top safely.
-    </p>
-    <p class="empty-note">
-        Grouping uses the effective device type, while the latest OS, hostname and service signals continue refining the automatic guess underneath.
+        Inventory groups the shared suite data by subnet first, then by inferred device type, so larger environments stay readable.
     </p>
 </section>
 
-{{if .AssetGroups}}
-<section class="panel-grid">
-    {{range .AssetGroups}}
-    <article class="panel">
-        <div class="panel-head">
-            <h2>{{.Name}}</h2>
-            <span class="pill">{{len .Assets}}</span>
-        </div>
-        <div class="list">
-            {{range .Assets}}
-            <a class="list-item" href="/assets/{{.ID}}">
-                <div>
-                    <div class="list-title">{{.DisplayName}}</div>
-                    <div class="list-meta">{{.PrimaryTarget}} | {{.EffectiveConnectionType}} | {{if .CurrentOS}}{{.CurrentOS}}{{else}}OS unknown{{end}}</div>
-                    <div class="tag-row asset-signal-row">
-                        <span class="tag">Classified {{.EffectiveDeviceType}}</span>
-                        {{if .DeviceTypeGuess}}<span class="tag">Guess {{.DeviceTypeGuess}} ({{.DeviceTypeConfidence}})</span>{{end}}
-                        {{if .ManualDeviceType}}<span class="tag">Manual override active</span>{{end}}
-                    </div>
-                    {{if .Tags}}
-                    <div class="tag-row">
-                        {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
-                    </div>
+{{if .InventorySections}}
+<section class="inventory-subnet-stack">
+    {{range .InventorySections}}
+    <details class="inventory-subnet-disclosure" {{if .ExpandByDefault}}open{{end}}>
+        <summary class="inventory-subnet-summary">
+            <div>
+                <div class="list-title">{{.Label}}</div>
+                <div class="list-meta">{{.HostCount}} hosts | {{.CategoryCount}} categories</div>
+            </div>
+            <div class="inventory-subnet-summary-meta">
+                <span class="pill subtle">{{.HostCount}}</span>
+                <span class="inventory-subnet-chevron">+</span>
+            </div>
+        </summary>
+        <div class="inventory-subnet-body">
+            {{range .Categories}}
+            <article class="inventory-category-card">
+                <div class="panel-head">
+                    <h2>{{.Label}}</h2>
+                    <span class="pill subtle">{{.HostCount}}</span>
+                </div>
+                <div class="list inventory-host-list">
+                    {{range .Hosts}}
+                    <a class="list-item inventory-host-link" href="/assets/{{.ID}}">
+                        <div class="inventory-host-main">
+                            <div class="inventory-host-header">
+                                <div>
+                                    <div class="list-title">{{.DisplayName}}</div>
+                                    <div class="list-meta">{{.PrimaryTarget}} | {{.ConnectionType}} | {{if .CurrentOS}}{{.CurrentOS}}{{else}}OS unknown{{end}}</div>
+                                </div>
+                                <span class="pill subtle">{{.OpenPortCount}} ports</span>
+                            </div>
+                            <div class="tag-row asset-signal-row">
+                                <span class="tag">Classified {{.DeviceType}}</span>
+                                {{if .DeviceTypeGuess}}<span class="tag">Guess {{.DeviceTypeGuess}} ({{.DeviceTypeConfidence}})</span>{{end}}
+                                {{if .ManualOverride}}<span class="tag">Manual override active</span>{{end}}
+                            </div>
+                            {{if .ServicePreviews}}
+                            <div class="inventory-service-row">
+                                {{range .ServicePreviews}}
+                                <span class="inventory-service-pill">{{.Port}} - {{.Protocol}} - {{.Service}} - {{.Detail}}</span>
+                                {{end}}
+                                {{if .AdditionalServiceHint}}<span class="inventory-service-pill subtle">{{.AdditionalServiceHint}}</span>{{end}}
+                            </div>
+                            {{else}}
+                            <div class="inventory-service-row">
+                                <span class="inventory-service-pill subtle">{{.AdditionalServiceHint}}</span>
+                            </div>
+                            {{end}}
+                            {{if .Tags}}
+                            <div class="tag-row">
+                                {{range .Tags}}<span class="tag">{{.}}</span>{{end}}
+                            </div>
+                            {{end}}
+                        </div>
+                    </a>
                     {{end}}
                 </div>
-                <span class="pill subtle">{{len .CurrentOpenPorts}} ports</span>
-            </a>
+            </article>
             {{end}}
         </div>
-    </article>
+    </details>
     {{end}}
 </section>
 {{else}}

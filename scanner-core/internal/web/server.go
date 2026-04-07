@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grvtyai/tracer/scanner-core/internal/classify"
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
 	"github.com/grvtyai/tracer/scanner-core/internal/storage"
@@ -73,6 +74,7 @@ type pageData struct {
 	AssetReevaluateURL    string
 	PortSections          []portSection
 	AssetGroups           []assetGroup
+	InventorySections     []inventorySubnetSection
 	Hosts                 []hostSummary
 	RunStatus             statusInfo
 	ScheduledScans        []storage.ScheduledScan
@@ -81,6 +83,7 @@ type pageData struct {
 	Stats                 dashboardStats
 	DashboardCharts       []dashboardChart
 	InventoryNetworkAPI   string
+	InventoryNetworkJSON  template.JS
 	DeviceTypeStats       []labelCount
 	ConnectionStats       []labelCount
 	StatusStats           []labelCount
@@ -117,6 +120,45 @@ type hostSummary struct {
 type assetGroup struct {
 	Name   string
 	Assets []storage.AssetSummary
+}
+
+type inventorySubnetSection struct {
+	ID              string
+	Label           string
+	HostCount       int
+	CategoryCount   int
+	Categories      []inventoryCategorySection
+	ExpandByDefault bool
+}
+
+type inventoryCategorySection struct {
+	Name      string
+	Label     string
+	HostCount int
+	Hosts     []inventoryHostItem
+}
+
+type inventoryHostItem struct {
+	ID                    string
+	DisplayName           string
+	PrimaryTarget         string
+	CurrentOS             string
+	DeviceType            string
+	ConnectionType        string
+	OpenPortCount         int
+	ServicePreviews       []inventoryServicePreview
+	AdditionalServiceHint string
+	DeviceTypeGuess       string
+	DeviceTypeConfidence  string
+	ManualOverride        bool
+	Tags                  []string
+}
+
+type inventoryServicePreview struct {
+	Port     int
+	Protocol string
+	Service  string
+	Detail   string
 }
 
 type portSection struct {
@@ -447,6 +489,7 @@ func (s *Server) handleDiscoveryAssets(w http.ResponseWriter, r *http.Request) {
 		Project:           currentProject,
 		Assets:            projectAssets,
 		AssetGroups:       groupAssets(projectAssets),
+		InventorySections: buildInventorySections(projectAssets),
 		Settings:          appSettings,
 	}
 	s.render(w, "assets.html", data)
@@ -807,23 +850,30 @@ func (s *Server) handleInventoryNetwork(w http.ResponseWriter, r *http.Request) 
 		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
 		return
 	}
+	projectAssets, err := s.repo.ListAssets(ctx, currentProject.ID)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	networkData := buildInventoryNetworkData(*currentProject, projectAssets)
 
 	data := pageData{
-		Title:               "Netzwerkansicht",
-		AppName:             s.options.AppName,
-		ActiveNav:           "inventory",
-		ActiveSection:       "inventory-network",
-		BasePath:            s.options.BasePath,
-		DBPath:              s.options.DBPath,
-		DataDir:             s.options.DataDir,
-		HeroNote:            "Interactive network topology built from the shared inventory",
-		Notice:              noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
-		Projects:            projects,
-		CurrentProject:      currentProject,
-		ProjectSwitchPath:   "/inventory/network",
-		Project:             currentProject,
-		InventoryNetworkAPI: buildProjectPath("/api/inventory/network", currentProject),
-		Settings:            appSettings,
+		Title:                "Netzwerkansicht",
+		AppName:              s.options.AppName,
+		ActiveNav:            "inventory",
+		ActiveSection:        "inventory-network",
+		BasePath:             s.options.BasePath,
+		DBPath:               s.options.DBPath,
+		DataDir:              s.options.DataDir,
+		HeroNote:             "Interactive network topology built from the shared inventory",
+		Notice:               noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:             projects,
+		CurrentProject:       currentProject,
+		ProjectSwitchPath:    "/inventory/network",
+		Project:              currentProject,
+		InventoryNetworkAPI:  buildProjectPath("/api/inventory/network", currentProject),
+		InventoryNetworkJSON: marshalTemplateJSON(networkData),
+		Settings:             appSettings,
 	}
 	s.render(w, "inventory_network.html", data)
 }
@@ -871,6 +921,7 @@ func (s *Server) renderInventory(w http.ResponseWriter, r *http.Request, switchP
 		Project:           currentProject,
 		Assets:            projectAssets,
 		AssetGroups:       groupAssets(projectAssets),
+		InventorySections: buildInventorySections(projectAssets),
 		Settings:          appSettings,
 	}
 	s.render(w, "assets.html", data)
@@ -1511,6 +1562,14 @@ func (s *Server) writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = encoder.Encode(value)
 }
 
+func marshalTemplateJSON(value any) template.JS {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return template.JS("null")
+	}
+	return template.JS(encoded)
+}
+
 func (s *Server) writeError(w http.ResponseWriter, status int, err error) {
 	s.writeJSON(w, status, map[string]any{"error": err.Error()})
 }
@@ -1743,6 +1802,101 @@ func groupAssets(projectAssets []storage.AssetSummary) []assetGroup {
 	return groups
 }
 
+func buildInventorySections(projectAssets []storage.AssetSummary) []inventorySubnetSection {
+	type sectionBucket struct {
+		id         string
+		label      string
+		categories map[string]*inventoryCategorySection
+	}
+
+	subnet24Counts, subnet16Counts := inventorySubnetCounts(projectAssets)
+	sectionBuckets := make(map[string]*sectionBucket)
+
+	for _, asset := range projectAssets {
+		sectionID, sectionLabel := inventorySubnetGroup(asset, subnet24Counts, subnet16Counts)
+		bucket, ok := sectionBuckets[sectionID]
+		if !ok {
+			bucket = &sectionBucket{
+				id:         sectionID,
+				label:      sectionLabel,
+				categories: make(map[string]*inventoryCategorySection),
+			}
+			sectionBuckets[sectionID] = bucket
+		}
+
+		categoryKey := normalizedInventoryCategory(asset.EffectiveDeviceType)
+		category, ok := bucket.categories[categoryKey]
+		if !ok {
+			category = &inventoryCategorySection{
+				Name:  categoryKey,
+				Label: inventoryCategoryLabel(categoryKey),
+				Hosts: make([]inventoryHostItem, 0),
+			}
+			bucket.categories[categoryKey] = category
+		}
+
+		servicePreviews, additionalHint := buildInventoryServicePreviews(asset.CurrentOpenPorts)
+		category.Hosts = append(category.Hosts, inventoryHostItem{
+			ID:                    asset.ID,
+			DisplayName:           asset.DisplayName,
+			PrimaryTarget:         asset.PrimaryTarget,
+			CurrentOS:             asset.CurrentOS,
+			DeviceType:            asset.EffectiveDeviceType,
+			ConnectionType:        asset.EffectiveConnectionType,
+			OpenPortCount:         len(asset.CurrentOpenPorts),
+			ServicePreviews:       servicePreviews,
+			AdditionalServiceHint: additionalHint,
+			DeviceTypeGuess:       asset.DeviceTypeGuess,
+			DeviceTypeConfidence:  asset.DeviceTypeConfidence,
+			ManualOverride:        strings.TrimSpace(asset.ManualDeviceType) != "",
+			Tags:                  asset.Tags,
+		})
+	}
+
+	keys := make([]string, 0, len(sectionBuckets))
+	for key := range sectionBuckets {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	sections := make([]inventorySubnetSection, 0, len(keys))
+	for _, key := range keys {
+		bucket := sectionBuckets[key]
+		categoryKeys := make([]string, 0, len(bucket.categories))
+		for categoryKey := range bucket.categories {
+			categoryKeys = append(categoryKeys, categoryKey)
+		}
+		sort.SliceStable(categoryKeys, func(i, j int) bool {
+			return inventoryCategorySortWeight(categoryKeys[i]) < inventoryCategorySortWeight(categoryKeys[j])
+		})
+
+		section := inventorySubnetSection{
+			ID:         bucket.id,
+			Label:      bucket.label,
+			Categories: make([]inventoryCategorySection, 0, len(categoryKeys)),
+		}
+		for _, categoryKey := range categoryKeys {
+			category := bucket.categories[categoryKey]
+			sort.Slice(category.Hosts, func(i, j int) bool {
+				if category.Hosts[i].DisplayName == category.Hosts[j].DisplayName {
+					return category.Hosts[i].PrimaryTarget < category.Hosts[j].PrimaryTarget
+				}
+				return category.Hosts[i].DisplayName < category.Hosts[j].DisplayName
+			})
+			category.HostCount = len(category.Hosts)
+			section.HostCount += category.HostCount
+			section.Categories = append(section.Categories, *category)
+		}
+		section.CategoryCount = len(section.Categories)
+		sections = append(sections, section)
+	}
+
+	if len(sections) == 1 {
+		sections[0].ExpandByDefault = true
+	}
+	return sections
+}
+
 func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []storage.AssetSummary) inventoryNetworkData {
 	type pendingHost struct {
 		groupID    string
@@ -1751,23 +1905,17 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 	}
 
 	hosts := make([]pendingHost, 0, len(projectAssets))
-	subnet24Counts := make(map[string]int)
-	subnet16Counts := make(map[string]int)
+	subnet24Counts, subnet16Counts := inventorySubnetCounts(projectAssets)
 
 	for _, asset := range projectAssets {
-		addr, ok := parseIPv4AssetTarget(asset.PrimaryTarget)
 		groupID := "inventory_hosts"
 		groupLabel := "Inventory Hosts"
 		hostID := asset.ID
 		hostTarget := firstNonEmptyWeb(asset.PrimaryTarget, asset.DisplayName, asset.ID)
-		if ok {
-			octets := addr.As4()
-			group24 := fmt.Sprintf("%d.%d.%d", octets[0], octets[1], octets[2])
-			group16 := fmt.Sprintf("%d.%d", octets[0], octets[1])
-			subnet24Counts[group24]++
-			subnet16Counts[group16]++
+		if addr, ok := parseIPv4AssetTarget(asset.PrimaryTarget); ok {
 			hostID = addr.String()
 			hostTarget = addr.String()
+			groupLabel, groupID = inventoryNetworkLabel(addr, subnet24Counts, subnet16Counts)
 		}
 
 		hosts = append(hosts, pendingHost{
@@ -1795,9 +1943,6 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 	for _, item := range hosts {
 		groupID := item.groupID
 		groupLabel := item.groupLabel
-		if addr, ok := parseIPv4AssetTarget(item.host.Target); ok {
-			groupLabel, groupID = inventoryNetworkLabel(addr, subnet24Counts, subnet16Counts)
-		}
 
 		group, ok := grouped[groupID]
 		if !ok {
@@ -1828,6 +1973,23 @@ func buildInventoryNetworkData(project storage.ProjectSummary, projectAssets []s
 	return out
 }
 
+func inventorySubnetCounts(projectAssets []storage.AssetSummary) (map[string]int, map[string]int) {
+	subnet24Counts := make(map[string]int)
+	subnet16Counts := make(map[string]int)
+	for _, asset := range projectAssets {
+		addr, ok := parseIPv4AssetTarget(asset.PrimaryTarget)
+		if !ok {
+			continue
+		}
+		octets := addr.As4()
+		group24 := fmt.Sprintf("%d.%d.%d", octets[0], octets[1], octets[2])
+		group16 := fmt.Sprintf("%d.%d", octets[0], octets[1])
+		subnet24Counts[group24]++
+		subnet16Counts[group16]++
+	}
+	return subnet24Counts, subnet16Counts
+}
+
 func parseIPv4AssetTarget(target string) (netip.Addr, bool) {
 	trimmed := strings.TrimSpace(target)
 	if trimmed == "" {
@@ -1856,6 +2018,193 @@ func inventoryNetworkLabel(addr netip.Addr, subnet24Counts map[string]int, subne
 
 	label := addr.String() + "/32"
 	return label, "host_" + strings.ReplaceAll(addr.String(), ".", "_")
+}
+
+func inventorySubnetGroup(asset storage.AssetSummary, subnet24Counts map[string]int, subnet16Counts map[string]int) (string, string) {
+	addr, ok := parseIPv4AssetTarget(asset.PrimaryTarget)
+	if !ok {
+		return "inventory_hosts", "Inventory Hosts"
+	}
+	return inventoryNetworkLabel(addr, subnet24Counts, subnet16Counts)
+}
+
+func normalizedInventoryCategory(value string) string {
+	trimmed := strings.TrimSpace(strings.ToLower(value))
+	if trimmed == "" {
+		return "unknown"
+	}
+	return trimmed
+}
+
+func inventoryCategoryLabel(value string) string {
+	switch normalizedInventoryCategory(value) {
+	case "router":
+		return "Router"
+	case "server":
+		return "Server"
+	case "workstation":
+		return "Workstation"
+	case "smartphone":
+		return "Smartphone"
+	case "tablet":
+		return "Tablet"
+	case "printer":
+		return "Printer"
+	case "iot":
+		return "IoT"
+	default:
+		return "Unknown"
+	}
+}
+
+func inventoryCategorySortWeight(value string) string {
+	switch normalizedInventoryCategory(value) {
+	case "router":
+		return "01_router"
+	case "server":
+		return "02_server"
+	case "workstation":
+		return "03_workstation"
+	case "smartphone":
+		return "04_smartphone"
+	case "tablet":
+		return "05_tablet"
+	case "printer":
+		return "06_printer"
+	case "iot":
+		return "07_iot"
+	default:
+		return "99_" + normalizedInventoryCategory(value)
+	}
+}
+
+func buildInventoryServicePreviews(ports []int) ([]inventoryServicePreview, string) {
+	if len(ports) == 0 {
+		return nil, "No open ports observed."
+	}
+
+	cloned := append([]int{}, ports...)
+	sort.Ints(cloned)
+	limit := len(cloned)
+	if limit > 4 {
+		limit = 4
+	}
+
+	previews := make([]inventoryServicePreview, 0, limit)
+	for _, port := range cloned[:limit] {
+		previews = append(previews, inventoryServicePreview{
+			Port:     port,
+			Protocol: "TCP",
+			Service:  inventoryServiceName(port),
+			Detail:   inventoryServiceDetail(port),
+		})
+	}
+
+	if len(cloned) > limit {
+		return previews, fmt.Sprintf("+%d more ports", len(cloned)-limit)
+	}
+	return previews, ""
+}
+
+func inventoryServiceName(port int) string {
+	switch port {
+	case 22:
+		return "SSH"
+	case 25:
+		return "SMTP"
+	case 53:
+		return "DNS"
+	case 80:
+		return "HTTP"
+	case 88:
+		return "Kerberos"
+	case 110:
+		return "POP3"
+	case 111:
+		return "RPC"
+	case 123:
+		return "NTP"
+	case 135:
+		return "RPC Endpoint"
+	case 139:
+		return "NetBIOS"
+	case 143:
+		return "IMAP"
+	case 389:
+		return "LDAP"
+	case 443:
+		return "HTTPS"
+	case 445:
+		return "SMB"
+	case 465:
+		return "SMTPS"
+	case 587:
+		return "Submission"
+	case 631:
+		return "IPP"
+	case 636:
+		return "LDAPS"
+	case 993:
+		return "IMAPS"
+	case 995:
+		return "POP3S"
+	case 1433:
+		return "MSSQL"
+	case 3306:
+		return "MySQL"
+	case 3389:
+		return "RDP"
+	case 5432:
+		return "PostgreSQL"
+	case 5900:
+		return "VNC"
+	case 6379:
+		return "Redis"
+	case 8080:
+		return "HTTP Alt"
+	case 8443:
+		return "HTTPS Alt"
+	default:
+		return inventoryServiceClassName(classify.FromPort(port))
+	}
+}
+
+func inventoryServiceDetail(port int) string {
+	switch classify.FromPort(port) {
+	case "web":
+		return "Webserver"
+	case "directory":
+		return "Directory Service"
+	case "database":
+		return "Database Service"
+	case "remote_access":
+		return "Remote Access"
+	case "messaging":
+		return "Messaging Service"
+	case "printing":
+		return "Print Service"
+	default:
+		return "No more data"
+	}
+}
+
+func inventoryServiceClassName(category string) string {
+	switch strings.TrimSpace(category) {
+	case "web":
+		return "Web"
+	case "directory":
+		return "Directory"
+	case "database":
+		return "Database"
+	case "remote_access":
+		return "Remote Access"
+	case "messaging":
+		return "Messaging"
+	case "printing":
+		return "Printing"
+	default:
+		return "General Service"
+	}
 }
 
 func inventoryHostStatus(asset storage.AssetSummary) string {
