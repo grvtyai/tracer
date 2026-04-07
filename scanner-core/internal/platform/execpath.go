@@ -72,14 +72,21 @@ func candidateExecutablePaths(name string) []string {
 
 	if home := strings.TrimSpace(os.Getenv("HOME")); home != "" {
 		add(filepath.Join(home, "go", "bin", name))
+		add(filepath.Join(home, ".local", "bin", name))
 	}
 
 	if sudoUser := strings.TrimSpace(os.Getenv("SUDO_USER")); sudoUser != "" && sudoUser != "root" {
 		add(filepath.Join("/home", sudoUser, "go", "bin", name))
+		add(filepath.Join("/home", sudoUser, ".local", "bin", name))
 	}
 
 	if runtime.GOOS == "linux" {
 		if matches, err := filepath.Glob(filepath.Join("/home", "*", "go", "bin", name)); err == nil {
+			for _, match := range matches {
+				add(match)
+			}
+		}
+		if matches, err := filepath.Glob(filepath.Join("/home", "*", ".local", "bin", name)); err == nil {
 			for _, match := range matches {
 				add(match)
 			}
@@ -99,6 +106,7 @@ func candidateExecutablePaths(name string) []string {
 			"/opt/zeek/bin",
 			"/opt/zeek/sbin",
 			"/root/go/bin",
+			"/root/.local/bin",
 		} {
 			add(filepath.Join(dir, name))
 		}
