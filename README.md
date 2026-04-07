@@ -8,9 +8,9 @@ A modular local operator suite for small infrastructure, lab networks and simila
 
 Built with Go, SQLite and a local browser UI.
 
-It is not meant to be "just a scanner". The long-term goal is a suite with a shared data model, a shared browser UI and multiple modules that work on the same projects, assets and evidence.
+A long-term goal is a suite with a shared data model, a shared browser UI and multiple modules that work on the same projects, assets and evidence.
 
-Right now the first real module is `Radar`.
+`Radar` is the first live module, with more modules planned on top of the same foundation.
 
 ## 🌌 What Startrace Is
 
@@ -40,13 +40,6 @@ Only `Radar` and `Inventory` are meaningfully developed today. The other module 
 - `suite`: owns the browser UI, routing, layout, templates, components and styling
 - `shared`: owns canonical data, persistence and shared runtime/platform helpers
 - `modules`: own capabilities, workflows, integrations and data preparation
-
-The boundary is:
-
-- modules are not separate mini frontends by default
-- the suite renders the UI
-- modules feed the suite with actions, data and workflow logic
-- shared packages stay above individual modules
 
 ## 📡 Current State
 
@@ -197,11 +190,11 @@ The near-term goal is not to add disconnected features. The priority is to make 
 
 Current focus:
 
-1. keep improving `Radar` without letting it become the whole product
+1. keep improving `Radar` as the first major module in the suite
 2. strengthen the shared suite shell and shared data model
 3. turn scheduling into a more general automation runner
 4. improve inventory quality, classification and topology views
-5. make `Security`, `Workbench` and `Automation` real module homes
+5. continue building out `Security`, `Workbench` and `Automation`
 
 ## 📚 More Documentation
 
