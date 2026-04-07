@@ -78,6 +78,14 @@ func candidateExecutablePaths(name string) []string {
 		add(filepath.Join("/home", sudoUser, "go", "bin", name))
 	}
 
+	if runtime.GOOS == "linux" {
+		if matches, err := filepath.Glob(filepath.Join("/home", "*", "go", "bin", name)); err == nil {
+			for _, match := range matches {
+				add(match)
+			}
+		}
+	}
+
 	switch runtime.GOOS {
 	case "linux":
 		for _, dir := range []string{
@@ -88,6 +96,8 @@ func candidateExecutablePaths(name string) []string {
 			"/sbin",
 			"/bin",
 			"/snap/bin",
+			"/opt/zeek/bin",
+			"/opt/zeek/sbin",
 			"/root/go/bin",
 		} {
 			add(filepath.Join(dir, name))
