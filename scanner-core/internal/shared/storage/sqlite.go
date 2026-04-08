@@ -935,6 +935,22 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 			note TEXT NOT NULL DEFAULT '',
 			FOREIGN KEY(run_id) REFERENCES runs(id)
 		);`,
+		`CREATE TABLE IF NOT EXISTS satellites (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			kind TEXT NOT NULL DEFAULT '',
+			role TEXT NOT NULL DEFAULT '',
+			status TEXT NOT NULL DEFAULT '',
+			address TEXT NOT NULL DEFAULT '',
+			hostname TEXT NOT NULL DEFAULT '',
+			platform TEXT NOT NULL DEFAULT '',
+			executor TEXT NOT NULL DEFAULT '',
+			last_seen_at TEXT NOT NULL DEFAULT '',
+			registration_token_hint TEXT NOT NULL DEFAULT '',
+			capabilities_json TEXT NOT NULL DEFAULT '[]',
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL
+		);`,
 		`CREATE INDEX IF NOT EXISTS idx_runs_project_id ON runs(project_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_job_results_run_id ON job_results(run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_evidence_run_id ON evidence(run_id);`,
@@ -946,6 +962,7 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 		`CREATE INDEX IF NOT EXISTS idx_asset_observations_run_id ON asset_observations(run_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_scheduled_scans_run ON scheduled_scans(source_run_id, execute_at);`,
 		`CREATE INDEX IF NOT EXISTS idx_scheduled_scans_asset ON scheduled_scans(source_asset_id, execute_at);`,
+		`CREATE INDEX IF NOT EXISTS idx_satellites_kind_name ON satellites(kind, name);`,
 	}
 
 	for _, statement := range statements {

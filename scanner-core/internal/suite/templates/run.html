@@ -34,11 +34,19 @@
             <div class="stat-label">Subnets</div>
             <div class="stat-value">{{len .Run.Scope.CIDRs}}</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-label">Planned Steps</div>
+            <div class="stat-value">{{len .RunJobItems}}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Execution Target</div>
+            <div class="stat-value">{{if .RunExecutionFacts}}{{(index .RunExecutionFacts 0).Value}}{{else}}-{{end}}</div>
+        </div>
     </article>
 
     <article class="panel">
         <div class="panel-head">
-            <h2>Run Metadata</h2>
+            <h2>Run And Execution</h2>
         </div>
         <div class="kv-grid">
             <div class="kv-key">Run ID</div>
@@ -49,8 +57,58 @@
             <div class="kv-value">{{.Run.Run.StartedAt.Format "2006-01-02 15:04:05"}}</div>
             <div class="kv-key">Finished</div>
             <div class="kv-value">{{if .Run.Run.FinishedAt.IsZero}}-{{else}}{{.Run.Run.FinishedAt.Format "2006-01-02 15:04:05"}}{{end}}</div>
+            {{range .RunExecutionFacts}}
+            <div class="kv-key">{{.Key}}</div>
+            <div class="kv-value">{{.Value}}</div>
+            {{end}}
         </div>
     </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Execution Steps</h2>
+        <span class="pill">{{len .RunJobItems}} steps</span>
+    </div>
+    {{if .RunJobItems}}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Step</th>
+                <th>Plugin</th>
+                <th>Target</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Finished</th>
+                <th>Duration</th>
+                <th>Records</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .RunJobItems}}
+            <tr>
+                <td>{{.Kind}}</td>
+                <td>{{.Plugin}}</td>
+                <td>{{.Target}}</td>
+                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
+                <td>{{.StartedAt}}</td>
+                <td>{{.FinishedAt}}</td>
+                <td>{{.Duration}}</td>
+                <td>{{.RecordsWritten}}</td>
+            </tr>
+            {{if or .Error .NeedsReevaluation}}
+            <tr>
+                <td colspan="8" class="reason-row">
+                    {{if .Error}}Error: {{.Error}}{{end}}{{if and .Error .NeedsReevaluation}} | {{end}}{{if .NeedsReevaluation}}Reevaluation: {{if .ReevaluationAfter}}{{.ReevaluationAfter}}{{else}}scheduled{{end}}{{if .ReevaluationReason}} | {{.ReevaluationReason}}{{end}}{{end}}
+                </td>
+            </tr>
+            {{end}}
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="empty-note">No execution steps were recorded for this run yet.</p>
+    {{end}}
 </section>
 
 <section class="panel-grid">
@@ -135,7 +193,7 @@
         {{end}}
         {{if .WarningDetails}}
         <div class="panel-head compact-head">
-            <h2>Failed Jobs</h2>
+            <h2>Failed Execution Steps</h2>
             <span class="pill subtle">{{len .WarningDetails}}</span>
         </div>
         <div class="list">

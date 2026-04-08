@@ -82,7 +82,7 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	satelliteOptions := s.satelliteOptions()
+	satelliteOptions := s.satelliteOptions(ctx)
 	form := defaultScanForm(currentProject, satelliteOptions)
 	if value := strings.TrimSpace(r.URL.Query().Get("scope")); value != "" {
 		form.ScopeInput = value
@@ -190,7 +190,7 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 		UseLargeRangeStrategy: isChecked(r.FormValue("use_large_range_strategy")),
 		ZeekAutoStart:         isChecked(r.FormValue("zeek_auto_start")),
 	}
-	selectedSatellite := resolveSatelliteSelection(form.SatelliteID, s.satelliteOptions())
+	selectedSatellite := resolveSatelliteSelection(form.SatelliteID, s.satelliteOptions(r.Context()))
 	form.SatelliteID = selectedSatellite.ID
 	form.SatelliteLabel = selectedSatellite.Label
 	form.ReevaluatePreset = firstNonEmptyWeb(strings.TrimSpace(r.FormValue("reevaluate_after_preset")), "off")

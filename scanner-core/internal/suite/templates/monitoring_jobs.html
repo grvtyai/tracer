@@ -18,8 +18,7 @@
             <span class="pill {{if .MonitoringMothership}}{{.MonitoringMothership.StatusClass}}{{else}}status-neutral{{end}}">{{if .MonitoringMothership}}{{.MonitoringMothership.Name}}{{else}}Mothership{{end}}</span>
         </div>
         <p class="empty-note">
-            Monitoring now shows real persisted Radar runs as local jobs. The execution target is still the Mothership,
-            so this becomes the bridge between today's local runs and later distributed Satelites.
+            Monitoring now shows real persisted Radar runs. Each row is one full run, each run contains individual execution steps, and the Satelite column shows where that run was meant to execute.
         </p>
         <div class="hero-actions">
             {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}

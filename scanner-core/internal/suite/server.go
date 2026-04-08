@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/netip"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -22,6 +23,7 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
+	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
 	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
 )
 
@@ -113,6 +115,9 @@ type pageData struct {
 	MonitoringMothership  *monitoringSatellite
 	MonitoringStats       []monitoringStat
 	MonitoringFacts       []monitoringFact
+	MonitoringTooling     []monitoringTool
+	RunExecutionFacts     []monitoringFact
+	RunJobItems           []runJobItem
 }
 
 type satelliteOption struct {
@@ -161,6 +166,33 @@ type monitoringStat struct {
 type monitoringFact struct {
 	Key   string
 	Value string
+}
+
+type monitoringTool struct {
+	Name        string
+	Required    bool
+	Status      string
+	StatusClass string
+	Path        string
+	Version     string
+	Runtime     string
+}
+
+type runJobItem struct {
+	ID                 string
+	Kind               string
+	Plugin             string
+	Target             string
+	Status             string
+	StatusClass        string
+	StartedAt          string
+	FinishedAt         string
+	Duration           string
+	RecordsWritten     int
+	Error              string
+	NeedsReevaluation  bool
+	ReevaluationAfter  string
+	ReevaluationReason string
 }
 
 type dashboardStats struct {
@@ -866,6 +898,8 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 		Run:               &run,
 		Hosts:             buildHostSummaries(run, projectAssets),
 		RunStatus:         describeRunStatus(run),
+		RunExecutionFacts: buildRunExecutionFacts(run),
+		RunJobItems:       buildRunJobItems(run),
 		ScheduledScans:    scheduledScans,
 		RunReevaluateURL:  buildReevaluationURL(project.ID, "Reevaluate "+run.Run.TemplateName, runScopeInput(run), "30m"),
 		WarningDetails:    buildWarningDetails(run),
@@ -1250,7 +1284,11 @@ func (s *Server) handleMonitoringSatellites(w http.ResponseWriter, r *http.Reque
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	mothership := s.buildMonitoringMothership(preflightChecks, runs)
+	monitoringSatellites, mothership, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 	data := pageData{
 		Title:                "Monitoring - Satelites",
 		AppName:              s.options.AppName,
@@ -1266,9 +1304,9 @@ func (s *Server) handleMonitoringSatellites(w http.ResponseWriter, r *http.Reque
 		Project:              currentProject,
 		PreflightChecks:      preflightChecks,
 		Settings:             appSettings,
-		MonitoringSatellites: []monitoringSatellite{mothership},
+		MonitoringSatellites: monitoringSatellites,
 		MonitoringMothership: &mothership,
-		MonitoringStats:      buildMonitoringSatelliteStats(runs, preflightChecks),
+		MonitoringStats:      buildMonitoringSatelliteStats(monitoringSatellites, runs, preflightChecks),
 		PrimaryAction: &pageAction{
 			Label:   "Register new Satelite",
 			URL:     buildProjectPath("/monitoring/satellites/register", currentProject),
@@ -1306,7 +1344,11 @@ func (s *Server) handleMonitoringSatelliteRegister(w http.ResponseWriter, r *htt
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	mothership := s.buildMonitoringMothership(preflightChecks, runs)
+	_, mothership, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 	data := pageData{
 		Title:                "Register Satelite",
 		AppName:              s.options.AppName,
@@ -1355,7 +1397,11 @@ func (s *Server) handleMonitoringHealth(w http.ResponseWriter, r *http.Request) 
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	mothership := s.buildMonitoringMothership(preflightChecks, runs)
+	monitoringSatellites, mothership, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 	data := pageData{
 		Title:                "Monitoring - Health",
 		AppName:              s.options.AppName,
@@ -1372,8 +1418,9 @@ func (s *Server) handleMonitoringHealth(w http.ResponseWriter, r *http.Request) 
 		PreflightChecks:      preflightChecks,
 		Settings:             appSettings,
 		MonitoringMothership: &mothership,
-		MonitoringStats:      buildMonitoringHealthStats(preflightChecks, runs),
+		MonitoringStats:      buildMonitoringHealthStats(monitoringSatellites, preflightChecks, runs),
 		MonitoringFacts:      s.buildMonitoringHealthFacts(preflightChecks, runs),
+		MonitoringTooling:    buildMonitoringTooling(preflightChecks),
 		PrimaryAction: &pageAction{
 			Label:   "Open Satelites",
 			URL:     buildProjectPath("/monitoring/satellites", currentProject),
@@ -1411,7 +1458,11 @@ func (s *Server) handleMonitoringJobs(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	mothership := s.buildMonitoringMothership(preflightChecks, runs)
+	monitoringSatellites, mothership, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 	monitoringJobs := s.buildMonitoringJobs(ctx, currentProject, runs)
 	data := pageData{
 		Title:                "Monitoring - Jobs",
@@ -1430,7 +1481,7 @@ func (s *Server) handleMonitoringJobs(w http.ResponseWriter, r *http.Request) {
 		Settings:             appSettings,
 		MonitoringMothership: &mothership,
 		MonitoringJobs:       monitoringJobs,
-		MonitoringStats:      buildMonitoringJobStats(monitoringJobs),
+		MonitoringStats:      buildMonitoringJobStats(monitoringSatellites, monitoringJobs),
 		PrimaryAction: &pageAction{
 			Label:   "Open Satelites",
 			URL:     buildProjectPath("/monitoring/satellites", currentProject),
@@ -1895,15 +1946,35 @@ func (s *Server) renderSuitePlaceholder(w http.ResponseWriter, r *http.Request, 
 	s.render(w, "module.html", data)
 }
 
-func (s *Server) satelliteOptions() []satelliteOption {
-	mothership := s.monitoringMothership()
-	return []satelliteOption{
-		{
+func (s *Server) satelliteOptions(ctx context.Context) []satelliteOption {
+	preflightChecks := collectPreflightChecks(s.options.DBPath)
+	mothership := s.buildMonitoringMothership(preflightChecks, nil)
+	if _, err := s.ensureBuiltinMonitoringSatellite(ctx, preflightChecks, nil); err != nil {
+		return []satelliteOption{{
 			ID:     mothership.ID,
 			Label:  fmt.Sprintf("Startrace Mothership - %s", mothership.Address),
 			Detail: "Built-in local execution target",
-		},
+		}}
 	}
+
+	storedSatellites, err := s.repo.ListSatellites(ctx)
+	if err != nil || len(storedSatellites) == 0 {
+		return []satelliteOption{{
+			ID:     mothership.ID,
+			Label:  fmt.Sprintf("Startrace Mothership - %s", mothership.Address),
+			Detail: "Built-in local execution target",
+		}}
+	}
+
+	options := make([]satelliteOption, 0, len(storedSatellites))
+	for _, satellite := range storedSatellites {
+		options = append(options, satelliteOption{
+			ID:     satellite.ID,
+			Label:  firstNonEmptyWeb(strings.TrimSpace(satellite.Name), satellite.ID) + " - " + firstNonEmptyWeb(strings.TrimSpace(satellite.Address), "no-address"),
+			Detail: firstNonEmptyWeb(strings.TrimSpace(satellite.Role), "Execution target"),
+		})
+	}
+	return options
 }
 
 func resolveSatelliteSelection(selectedID string, options []satelliteOption) satelliteOption {
@@ -1919,6 +1990,87 @@ func resolveSatelliteSelection(selectedID string, options []satelliteOption) sat
 		ID:     "mothership",
 		Label:  "Startrace Mothership - 127.0.0.1",
 		Detail: "Built-in local execution target",
+	}
+}
+
+func (s *Server) monitoringSatellites(ctx context.Context, checks []preflightCheck, runs []storage.RunSummary) ([]monitoringSatellite, monitoringSatellite, error) {
+	mothershipStored, err := s.ensureBuiltinMonitoringSatellite(ctx, checks, runs)
+	if err != nil {
+		return nil, monitoringSatellite{}, err
+	}
+
+	storedSatellites, err := s.repo.ListSatellites(ctx)
+	if err != nil {
+		return nil, monitoringSatellite{}, err
+	}
+
+	monitoringSatellites := make([]monitoringSatellite, 0, len(storedSatellites))
+	mothershipView := s.buildMonitoringMothership(checks, runs)
+	if len(storedSatellites) == 0 {
+		return []monitoringSatellite{mothershipView}, mothershipView, nil
+	}
+
+	for _, satellite := range storedSatellites {
+		view := s.monitoringSatelliteFromStored(satellite)
+		if satellite.ID == mothershipStored.ID {
+			view = mothershipView
+		}
+		monitoringSatellites = append(monitoringSatellites, view)
+	}
+	return monitoringSatellites, mothershipView, nil
+}
+
+func (s *Server) ensureBuiltinMonitoringSatellite(ctx context.Context, checks []preflightCheck, runs []storage.RunSummary) (storage.Satellite, error) {
+	mothership := s.buildMonitoringMothership(checks, runs)
+	return s.repo.UpsertSatellite(ctx, storage.SatelliteUpsertInput{
+		ID:                    mothership.ID,
+		Name:                  mothership.Name,
+		Kind:                  "mothership",
+		Role:                  mothership.Role,
+		Status:                mothership.Status,
+		Address:               mothership.Address,
+		Hostname:              mothership.Hostname,
+		Platform:              mothership.Platform,
+		Executor:              mothership.Executor,
+		LastSeenAt:            time.Now().UTC(),
+		RegistrationTokenHint: "Built-in local node",
+		Capabilities:          monitoringCapabilities(checks),
+	})
+}
+
+func (s *Server) monitoringSatelliteFromStored(satellite storage.Satellite) monitoringSatellite {
+	statusClass := "status-neutral"
+	switch strings.ToLower(strings.TrimSpace(satellite.Status)) {
+	case "healthy", "online":
+		statusClass = "status-success"
+	case "needs attention", "warning":
+		statusClass = "status-warning"
+	case "degraded", "offline", "error":
+		statusClass = "status-danger"
+	}
+
+	lastSeen := "No heartbeat yet"
+	if !satellite.LastSeenAt.IsZero() {
+		lastSeen = formatMonitoringTimestamp(satellite.LastSeenAt)
+	}
+
+	summary := "Prepared execution target"
+	if len(satellite.Capabilities) > 0 {
+		summary = strings.Join(satellite.Capabilities, ", ")
+	}
+
+	return monitoringSatellite{
+		ID:          satellite.ID,
+		Name:        satellite.Name,
+		Role:        satellite.Role,
+		Status:      firstNonEmptyWeb(strings.TrimSpace(satellite.Status), "Unknown"),
+		StatusClass: statusClass,
+		Address:     satellite.Address,
+		Hostname:    satellite.Hostname,
+		Platform:    satellite.Platform,
+		Executor:    satellite.Executor,
+		LastSeen:    lastSeen,
+		Summary:     summary,
 	}
 }
 
@@ -1953,7 +2105,7 @@ func (s *Server) buildMonitoringMothership(checks []preflightCheck, runs []stora
 	return mothership
 }
 
-func buildMonitoringSatelliteStats(runs []storage.RunSummary, checks []preflightCheck) []monitoringStat {
+func buildMonitoringSatelliteStats(satellites []monitoringSatellite, runs []storage.RunSummary, checks []preflightCheck) []monitoringStat {
 	readyTools, totalTools := monitoringToolingCounts(checks)
 	lastRunLabel := "No runs yet"
 	lastRunDetail := "The Mothership is ready but has not executed a persisted Radar run for this project yet."
@@ -1963,14 +2115,14 @@ func buildMonitoringSatelliteStats(runs []storage.RunSummary, checks []preflight
 	}
 
 	return []monitoringStat{
-		{Label: "Registered targets", Value: "1", Detail: "The local Startrace Mothership is currently the only execution node."},
+		{Label: "Registered targets", Value: fmt.Sprintf("%d", len(satellites)), Detail: "The local Startrace Mothership is available now and future Satelites will appear here too."},
 		{Label: "Toolkit ready", Value: fmt.Sprintf("%d / %d", readyTools, totalTools), Detail: "Remote Satelites can later reuse the same readiness model."},
 		{Label: "Persisted runs", Value: fmt.Sprintf("%d", len(runs)), Detail: "Radar runs are already visible here before distributed execution exists."},
 		{Label: "Latest run", Value: lastRunLabel, Detail: lastRunDetail},
 	}
 }
 
-func buildMonitoringHealthStats(checks []preflightCheck, runs []storage.RunSummary) []monitoringStat {
+func buildMonitoringHealthStats(satellites []monitoringSatellite, checks []preflightCheck, runs []storage.RunSummary) []monitoringStat {
 	statusValue := "Healthy"
 	statusDetail := "The local Startrace Mothership is ready for local execution."
 	switch preflightState(checks) {
@@ -1994,13 +2146,14 @@ func buildMonitoringHealthStats(checks []preflightCheck, runs []storage.RunSumma
 
 	return []monitoringStat{
 		{Label: "Mothership", Value: statusValue, Detail: statusDetail},
+		{Label: "Registered nodes", Value: fmt.Sprintf("%d", len(satellites)), Detail: "Today this is the local Mothership, later this expands to additional Satelites."},
 		{Label: "Tooling", Value: fmt.Sprintf("%d / %d ready", readyTools, totalTools), Detail: "Required and optional Radar tools detected on this host."},
-		{Label: "Radar runs", Value: fmt.Sprintf("%d", len(runs)), Detail: "Persisted project runs executed through the local Mothership."},
+		{Label: "Radar runs", Value: fmt.Sprintf("%d", len(runs)), Detail: "Persisted project runs executed through the selected Satelite model."},
 		{Label: "Last success", Value: lastSuccessfulLabel, Detail: lastSuccessfulDetail},
 	}
 }
 
-func buildMonitoringJobStats(jobs []monitoringJob) []monitoringStat {
+func buildMonitoringJobStats(satellites []monitoringSatellite, jobs []monitoringJob) []monitoringStat {
 	completed := 0
 	running := 0
 	attention := 0
@@ -2017,6 +2170,7 @@ func buildMonitoringJobStats(jobs []monitoringJob) []monitoringStat {
 
 	return []monitoringStat{
 		{Label: "Visible jobs", Value: fmt.Sprintf("%d", len(jobs)), Detail: "This view is backed by real persisted Radar runs."},
+		{Label: "Execution nodes", Value: fmt.Sprintf("%d", len(satellites)), Detail: "Jobs are still local today, but already tied to the Satelite model."},
 		{Label: "Running", Value: fmt.Sprintf("%d", running), Detail: "Runs that are still collecting evidence right now."},
 		{Label: "Completed", Value: fmt.Sprintf("%d", completed), Detail: "Runs that finished without a recorded failure."},
 		{Label: "Needs attention", Value: fmt.Sprintf("%d", attention), Detail: "Runs with failures, warnings or reevaluation hints."},
@@ -2024,6 +2178,7 @@ func buildMonitoringJobStats(jobs []monitoringJob) []monitoringStat {
 }
 
 func (s *Server) buildMonitoringHealthFacts(checks []preflightCheck, runs []storage.RunSummary) []monitoringFact {
+	dataDir := firstNonEmptyWeb(s.options.DataDir, storage.DefaultDataDir())
 	facts := []monitoringFact{
 		{Key: "Hostname", Value: inventoryOriginHostname()},
 		{Key: "Primary address", Value: detectMothershipAddress()},
@@ -2033,9 +2188,12 @@ func (s *Server) buildMonitoringHealthFacts(checks []preflightCheck, runs []stor
 		{Key: "Host uptime", Value: monitoringHostUptimeSummary()},
 		{Key: "CPU", Value: monitoringCPUSummary()},
 		{Key: "Memory", Value: monitoringMemorySummary()},
+		{Key: "Data dir usage", Value: monitoringFilesystemUsage(dataDir)},
+		{Key: "Zeek runtime", Value: monitoringZeekRuntime()},
 		{Key: "Privileges", Value: firstNonEmptyWeb(preflightCheckDetail(checks, "process-privileges"), "Unknown")},
+		{Key: "SQLite write test", Value: firstNonEmptyWeb(preflightCheckDetail(checks, "sqlite-store"), "Unknown")},
 		{Key: "SQLite store", Value: firstNonEmptyWeb(s.options.DBPath, "-")},
-		{Key: "Data directory", Value: firstNonEmptyWeb(s.options.DataDir, storage.DefaultDataDir())},
+		{Key: "Data directory", Value: dataDir},
 	}
 
 	if latestSuccessful := latestRunMatching(runs, func(run storage.RunSummary) bool {
@@ -2048,6 +2206,30 @@ func (s *Server) buildMonitoringHealthFacts(checks []preflightCheck, runs []stor
 	}
 
 	return facts
+}
+
+func buildMonitoringTooling(checks []preflightCheck) []monitoringTool {
+	tools := make([]monitoringTool, 0)
+	for _, check := range checks {
+		if !isMonitoringToolCheck(check.Name) {
+			continue
+		}
+		path := "-"
+		if resolved, err := platform.ResolveExecutable(check.Name); err == nil {
+			path = resolved
+		}
+		tool := monitoringTool{
+			Name:        check.Name,
+			Required:    check.Required,
+			Status:      monitoringToolStatusLabel(check.Status),
+			StatusClass: monitoringToolStatusClass(check.Status),
+			Path:        path,
+			Version:     monitoringToolVersion(check.Name, check.Status),
+			Runtime:     monitoringToolRuntime(check.Name, check.Status),
+		}
+		tools = append(tools, tool)
+	}
+	return tools
 }
 
 func (s *Server) buildMonitoringJobs(ctx context.Context, currentProject *storage.ProjectSummary, runs []storage.RunSummary) []monitoringJob {
@@ -2159,6 +2341,17 @@ func monitoringToolingCounts(checks []preflightCheck) (int, int) {
 		}
 	}
 	return ready, total
+}
+
+func monitoringCapabilities(checks []preflightCheck) []string {
+	capabilities := make([]string, 0)
+	for _, check := range checks {
+		if !isMonitoringToolCheck(check.Name) || check.Status != "ok" {
+			continue
+		}
+		capabilities = append(capabilities, check.Name)
+	}
+	return capabilities
 }
 
 func isMonitoringToolCheck(name string) bool {
@@ -2308,6 +2501,136 @@ func monitoringMemorySummary() string {
 	totalGiB := float64(totalKB) / (1024 * 1024)
 	usedPercent := (float64(usedKB) / float64(totalKB)) * 100
 	return fmt.Sprintf("%.1f / %.1f GiB used (%.0f%%)", usedGiB, totalGiB, usedPercent)
+}
+
+func monitoringFilesystemUsage(path string) string {
+	if runtime.GOOS != "linux" {
+		return "Available on Linux hosts"
+	}
+	target := firstNonEmptyWeb(strings.TrimSpace(path), "/")
+	output, err := exec.Command("df", "-h", target).CombinedOutput()
+	if err != nil {
+		return "Unavailable"
+	}
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	if len(lines) < 2 {
+		return "Unavailable"
+	}
+	fields := strings.Fields(lines[len(lines)-1])
+	if len(fields) < 6 {
+		return strings.TrimSpace(lines[len(lines)-1])
+	}
+	return fmt.Sprintf("%s used of %s (%s) | %s free", fields[2], fields[1], fields[4], fields[3])
+}
+
+func monitoringZeekRuntime() string {
+	if runtime.GOOS != "linux" {
+		return "Available on Linux hosts"
+	}
+	if _, err := platform.ResolveExecutable("zeekctl"); err != nil {
+		return "zeekctl not installed"
+	}
+	output, err := exec.Command("zeekctl", "status").CombinedOutput()
+	if err != nil {
+		return "zeekctl installed"
+	}
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	if len(lines) == 0 || strings.TrimSpace(lines[0]) == "" {
+		return "zeekctl installed"
+	}
+	return strings.TrimSpace(lines[0])
+}
+
+func monitoringToolStatusLabel(status string) string {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "ok":
+		return "Available"
+	case "warning":
+		return "Optional missing"
+	case "error":
+		return "Required missing"
+	default:
+		return firstNonEmptyWeb(strings.TrimSpace(status), "Unknown")
+	}
+}
+
+func monitoringToolStatusClass(status string) string {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "ok":
+		return "status-success"
+	case "warning":
+		return "status-warning"
+	case "error":
+		return "status-danger"
+	default:
+		return "status-neutral"
+	}
+}
+
+func monitoringToolRuntime(name string, status string) string {
+	if strings.ToLower(strings.TrimSpace(status)) != "ok" {
+		return "-"
+	}
+	switch name {
+	case "zeekctl":
+		return monitoringZeekRuntime()
+	default:
+		return "Ready"
+	}
+}
+
+func monitoringToolVersion(name string, status string) string {
+	if strings.ToLower(strings.TrimSpace(status)) != "ok" {
+		return "-"
+	}
+	if runtime.GOOS != "linux" {
+		return "Resolved on Linux hosts"
+	}
+
+	candidates := toolVersionCommands(name)
+	for _, candidate := range candidates {
+		output, err := exec.Command(candidate[0], candidate[1:]...).CombinedOutput()
+		if err != nil {
+			continue
+		}
+		line := firstMeaningfulLine(string(output))
+		if strings.TrimSpace(line) != "" {
+			return line
+		}
+	}
+	return "available"
+}
+
+func toolVersionCommands(name string) [][]string {
+	switch name {
+	case "naabu":
+		return [][]string{{"naabu", "-version"}}
+	case "nmap":
+		return [][]string{{"nmap", "--version"}}
+	case "httpx":
+		return [][]string{{"httpx", "-version"}}
+	case "zgrab2":
+		return [][]string{{"zgrab2", "--version"}}
+	case "scamper":
+		return [][]string{{"scamper", "-v"}}
+	case "arp-scan":
+		return [][]string{{"arp-scan", "--version"}}
+	case "zeekctl":
+		return [][]string{{"zeekctl", "version"}, {"zeekctl", "--version"}}
+	default:
+		return [][]string{{name, "--version"}, {name, "-version"}, {name, "-v"}}
+	}
+}
+
+func firstMeaningfulLine(raw string) string {
+	for _, line := range strings.Split(raw, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		return trimmed
+	}
+	return ""
 }
 
 func (s *Server) handleModuleIllustration(w http.ResponseWriter, r *http.Request) {
@@ -2568,6 +2891,181 @@ func buildWarningDetails(run storage.RunDetails) []warningDetail {
 		})
 	}
 	return details
+}
+
+func buildRunExecutionFacts(run storage.RunDetails) []monitoringFact {
+	scopeEntries := len(run.Scope.Targets) + len(run.Scope.CIDRs)
+	satelliteName := firstNonEmptyWeb(
+		strings.TrimSpace(run.Scope.Labels["execution_satellite_name"]),
+		"Startrace Mothership - "+detectMothershipAddress(),
+	)
+	satelliteID := firstNonEmptyWeb(strings.TrimSpace(run.Scope.Labels["execution_satellite_id"]), "mothership")
+
+	completedSteps := 0
+	failedSteps := 0
+	for _, result := range run.JobResults {
+		switch result.Status {
+		case jobs.StatusSucceeded:
+			completedSteps++
+		case jobs.StatusFailed:
+			failedSteps++
+		}
+	}
+
+	return []monitoringFact{
+		{Key: "Execution satelite", Value: satelliteName},
+		{Key: "Satelite ID", Value: satelliteID},
+		{Key: "Run mode", Value: firstNonEmptyWeb(strings.TrimSpace(run.Run.Mode), "run")},
+		{Key: "Scope entries", Value: fmt.Sprintf("%d", scopeEntries)},
+		{Key: "Planned steps", Value: fmt.Sprintf("%d", len(run.Plan))},
+		{Key: "Finished steps", Value: fmt.Sprintf("%d", completedSteps)},
+		{Key: "Failed steps", Value: fmt.Sprintf("%d", failedSteps)},
+		{Key: "Evidence records", Value: fmt.Sprintf("%d", run.Run.EvidenceCount)},
+	}
+}
+
+func buildRunJobItems(run storage.RunDetails) []runJobItem {
+	items := make([]runJobItem, 0, len(run.Plan)+len(run.JobResults))
+	resultsByID := make(map[string]jobs.ExecutionResult, len(run.JobResults))
+	usedResults := make(map[string]struct{}, len(run.JobResults))
+	for _, result := range run.JobResults {
+		resultsByID[result.JobID] = result
+	}
+
+	for _, planned := range run.Plan {
+		result, ok := resultsByID[planned.ID]
+		if ok {
+			usedResults[planned.ID] = struct{}{}
+		}
+		items = append(items, buildRunJobItemFromPlan(planned, result, ok, strings.EqualFold(strings.TrimSpace(run.Run.Status), "running")))
+	}
+
+	for _, result := range run.JobResults {
+		if _, ok := usedResults[result.JobID]; ok {
+			continue
+		}
+		items = append(items, buildRunJobItemFromResult(result))
+	}
+
+	return items
+}
+
+func buildRunJobItemFromPlan(planned jobs.Job, result jobs.ExecutionResult, hasResult bool, runIsRunning bool) runJobItem {
+	item := runJobItem{
+		ID:     planned.ID,
+		Kind:   string(planned.Kind),
+		Plugin: firstNonEmptyWeb(strings.TrimSpace(planned.Plugin), "planner"),
+		Target: summarizeJobTargets(planned.Targets, planned.Ports),
+	}
+
+	if !hasResult {
+		item.Status = "Pending"
+		item.StatusClass = "status-neutral"
+		if !runIsRunning {
+			item.Status = "Not recorded"
+		}
+		item.Duration = "-"
+		item.StartedAt = "-"
+		item.FinishedAt = "-"
+		return item
+	}
+
+	item.Status = runJobStatusLabel(result.Status)
+	item.StatusClass = runJobStatusClass(result.Status)
+	item.StartedAt = formatMonitoringTimestamp(result.StartedAt)
+	item.FinishedAt = formatMonitoringTimestamp(result.FinishedAt)
+	item.Duration = formatRunJobDuration(result.StartedAt, result.FinishedAt)
+	item.RecordsWritten = result.RecordsWritten
+	item.Error = strings.TrimSpace(result.Error)
+	item.NeedsReevaluation = result.NeedsReevaluation
+	item.ReevaluationAfter = strings.TrimSpace(result.ReevaluationAfter)
+	item.ReevaluationReason = strings.TrimSpace(result.ReevaluationReason)
+	if target := summarizeJobTargets(result.Targets, result.Ports); target != "-" {
+		item.Target = target
+	}
+	if strings.TrimSpace(result.Plugin) != "" {
+		item.Plugin = result.Plugin
+	}
+	if strings.TrimSpace(string(result.Kind)) != "" {
+		item.Kind = string(result.Kind)
+	}
+	return item
+}
+
+func buildRunJobItemFromResult(result jobs.ExecutionResult) runJobItem {
+	return runJobItem{
+		ID:                 result.JobID,
+		Kind:               string(result.Kind),
+		Plugin:             firstNonEmptyWeb(strings.TrimSpace(result.Plugin), "runtime"),
+		Target:             summarizeJobTargets(result.Targets, result.Ports),
+		Status:             runJobStatusLabel(result.Status),
+		StatusClass:        runJobStatusClass(result.Status),
+		StartedAt:          formatMonitoringTimestamp(result.StartedAt),
+		FinishedAt:         formatMonitoringTimestamp(result.FinishedAt),
+		Duration:           formatRunJobDuration(result.StartedAt, result.FinishedAt),
+		RecordsWritten:     result.RecordsWritten,
+		Error:              strings.TrimSpace(result.Error),
+		NeedsReevaluation:  result.NeedsReevaluation,
+		ReevaluationAfter:  strings.TrimSpace(result.ReevaluationAfter),
+		ReevaluationReason: strings.TrimSpace(result.ReevaluationReason),
+	}
+}
+
+func summarizeJobTargets(targets []string, ports []int) string {
+	if len(targets) > 0 {
+		if len(targets) == 1 {
+			return targets[0]
+		}
+		return fmt.Sprintf("%s +%d more", targets[0], len(targets)-1)
+	}
+	if len(ports) > 0 {
+		parts := make([]string, 0, len(ports))
+		limit := len(ports)
+		if limit > 4 {
+			limit = 4
+		}
+		for idx := 0; idx < limit; idx++ {
+			parts = append(parts, fmt.Sprintf("%d", ports[idx]))
+		}
+		if len(ports) > limit {
+			return "ports " + strings.Join(parts, ", ") + fmt.Sprintf(" +%d more", len(ports)-limit)
+		}
+		return "ports " + strings.Join(parts, ", ")
+	}
+	return "-"
+}
+
+func runJobStatusLabel(status jobs.ExecutionStatus) string {
+	switch status {
+	case jobs.StatusSucceeded:
+		return "Succeeded"
+	case jobs.StatusFailed:
+		return "Failed"
+	case jobs.StatusSkipped:
+		return "Skipped"
+	default:
+		return "Unknown"
+	}
+}
+
+func runJobStatusClass(status jobs.ExecutionStatus) string {
+	switch status {
+	case jobs.StatusSucceeded:
+		return "status-success"
+	case jobs.StatusFailed:
+		return "status-danger"
+	case jobs.StatusSkipped:
+		return "status-warning"
+	default:
+		return "status-neutral"
+	}
+}
+
+func formatRunJobDuration(start time.Time, finish time.Time) string {
+	if start.IsZero() || finish.IsZero() || finish.Before(start) {
+		return "-"
+	}
+	return formatMonitoringDuration(finish.Sub(start))
 }
 
 func countEvidence(runs []storage.RunSummary) int {

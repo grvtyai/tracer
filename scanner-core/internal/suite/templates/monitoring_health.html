@@ -18,6 +18,9 @@
             <h2>Mothership Runtime</h2>
             <span class="pill {{.MonitoringMothership.StatusClass}}">{{.MonitoringMothership.Status}}</span>
         </div>
+        <p class="empty-note">
+            Health describes the local execution node itself. Runs are the full Radar executions, steps are the individual jobs inside a run, and the Satelite is the selected execution target.
+        </p>
         <div class="kv-grid">
             {{range .MonitoringFacts}}
             <div class="kv-key">{{.Key}}</div>
@@ -31,6 +34,34 @@
     </article>
 </section>
 {{end}}
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Toolkit Inventory</h2>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Tool</th>
+                <th>Status</th>
+                <th>Version</th>
+                <th>Runtime</th>
+                <th>Path</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .MonitoringTooling}}
+            <tr>
+                <td>{{.Name}}{{if .Required}} <span class="pill subtle">required</span>{{end}}</td>
+                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
+                <td>{{.Version}}</td>
+                <td>{{.Runtime}}</td>
+                <td class="mono">{{.Path}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</section>
 
 <section class="panel">
     <div class="panel-head">
