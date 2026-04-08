@@ -1,2 +1,4 @@
 BackUps/
 .gocache/
+scanner-core/*.exe
+scanner-core/*.test.exe
