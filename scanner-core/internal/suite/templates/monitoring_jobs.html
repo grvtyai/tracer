@@ -1,43 +1,68 @@
 {{define "monitoring_jobs.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-<section class="panel">
-    <div class="panel-head">
-        <h2>Monitoring Jobs</h2>
+<section class="hero-grid">
+    <article class="stats-grid">
+        {{range .MonitoringStats}}
+        <div class="stat-card">
+            <div class="stat-label">{{.Label}}</div>
+            <div class="stat-value">{{.Value}}</div>
+            <div class="list-meta">{{.Detail}}</div>
+        </div>
+        {{end}}
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Execution Summary</h2>
+            <span class="pill {{if .MonitoringMothership}}{{.MonitoringMothership.StatusClass}}{{else}}status-neutral{{end}}">{{if .MonitoringMothership}}{{.MonitoringMothership.Name}}{{else}}Mothership{{end}}</span>
+        </div>
+        <p class="empty-note">
+            Monitoring now shows real persisted Radar runs as local jobs. The execution target is still the Mothership,
+            so this becomes the bridge between today's local runs and later distributed Satelites.
+        </p>
         <div class="hero-actions">
             {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
             {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
         </div>
-    </div>
-    <p class="empty-note">
-        Monitoring jobs are planned here before the distributed runner system is active. This gives the suite a stable
-        place for job visibility now, while execution stays local on the Mothership.
-    </p>
+    </article>
 </section>
 
 <section class="panel">
     <div class="panel-head">
-        <h2>Planned Job Types</h2>
+        <h2>Recent Jobs</h2>
     </div>
+    {{if .MonitoringJobs}}
     <table class="table">
         <thead>
             <tr>
-                <th>Job</th>
-                <th>Target</th>
+                <th>Run</th>
+                <th>Scope</th>
+                <th>Satelite</th>
+                <th>Project</th>
                 <th>Status</th>
+                <th>Started</th>
+                <th>Finished</th>
                 <th>Summary</th>
             </tr>
         </thead>
         <tbody>
             {{range .MonitoringJobs}}
             <tr>
-                <td>{{.Name}}</td>
+                <td>{{if .URL}}<a class="table-link" href="{{.URL}}">{{.Name}}</a>{{else}}{{.Name}}{{end}}</td>
                 <td>{{.Target}}</td>
-                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
+                <td>{{.Execution}}</td>
+                <td>{{.Project}}</td>
+                <td><span class="status-label {{.StatusClass}}">{{if .Running}}<span class="spinner tiny"></span>{{end}}{{.Status}}</span></td>
+                <td>{{.StartedAt}}</td>
+                <td>{{.FinishedAt}}</td>
                 <td>{{.Summary}}</td>
             </tr>
             {{end}}
         </tbody>
     </table>
+    {{else}}
+    <p class="empty-note">No persisted Radar runs are available for this project yet.</p>
+    {{end}}
 </section>
 {{end}}

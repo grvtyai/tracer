@@ -3,35 +3,31 @@
 {{define "page"}}
 {{if .MonitoringMothership}}
 <section class="hero-grid">
+    <article class="stats-grid">
+        {{range .MonitoringStats}}
+        <div class="stat-card">
+            <div class="stat-label">{{.Label}}</div>
+            <div class="stat-value">{{.Value}}</div>
+            <div class="list-meta">{{.Detail}}</div>
+        </div>
+        {{end}}
+    </article>
+
     <article class="panel">
         <div class="panel-head">
-            <h2>Mothership Health</h2>
+            <h2>Mothership Runtime</h2>
             <span class="pill {{.MonitoringMothership.StatusClass}}">{{.MonitoringMothership.Status}}</span>
         </div>
         <div class="kv-grid">
-            <div class="kv-key">Execution target</div>
-            <div class="kv-value">{{.MonitoringMothership.Name}}</div>
-            <div class="kv-key">Address</div>
-            <div class="kv-value mono">{{.MonitoringMothership.Address}}</div>
-            <div class="kv-key">Heartbeat</div>
-            <div class="kv-value">{{.MonitoringMothership.LastSeen}}</div>
-            <div class="kv-key">Executor</div>
-            <div class="kv-value">{{.MonitoringMothership.Executor}}</div>
+            {{range .MonitoringFacts}}
+            <div class="kv-key">{{.Key}}</div>
+            <div class="kv-value">{{.Value}}</div>
+            {{end}}
         </div>
         <div class="hero-actions">
             {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
             {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
         </div>
-    </article>
-
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Monitoring Direction</h2>
-        </div>
-        <p class="empty-note">
-            This area will later combine host heartbeat, Satelite runtime checks, toolkit availability and job execution health.
-            For now it exposes the built-in Mothership as the first monitoring target.
-        </p>
     </article>
 </section>
 {{end}}
@@ -52,7 +48,9 @@
             {{range .PreflightChecks}}
             <tr>
                 <td>{{.Name}}</td>
-                <td><span class="status-label status-{{.Status}}">{{.Status}}</span></td>
+                <td>
+                    <span class="status-label {{if eq .Status "ok"}}status-success{{else if eq .Status "error"}}status-danger{{else}}status-warning{{end}}">{{.Status}}</span>
+                </td>
                 <td>{{.Detail}}</td>
             </tr>
             {{end}}

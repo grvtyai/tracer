@@ -2,10 +2,20 @@
 
 {{define "page"}}
 <section class="hero-grid">
+    <article class="stats-grid">
+        {{range .MonitoringStats}}
+        <div class="stat-card">
+            <div class="stat-label">{{.Label}}</div>
+            <div class="stat-value">{{.Value}}</div>
+            <div class="list-meta">{{.Detail}}</div>
+        </div>
+        {{end}}
+    </article>
+
     <article class="panel">
         <div class="panel-head">
             <h2>Satelite Overview</h2>
-            <span class="pill status-success">1 active target</span>
+            <span class="pill {{if .MonitoringMothership}}{{.MonitoringMothership.StatusClass}}{{else}}status-success{{end}}">1 active target</span>
         </div>
         <p class="empty-note">
             Satelites are the execution targets behind Startrace. Right now the local Mothership is the only active target,
@@ -41,6 +51,7 @@
                 <th>Role</th>
                 <th>Status</th>
                 <th>Address</th>
+                <th>Platform</th>
                 <th>Heartbeat</th>
             </tr>
         </thead>
@@ -51,6 +62,7 @@
                 <td>{{.Role}}</td>
                 <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
                 <td class="mono">{{.Address}}</td>
+                <td class="mono">{{.Platform}}</td>
                 <td>{{.LastSeen}}</td>
             </tr>
             {{end}}
