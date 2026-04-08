@@ -52,6 +52,27 @@ func helpTopicDefinitions() []helpTopicPage {
 			},
 		},
 		{
+			Slug:     "infrastructure",
+			Title:    "Infrastructure",
+			Category: "Getting Started",
+			Summary:  "How Startrace is split between the Mothership, future Satelites and the module-driven suite architecture.",
+			Sections: []helpSection{
+				{Title: "Mothership", Content: []string{
+					"The Mothership is the main Startrace host. It runs the browser UI, stores the shared SQLite data and currently executes jobs locally.",
+					"It is the first execution target shown in the suite and acts as the default home for Radar runs until remote Satelites are available.",
+				}},
+				{Title: "Satelites", Content: []string{
+					"Satelites are the planned Startrace runners for other network segments or remote environments.",
+					"A Satelite should receive jobs from the Mothership, execute them with the local toolkit and report health, status and results back to the main host.",
+				}},
+				{Title: "Responsibilities", Content: []string{
+					"The Mothership owns the product UI, shared state and orchestration.",
+					"Satelites are meant to own execution in places where keeping everything on one host is not practical.",
+					"This split keeps Startrace usable as a single-node deployment today while leaving room for a distributed model later.",
+				}},
+			},
+		},
+		{
 			Slug:     "basics",
 			Title:    "Basic Functions",
 			Category: "Getting Started",
@@ -72,17 +93,28 @@ func helpTopicDefinitions() []helpTopicPage {
 			Slug:     "plugins",
 			Title:    "Plugins and Tools",
 			Category: "Reference",
-			Summary:  "Overview of the currently used plugins, what they do and where their upstream projects live.",
+			Summary:  "What Radar does, which technologies it uses and how the current discovery stack is split into separate pieces.",
 			Sections: []helpSection{
-				{Title: "Discovery Plugins", Content: []string{
-					"naabu for port discovery.",
-					"nmap for service and OS fingerprinting.",
-					"httpx and zgrab2 for web and layer-7 probing.",
-					"scamper for route tracing.",
-					"zeek for passive ingest integration.",
+				{Title: "What Radar Is", Content: []string{
+					"Radar is the first live Startrace module and is responsible for network discovery, scan execution and the first wave of technical evidence collection.",
+					"It is not one single scanner. Radar combines multiple focused tools and normalizes their output into the shared Startrace data model.",
 				}},
-				{Title: "Notes", Content: []string{
-					"This section is intentionally a framework page for now. We can expand each plugin with install notes, flags, caveats and troubleshooting as we solidify the suite.",
+				{Title: "Core Discovery Stack", Content: []string{
+					"naabu is used for fast port discovery and broad active reachability checks.",
+					"nmap is used after initial discovery for deeper service and operating system fingerprinting.",
+					"scamper is used for route tracing and path context.",
+					"httpx is used to verify and classify web-facing services.",
+					"zgrab2 is used for additional layer-7 grabbing when deeper protocol detail is useful.",
+					"Zeek is used as the passive ingest path when passive observations are enabled.",
+				}},
+				{Title: "Additional Integrations", Content: []string{
+					"arp-scan is available for local-segment discovery where layer-2 visibility helps.",
+					"ldapdomaindump and SharpHound-related paths are early integrations for later identity- and directory-oriented workflows.",
+					"These integrations are kept modular so Radar can grow without forcing every tool into every run.",
+				}},
+				{Title: "Why It Is Split This Way", Content: []string{
+					"Each tool does a narrower job well, and Startrace combines them into one operator flow.",
+					"This makes Radar easier to evolve than a monolithic scanner while keeping the results inside shared projects, assets and evidence records.",
 				}},
 			},
 			Links: []helpExternalLink{

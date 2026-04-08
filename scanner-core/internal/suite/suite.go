@@ -130,6 +130,7 @@ func buildModuleNav(activeNav string, activeSection string, currentProject *stor
 		candidates = []candidate{
 			{section: "help-overview", label: "Overview", url: "/help"},
 			{section: "help-installation", label: "Installation", url: "/help/installation"},
+			{section: "help-infrastructure", label: "Infrastructure", url: "/help/infrastructure"},
 			{section: "help-basics", label: "Basics", url: "/help/basics"},
 			{section: "help-plugins", label: "Plugins", url: "/help/plugins"},
 			{section: "help-runs", label: "Runs", url: "/help/runs"},
