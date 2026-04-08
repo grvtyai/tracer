@@ -607,6 +607,15 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     gap: 8px;
 }
 
+.status-dot {
+    display: inline-flex;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
+}
+
 .status-pill {
     display: inline-flex;
     align-items: center;

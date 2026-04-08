@@ -6,24 +6,10 @@
         {{range .MonitoringStats}}
         <div class="stat-card">
             <div class="stat-label">{{.Label}}</div>
-            <div class="stat-value">{{.Value}}</div>
-            <div class="list-meta">{{.Detail}}</div>
+            <div class="stat-value">{{if .StatusClass}}<span class="status-label {{.StatusClass}}"><span class="status-dot"></span>{{.Value}}</span>{{else}}{{.Value}}{{end}}</div>
+            {{if .Detail}}<div class="list-meta">{{.Detail}}</div>{{end}}
         </div>
         {{end}}
-    </article>
-
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Execution Summary</h2>
-            <span class="pill {{if .MonitoringMothership}}{{.MonitoringMothership.StatusClass}}{{else}}status-neutral{{end}}">{{if .MonitoringMothership}}{{.MonitoringMothership.Name}}{{else}}Mothership{{end}}</span>
-        </div>
-        <p class="empty-note">
-            Monitoring now shows real persisted Radar runs. Each row is one full run, each run contains individual execution steps, and the Satelite column shows where that run was meant to execute.
-        </p>
-        <div class="hero-actions">
-            {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
-            {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
-        </div>
     </article>
 </section>
 

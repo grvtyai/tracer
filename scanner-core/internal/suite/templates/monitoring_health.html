@@ -7,8 +7,8 @@
         {{range .MonitoringStats}}
         <div class="stat-card">
             <div class="stat-label">{{.Label}}</div>
-            <div class="stat-value">{{.Value}}</div>
-            <div class="list-meta">{{.Detail}}</div>
+            <div class="stat-value">{{if .StatusClass}}<span class="status-label {{.StatusClass}}"><span class="status-dot"></span>{{.Value}}</span>{{else}}{{.Value}}{{end}}</div>
+            {{if .Detail}}<div class="list-meta">{{.Detail}}</div>{{end}}
         </div>
         {{end}}
     </article>
@@ -18,9 +18,6 @@
             <h2>Mothership Runtime</h2>
             <span class="pill {{.MonitoringMothership.StatusClass}}">{{.MonitoringMothership.Status}}</span>
         </div>
-        <p class="empty-note">
-            Health describes the local execution node itself. Runs are the full Radar executions, steps are the individual jobs inside a run, and the Satelite is the selected execution target.
-        </p>
         <div class="kv-grid">
             {{range .MonitoringFacts}}
             <div class="kv-key">{{.Key}}</div>

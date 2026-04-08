@@ -137,6 +137,7 @@ type monitoringSatellite struct {
 	Platform    string
 	Executor    string
 	LastSeen    string
+	FirstSeen   string
 	Summary     string
 }
 
@@ -161,6 +162,7 @@ type monitoringStat struct {
 	Label  string
 	Value  string
 	Detail string
+	StatusClass string
 }
 
 type monitoringFact struct {
@@ -1304,9 +1306,9 @@ func (s *Server) handleMonitoringSatellites(w http.ResponseWriter, r *http.Reque
 		Project:              currentProject,
 		PreflightChecks:      preflightChecks,
 		Settings:             appSettings,
-		MonitoringSatellites: monitoringSatellites,
+		MonitoringSatellites: filterRegisteredSatellites(monitoringSatellites),
 		MonitoringMothership: &mothership,
-		MonitoringStats:      buildMonitoringSatelliteStats(monitoringSatellites, runs, preflightChecks),
+		MonitoringStats:      buildMonitoringSatelliteStats(mothership, monitoringSatellites, mustListAssets(ctx, s.repo, currentProject.ID)),
 		PrimaryAction: &pageAction{
 			Label:   "Register new Satelite",
 			URL:     buildProjectPath("/monitoring/satellites/register", currentProject),
@@ -2006,6 +2008,7 @@ func (s *Server) monitoringSatellites(ctx context.Context, checks []preflightChe
 
 	monitoringSatellites := make([]monitoringSatellite, 0, len(storedSatellites))
 	mothershipView := s.buildMonitoringMothership(checks, runs)
+	mothershipView.FirstSeen = formatMonitoringTimestamp(mothershipStored.CreatedAt)
 	if len(storedSatellites) == 0 {
 		return []monitoringSatellite{mothershipView}, mothershipView, nil
 	}
@@ -2070,8 +2073,20 @@ func (s *Server) monitoringSatelliteFromStored(satellite storage.Satellite) moni
 		Platform:    satellite.Platform,
 		Executor:    satellite.Executor,
 		LastSeen:    lastSeen,
+		FirstSeen:   formatMonitoringTimestamp(satellite.CreatedAt),
 		Summary:     summary,
 	}
+}
+
+func filterRegisteredSatellites(satellites []monitoringSatellite) []monitoringSatellite {
+	filtered := make([]monitoringSatellite, 0, len(satellites))
+	for _, satellite := range satellites {
+		if strings.EqualFold(strings.TrimSpace(satellite.ID), "mothership") {
+			continue
+		}
+		filtered = append(filtered, satellite)
+	}
+	return filtered
 }
 
 func (s *Server) buildMonitoringMothership(checks []preflightCheck, runs []storage.RunSummary) monitoringSatellite {
@@ -2105,51 +2120,59 @@ func (s *Server) buildMonitoringMothership(checks []preflightCheck, runs []stora
 	return mothership
 }
 
-func buildMonitoringSatelliteStats(satellites []monitoringSatellite, runs []storage.RunSummary, checks []preflightCheck) []monitoringStat {
-	readyTools, totalTools := monitoringToolingCounts(checks)
-	lastRunLabel := "No runs yet"
-	lastRunDetail := "The Mothership is ready but has not executed a persisted Radar run for this project yet."
-	if latest := latestRun(runs); latest != nil {
-		lastRunLabel = firstNonEmptyWeb(strings.TrimSpace(latest.TemplateName), "Radar run")
-		lastRunDetail = "Started " + latest.StartedAt.Local().Format("2006-01-02 15:04")
+func buildMonitoringSatelliteStats(mothership monitoringSatellite, satellites []monitoringSatellite, assets []storage.AssetSummary) []monitoringStat {
+	registeredSatellites := len(filterRegisteredSatellites(satellites))
+	mothershipStatus := "Online - Stable"
+	statusClass := "status-success"
+	switch mothership.StatusClass {
+	case "status-warning":
+		mothershipStatus = "Online - Warning"
+		statusClass = "status-warning"
+	case "status-danger":
+		mothershipStatus = "Offline"
+		statusClass = "status-danger"
 	}
 
 	return []monitoringStat{
-		{Label: "Registered targets", Value: fmt.Sprintf("%d", len(satellites)), Detail: "The local Startrace Mothership is available now and future Satelites will appear here too."},
-		{Label: "Toolkit ready", Value: fmt.Sprintf("%d / %d", readyTools, totalTools), Detail: "Remote Satelites can later reuse the same readiness model."},
-		{Label: "Persisted runs", Value: fmt.Sprintf("%d", len(runs)), Detail: "Radar runs are already visible here before distributed execution exists."},
-		{Label: "Latest run", Value: lastRunLabel, Detail: lastRunDetail},
+		{Label: "Registered Satelites", Value: fmt.Sprintf("%d", registeredSatellites)},
+		{Label: "Mothership Status", Value: mothershipStatus, StatusClass: statusClass},
+		{Label: "Inventory", Value: fmt.Sprintf("%d", len(assets))},
+		{Label: "Subnets", Value: fmt.Sprintf("%d", countUniqueSubnets(assets))},
 	}
 }
 
 func buildMonitoringHealthStats(satellites []monitoringSatellite, checks []preflightCheck, runs []storage.RunSummary) []monitoringStat {
 	statusValue := "Healthy"
-	statusDetail := "The local Startrace Mothership is ready for local execution."
 	switch preflightState(checks) {
 	case "warning":
 		statusValue = "Needs attention"
-		statusDetail = "Optional tools are missing or a non-critical runtime check needs attention."
 	case "error":
 		statusValue = "Degraded"
-		statusDetail = "At least one required runtime check is failing."
 	}
 
 	readyTools, totalTools := monitoringToolingCounts(checks)
 	lastSuccessfulLabel := "No successful run yet"
-	lastSuccessfulDetail := "Launch a Radar run and the last successful execution will appear here."
 	if latestSuccessful := latestRunMatching(runs, func(run storage.RunSummary) bool {
 		return strings.EqualFold(strings.TrimSpace(run.Status), "completed")
 	}); latestSuccessful != nil {
 		lastSuccessfulLabel = firstNonEmptyWeb(strings.TrimSpace(latestSuccessful.TemplateName), "Radar run")
-		lastSuccessfulDetail = "Finished " + formatMonitoringTimestamp(latestSuccessful.FinishedAt)
+	}
+
+	statusClass := ""
+	switch statusValue {
+	case "Healthy":
+		statusClass = "status-success"
+	case "Needs attention":
+		statusClass = "status-warning"
+	case "Degraded":
+		statusClass = "status-danger"
 	}
 
 	return []monitoringStat{
-		{Label: "Mothership", Value: statusValue, Detail: statusDetail},
-		{Label: "Registered nodes", Value: fmt.Sprintf("%d", len(satellites)), Detail: "Today this is the local Mothership, later this expands to additional Satelites."},
-		{Label: "Tooling", Value: fmt.Sprintf("%d / %d ready", readyTools, totalTools), Detail: "Required and optional Radar tools detected on this host."},
-		{Label: "Radar runs", Value: fmt.Sprintf("%d", len(runs)), Detail: "Persisted project runs executed through the selected Satelite model."},
-		{Label: "Last success", Value: lastSuccessfulLabel, Detail: lastSuccessfulDetail},
+		{Label: "Mothership", Value: statusValue, StatusClass: statusClass},
+		{Label: "Registered nodes", Value: fmt.Sprintf("%d", len(satellites))},
+		{Label: "Tooling", Value: fmt.Sprintf("%d / %d ready", readyTools, totalTools)},
+		{Label: "Last success", Value: lastSuccessfulLabel},
 	}
 }
 
@@ -2169,11 +2192,11 @@ func buildMonitoringJobStats(satellites []monitoringSatellite, jobs []monitoring
 	}
 
 	return []monitoringStat{
-		{Label: "Visible jobs", Value: fmt.Sprintf("%d", len(jobs)), Detail: "This view is backed by real persisted Radar runs."},
-		{Label: "Execution nodes", Value: fmt.Sprintf("%d", len(satellites)), Detail: "Jobs are still local today, but already tied to the Satelite model."},
-		{Label: "Running", Value: fmt.Sprintf("%d", running), Detail: "Runs that are still collecting evidence right now."},
-		{Label: "Completed", Value: fmt.Sprintf("%d", completed), Detail: "Runs that finished without a recorded failure."},
-		{Label: "Needs attention", Value: fmt.Sprintf("%d", attention), Detail: "Runs with failures, warnings or reevaluation hints."},
+		{Label: "Visible jobs", Value: fmt.Sprintf("%d", len(jobs))},
+		{Label: "Execution nodes", Value: fmt.Sprintf("%d", len(satellites))},
+		{Label: "Running", Value: fmt.Sprintf("%d", running)},
+		{Label: "Completed", Value: fmt.Sprintf("%d", completed)},
+		{Label: "Needs attention", Value: fmt.Sprintf("%d", attention)},
 	}
 }
 

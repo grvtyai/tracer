@@ -2,41 +2,40 @@
 
 {{define "page"}}
 <section class="hero-grid">
-    <article class="stats-grid">
-        {{range .MonitoringStats}}
-        <div class="stat-card">
-            <div class="stat-label">{{.Label}}</div>
-            <div class="stat-value">{{.Value}}</div>
-            <div class="list-meta">{{.Detail}}</div>
-        </div>
-        {{end}}
-    </article>
-
     <article class="panel">
         <div class="panel-head">
-            <h2>Satelite Overview</h2>
-            <span class="pill {{if .MonitoringMothership}}{{.MonitoringMothership.StatusClass}}{{else}}status-success{{end}}">1 active target</span>
+            <h2>Mothership Details</h2>
         </div>
-        <p class="empty-note">
-            Satelites are the execution targets behind Startrace. Right now the local Mothership is the only active target,
-            and future remote Satelites can be registered here once runner support is wired in.
-        </p>
+        <div class="kv-grid">
+        <div class="kv-key">Name</div>
+        <div class="kv-value">{{.MonitoringMothership.Name}}</div>
+        <div class="kv-key">Hostname</div>
+        <div class="kv-value mono">{{.MonitoringMothership.Hostname}}</div>
+        <div class="kv-key">Address</div>
+        <div class="kv-value mono">{{.MonitoringMothership.Address}}</div>
+        <div class="kv-key">Platform</div>
+        <div class="kv-value mono">{{.MonitoringMothership.Platform}}</div>
+        <div class="kv-key">Executor</div>
+        <div class="kv-value">{{.MonitoringMothership.Executor}}</div>
+        <div class="kv-key">First seen</div>
+        <div class="kv-value">{{.MonitoringMothership.FirstSeen}}</div>
+        <div class="kv-key">Heartbeat</div>
+        <div class="kv-value">{{.MonitoringMothership.LastSeen}}</div>
+        </div>
         <div class="hero-actions">
             {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
             {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
         </div>
     </article>
 
-    <article class="panel">
-        <div class="panel-head">
-            <h2>Execution Default</h2>
+    <article class="stats-grid">
+        {{range .MonitoringStats}}
+        <div class="stat-card">
+            <div class="stat-label">{{.Label}}</div>
+            <div class="stat-value">{{if .StatusClass}}<span class="status-label {{.StatusClass}}"><span class="status-dot"></span>{{.Value}}</span>{{else}}{{.Value}}{{end}}</div>
+            {{if .Detail}}<div class="list-meta">{{.Detail}}</div>{{end}}
         </div>
-        <div class="kv-grid">
-            <div class="kv-key">Default target</div>
-            <div class="kv-value">Startrace Mothership - {{if .MonitoringMothership}}{{.MonitoringMothership.Address}}{{else}}127.0.0.1{{end}}</div>
-            <div class="kv-key">Registration</div>
-            <div class="kv-value">Remote Satelite registration is prepared in the UI but not active yet.</div>
-        </div>
+        {{end}}
     </article>
 </section>
 
@@ -44,6 +43,7 @@
     <div class="panel-head">
         <h2>Registered Satelites</h2>
     </div>
+    {{if .MonitoringSatellites}}
     <table class="table">
         <thead>
             <tr>
@@ -68,27 +68,8 @@
             {{end}}
         </tbody>
     </table>
+    {{else}}
+    <p class="empty-note">No registered Satelites yet.</p>
+    {{end}}
 </section>
-
-{{if .MonitoringMothership}}
-<section class="panel">
-    <div class="panel-head">
-        <h2>Mothership Details</h2>
-    </div>
-    <div class="kv-grid">
-        <div class="kv-key">Name</div>
-        <div class="kv-value">{{.MonitoringMothership.Name}}</div>
-        <div class="kv-key">Hostname</div>
-        <div class="kv-value mono">{{.MonitoringMothership.Hostname}}</div>
-        <div class="kv-key">Address</div>
-        <div class="kv-value mono">{{.MonitoringMothership.Address}}</div>
-        <div class="kv-key">Platform</div>
-        <div class="kv-value mono">{{.MonitoringMothership.Platform}}</div>
-        <div class="kv-key">Executor</div>
-        <div class="kv-value">{{.MonitoringMothership.Executor}}</div>
-        <div class="kv-key">Summary</div>
-        <div class="kv-value">{{.MonitoringMothership.Summary}}</div>
-    </div>
-</section>
-{{end}}
 {{end}}
