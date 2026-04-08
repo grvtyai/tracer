@@ -34,6 +34,30 @@
 
 <section class="panel">
     <div class="panel-head">
+        <h2>Monitoring Checks</h2>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Check</th>
+                <th>Status</th>
+                <th>Detail</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .MonitoringChecks}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
+                <td>{{.Detail}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
         <h2>Toolkit Inventory</h2>
     </div>
     <table class="table">

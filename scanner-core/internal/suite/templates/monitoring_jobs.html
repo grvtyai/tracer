@@ -17,6 +17,28 @@
     <div class="panel-head">
         <h2>Recent Jobs</h2>
     </div>
+    <form method="get" action="/monitoring/jobs" class="asset-form" style="margin-bottom: 18px;">
+        <input type="hidden" name="project" value="{{if .CurrentProject}}{{.CurrentProject.ID}}{{end}}" />
+        <div class="form-grid">
+            <label class="form-row">
+                <span class="form-label">Search</span>
+                <input class="input" type="search" name="q" value="{{.MonitoringJobQuery}}" placeholder="Run name, target, satelite or summary" />
+            </label>
+            <label class="form-row">
+                <span class="form-label">Status</span>
+                <select class="input" name="status">
+                    <option value="all" {{if eq .MonitoringJobStatus "all"}}selected{{end}}>All</option>
+                    <option value="running" {{if eq .MonitoringJobStatus "running"}}selected{{end}}>Running</option>
+                    <option value="completed" {{if eq .MonitoringJobStatus "completed"}}selected{{end}}>Completed</option>
+                    <option value="attention" {{if eq .MonitoringJobStatus "attention"}}selected{{end}}>Needs attention</option>
+                </select>
+            </label>
+        </div>
+        <div class="hero-actions compact-actions">
+            <button class="button button-primary" type="submit">Apply</button>
+            <a class="button button-secondary" href="/monitoring/jobs?project={{if .CurrentProject}}{{.CurrentProject.ID}}{{end}}">Reset</a>
+        </div>
+    </form>
     {{if .MonitoringJobs}}
     <table class="table">
         <thead>

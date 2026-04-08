@@ -1,7 +1,9 @@
 package suite
 
 import (
+	"crypto/rand"
 	"context"
+	"encoding/hex"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -116,8 +118,12 @@ type pageData struct {
 	MonitoringStats       []monitoringStat
 	MonitoringFacts       []monitoringFact
 	MonitoringTooling     []monitoringTool
+	MonitoringChecks      []monitoringCheck
 	RunExecutionFacts     []monitoringFact
 	RunJobItems           []runJobItem
+	MonitoringJobQuery    string
+	MonitoringJobStatus   string
+	SatelliteRegisterForm satelliteRegisterFormData
 }
 
 type satelliteOption struct {
@@ -180,6 +186,13 @@ type monitoringTool struct {
 	Runtime     string
 }
 
+type monitoringCheck struct {
+	Name        string
+	Status      string
+	StatusClass string
+	Detail      string
+}
+
 type runJobItem struct {
 	ID                 string
 	Kind               string
@@ -195,6 +208,17 @@ type runJobItem struct {
 	NeedsReevaluation  bool
 	ReevaluationAfter  string
 	ReevaluationReason string
+}
+
+type satelliteRegisterFormData struct {
+	Name             string
+	Address          string
+	Role             string
+	RegistrationToken string
+	CapabilityNaabu  bool
+	CapabilityNmap   bool
+	CapabilityHTTPX  bool
+	CapabilityZeek   bool
 }
 
 type dashboardStats struct {
@@ -1305,6 +1329,7 @@ func (s *Server) handleMonitoringSatellites(w http.ResponseWriter, r *http.Reque
 		ProjectSwitchPath:    "/monitoring/satellites",
 		Project:              currentProject,
 		PreflightChecks:      preflightChecks,
+		Notice:               noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Settings:             appSettings,
 		MonitoringSatellites: filterRegisteredSatellites(monitoringSatellites),
 		MonitoringMothership: &mothership,
@@ -1324,6 +1349,17 @@ func (s *Server) handleMonitoringSatellites(w http.ResponseWriter, r *http.Reque
 }
 
 func (s *Server) handleMonitoringSatelliteRegister(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		s.renderMonitoringSatelliteRegister(w, r, satelliteRegisterFormData{})
+	case http.MethodPost:
+		s.handleMonitoringSatelliteRegisterSave(w, r)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *Server) renderMonitoringSatelliteRegister(w http.ResponseWriter, r *http.Request, form satelliteRegisterFormData) {
 	if r.URL.Path != "/monitoring/satellites/register" {
 		http.NotFound(w, r)
 		return
@@ -1340,6 +1376,9 @@ func (s *Server) handleMonitoringSatelliteRegister(w http.ResponseWriter, r *htt
 		return
 	}
 
+	if strings.TrimSpace(form.Name) == "" {
+		form = defaultSatelliteRegisterForm()
+	}
 	preflightChecks := collectPreflightChecks(s.options.DBPath)
 	runs, err := s.repo.ListRuns(ctx, currentProject.ID)
 	if err != nil {
@@ -1365,8 +1404,10 @@ func (s *Server) handleMonitoringSatelliteRegister(w http.ResponseWriter, r *htt
 		ProjectSwitchPath:    "/monitoring/satellites/register",
 		Project:              currentProject,
 		PreflightChecks:      preflightChecks,
+		Notice:               noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Settings:             appSettings,
 		MonitoringMothership: &mothership,
+		SatelliteRegisterForm: form,
 		PrimaryAction: &pageAction{
 			Label:   "Back to Satelites",
 			URL:     buildProjectPath("/monitoring/satellites", currentProject),
@@ -1374,6 +1415,80 @@ func (s *Server) handleMonitoringSatelliteRegister(w http.ResponseWriter, r *htt
 		},
 	}
 	s.render(w, "monitoring_satellite_register.html", data)
+}
+
+func (s *Server) handleMonitoringSatelliteRegisterSave(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/monitoring/satellites/register" {
+		http.NotFound(w, r)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		s.writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	ctx := r.Context()
+	_, currentProject, _, err := s.loadShellContext(ctx, strings.TrimSpace(r.FormValue("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	form := satelliteRegisterFormData{
+		Name:              strings.TrimSpace(r.FormValue("name")),
+		Address:           strings.TrimSpace(r.FormValue("address")),
+		Role:              firstNonEmptyWeb(strings.TrimSpace(r.FormValue("role")), "Remote Satelite"),
+		RegistrationToken: strings.TrimSpace(r.FormValue("registration_token")),
+		CapabilityNaabu:   isChecked(r.FormValue("cap_naabu")),
+		CapabilityNmap:    isChecked(r.FormValue("cap_nmap")),
+		CapabilityHTTPX:   isChecked(r.FormValue("cap_httpx")),
+		CapabilityZeek:    isChecked(r.FormValue("cap_zeek")),
+	}
+
+	if strings.TrimSpace(form.Name) == "" || strings.TrimSpace(form.Address) == "" {
+		redirectURL := buildProjectPath("/monitoring/satellites/register", currentProject)
+		if strings.Contains(redirectURL, "?") {
+			redirectURL += "&notice=satellite-register-failed"
+		} else {
+			redirectURL += "?notice=satellite-register-failed"
+		}
+		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+		return
+	}
+	if strings.TrimSpace(form.RegistrationToken) == "" {
+		form.RegistrationToken = generateRegistrationToken()
+	}
+
+	_, err = s.repo.UpsertSatellite(ctx, storage.SatelliteUpsertInput{
+		ID:                    "satellite-" + slugifySatelliteName(form.Name) + "-" + time.Now().UTC().Format("20060102150405"),
+		Name:                  form.Name,
+		Kind:                  "satellite",
+		Role:                  form.Role,
+		Status:                "Awaiting heartbeat",
+		Address:               form.Address,
+		Hostname:              "",
+		Platform:              "Pending registration",
+		Executor:              "Remote runner",
+		LastSeenAt:            time.Time{},
+		RegistrationTokenHint: form.RegistrationToken,
+		Capabilities:          registerFormCapabilities(form),
+	})
+	if err != nil {
+		s.renderMonitoringSatelliteRegister(w, r, form)
+		return
+	}
+
+	redirectURL := buildProjectPath("/monitoring/satellites", currentProject)
+	if strings.Contains(redirectURL, "?") {
+		redirectURL += "&notice=satellite-registered"
+	} else {
+		redirectURL += "?notice=satellite-registered"
+	}
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
 func (s *Server) handleMonitoringHealth(w http.ResponseWriter, r *http.Request) {
@@ -1423,6 +1538,7 @@ func (s *Server) handleMonitoringHealth(w http.ResponseWriter, r *http.Request) 
 		MonitoringStats:      buildMonitoringHealthStats(monitoringSatellites, preflightChecks, runs),
 		MonitoringFacts:      s.buildMonitoringHealthFacts(preflightChecks, runs),
 		MonitoringTooling:    buildMonitoringTooling(preflightChecks),
+		MonitoringChecks:     buildMonitoringChecks(preflightChecks, runs, currentProject, s.options),
 		PrimaryAction: &pageAction{
 			Label:   "Open Satelites",
 			URL:     buildProjectPath("/monitoring/satellites", currentProject),
@@ -1465,7 +1581,9 @@ func (s *Server) handleMonitoringJobs(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	monitoringJobs := s.buildMonitoringJobs(ctx, currentProject, runs)
+	monitoringJobQuery := strings.TrimSpace(r.URL.Query().Get("q"))
+	monitoringJobStatus := firstNonEmptyWeb(strings.TrimSpace(r.URL.Query().Get("status")), "all")
+	monitoringJobs := filterMonitoringJobs(s.buildMonitoringJobs(ctx, currentProject, runs), monitoringJobQuery, monitoringJobStatus)
 	data := pageData{
 		Title:                "Monitoring - Jobs",
 		AppName:              s.options.AppName,
@@ -1484,6 +1602,8 @@ func (s *Server) handleMonitoringJobs(w http.ResponseWriter, r *http.Request) {
 		MonitoringMothership: &mothership,
 		MonitoringJobs:       monitoringJobs,
 		MonitoringStats:      buildMonitoringJobStats(monitoringSatellites, monitoringJobs),
+		MonitoringJobQuery:   monitoringJobQuery,
+		MonitoringJobStatus:  monitoringJobStatus,
 		PrimaryAction: &pageAction{
 			Label:   "Open Satelites",
 			URL:     buildProjectPath("/monitoring/satellites", currentProject),
@@ -2046,7 +2166,7 @@ func (s *Server) monitoringSatelliteFromStored(satellite storage.Satellite) moni
 	switch strings.ToLower(strings.TrimSpace(satellite.Status)) {
 	case "healthy", "online":
 		statusClass = "status-success"
-	case "needs attention", "warning":
+	case "needs attention", "warning", "awaiting heartbeat", "registered":
 		statusClass = "status-warning"
 	case "degraded", "offline", "error":
 		statusClass = "status-danger"
@@ -2087,6 +2207,70 @@ func filterRegisteredSatellites(satellites []monitoringSatellite) []monitoringSa
 		filtered = append(filtered, satellite)
 	}
 	return filtered
+}
+
+func defaultSatelliteRegisterForm() satelliteRegisterFormData {
+	return satelliteRegisterFormData{
+		Name:              "Branch Office Satelite",
+		Address:           "10.20.30.40",
+		Role:              "Remote Satelite",
+		RegistrationToken: generateRegistrationToken(),
+		CapabilityNaabu:   true,
+		CapabilityNmap:    true,
+		CapabilityHTTPX:   true,
+		CapabilityZeek:    false,
+	}
+}
+
+func registerFormCapabilities(form satelliteRegisterFormData) []string {
+	capabilities := make([]string, 0, 4)
+	if form.CapabilityNaabu {
+		capabilities = append(capabilities, "naabu")
+	}
+	if form.CapabilityNmap {
+		capabilities = append(capabilities, "nmap")
+	}
+	if form.CapabilityHTTPX {
+		capabilities = append(capabilities, "httpx")
+	}
+	if form.CapabilityZeek {
+		capabilities = append(capabilities, "zeekctl")
+	}
+	return capabilities
+}
+
+func slugifySatelliteName(name string) string {
+	lowered := strings.ToLower(strings.TrimSpace(name))
+	if lowered == "" {
+		return "node"
+	}
+	var builder strings.Builder
+	lastDash := false
+	for _, r := range lowered {
+		switch {
+		case r >= 'a' && r <= 'z':
+			builder.WriteRune(r)
+			lastDash = false
+		case r >= '0' && r <= '9':
+			builder.WriteRune(r)
+			lastDash = false
+		default:
+			if !lastDash {
+				builder.WriteRune('-')
+				lastDash = true
+			}
+		}
+	}
+	return strings.Trim(builder.String(), "-")
+}
+
+func generateRegistrationToken() string {
+	randomBytes := make([]byte, 6)
+	if _, err := rand.Read(randomBytes); err != nil {
+		return "STRC-REG-PENDING"
+	}
+	encoded := strings.ToUpper(hex.EncodeToString(randomBytes))
+	return "STRC-REG-" + encoded[:4] + "-" + encoded[4:8] + "-" + encoded[8:12]
 }
 
 func (s *Server) buildMonitoringMothership(checks []preflightCheck, runs []storage.RunSummary) monitoringSatellite {
@@ -2253,6 +2437,153 @@ func buildMonitoringTooling(checks []preflightCheck) []monitoringTool {
 		tools = append(tools, tool)
 	}
 	return tools
+}
+
+func buildMonitoringChecks(checks []preflightCheck, runs []storage.RunSummary, currentProject *storage.ProjectSummary, opts Options) []monitoringCheck {
+	monitoring := make([]monitoringCheck, 0, 5)
+
+	sqliteStatus := "Healthy"
+	sqliteClass := "status-success"
+	sqliteDetail := firstNonEmptyWeb(preflightCheckDetail(checks, "sqlite-store"), firstNonEmptyWeb(opts.DBPath, "-"))
+	if sqliteDetail == "" || strings.Contains(strings.ToLower(sqliteDetail), "not writable") {
+		sqliteStatus = "Failed"
+		sqliteClass = "status-danger"
+	}
+	monitoring = append(monitoring, monitoringCheck{
+		Name:        "SQLite store",
+		Status:      sqliteStatus,
+		StatusClass: sqliteClass,
+		Detail:      sqliteDetail,
+	})
+
+	readyTools, totalTools := monitoringToolingCounts(checks)
+	toolkitStatus := "Healthy"
+	toolkitClass := "status-success"
+	if readyTools < totalTools {
+		toolkitStatus = "Degraded"
+		toolkitClass = "status-warning"
+	}
+	requiredMissing := false
+	for _, check := range checks {
+		if check.Required && check.Status != "ok" {
+			requiredMissing = true
+			break
+		}
+	}
+	if requiredMissing {
+		toolkitStatus = "Failed"
+		toolkitClass = "status-danger"
+	}
+	monitoring = append(monitoring, monitoringCheck{
+		Name:        "Toolkit readiness",
+		Status:      toolkitStatus,
+		StatusClass: toolkitClass,
+		Detail:      fmt.Sprintf("%d / %d tools ready", readyTools, totalTools),
+	})
+
+	usagePercent, usageDetail := monitoringFilesystemMetrics(firstNonEmptyWeb(opts.DataDir, storage.DefaultDataDir()))
+	storageStatus := "Healthy"
+	storageClass := "status-success"
+	switch {
+	case usagePercent >= 95:
+		storageStatus = "Critical"
+		storageClass = "status-danger"
+	case usagePercent >= 85:
+		storageStatus = "Warning"
+		storageClass = "status-warning"
+	case usagePercent < 0:
+		storageStatus = "Unknown"
+		storageClass = "status-neutral"
+	}
+	monitoring = append(monitoring, monitoringCheck{
+		Name:        "Storage headroom",
+		Status:      storageStatus,
+		StatusClass: storageClass,
+		Detail:      usageDetail,
+	})
+
+	runFreshnessStatus := "No runs"
+	runFreshnessClass := "status-warning"
+	runFreshnessDetail := "No successful Radar run recorded yet."
+	if latestSuccessful := latestRunMatching(runs, func(run storage.RunSummary) bool {
+		return strings.EqualFold(strings.TrimSpace(run.Status), "completed")
+	}); latestSuccessful != nil {
+		age := time.Since(latestSuccessful.FinishedAt)
+		runFreshnessStatus = "Fresh"
+		runFreshnessClass = "status-success"
+		if age > 24*time.Hour {
+			runFreshnessStatus = "Stale"
+			runFreshnessClass = "status-warning"
+		}
+		if age > 7*24*time.Hour {
+			runFreshnessStatus = "Old"
+			runFreshnessClass = "status-danger"
+		}
+		runFreshnessDetail = fmt.Sprintf("%s | %s", firstNonEmptyWeb(strings.TrimSpace(latestSuccessful.TemplateName), "Radar run"), formatMonitoringTimestamp(latestSuccessful.FinishedAt))
+	}
+	monitoring = append(monitoring, monitoringCheck{
+		Name:        "Run freshness",
+		Status:      runFreshnessStatus,
+		StatusClass: runFreshnessClass,
+		Detail:      runFreshnessDetail,
+	})
+
+	registryCount := 0
+	if currentProject != nil {
+		registryCount = currentProject.RunCount
+	}
+	registryDetail := "Mothership only"
+	if registryCount > 0 {
+		registryDetail = fmt.Sprintf("%d project runs tracked", registryCount)
+	}
+	monitoring = append(monitoring, monitoringCheck{
+		Name:        "Registry state",
+		Status:      "Ready",
+		StatusClass: "status-success",
+		Detail:      registryDetail,
+	})
+
+	return monitoring
+}
+
+func filterMonitoringJobs(items []monitoringJob, query string, status string) []monitoringJob {
+	filtered := make([]monitoringJob, 0, len(items))
+	needle := strings.ToLower(strings.TrimSpace(query))
+	for _, item := range items {
+		if !monitoringJobMatchesStatus(item, status) {
+			continue
+		}
+		if needle != "" {
+			haystack := strings.ToLower(strings.Join([]string{
+				item.Name,
+				item.Project,
+				item.Target,
+				item.Execution,
+				item.Status,
+				item.Summary,
+			}, " "))
+			if !strings.Contains(haystack, needle) {
+				continue
+			}
+		}
+		filtered = append(filtered, item)
+	}
+	return filtered
+}
+
+func monitoringJobMatchesStatus(item monitoringJob, status string) bool {
+	switch strings.ToLower(strings.TrimSpace(status)) {
+	case "", "all":
+		return true
+	case "running":
+		return item.Running || item.StatusClass == "status-info"
+	case "completed":
+		return item.StatusClass == "status-success"
+	case "attention":
+		return item.StatusClass == "status-warning" || item.StatusClass == "status-danger"
+	default:
+		return true
+	}
 }
 
 func (s *Server) buildMonitoringJobs(ctx context.Context, currentProject *storage.ProjectSummary, runs []storage.RunSummary) []monitoringJob {
@@ -2527,23 +2858,34 @@ func monitoringMemorySummary() string {
 }
 
 func monitoringFilesystemUsage(path string) string {
+	_, detail := monitoringFilesystemMetrics(path)
+	return detail
+}
+
+func monitoringFilesystemMetrics(path string) (int, string) {
 	if runtime.GOOS != "linux" {
-		return "Available on Linux hosts"
+		return -1, "Available on Linux hosts"
 	}
 	target := firstNonEmptyWeb(strings.TrimSpace(path), "/")
-	output, err := exec.Command("df", "-h", target).CombinedOutput()
+	output, err := exec.Command("df", "-P", "-h", target).CombinedOutput()
 	if err != nil {
-		return "Unavailable"
+		return -1, "Unavailable"
 	}
 	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
 	if len(lines) < 2 {
-		return "Unavailable"
+		return -1, "Unavailable"
 	}
 	fields := strings.Fields(lines[len(lines)-1])
 	if len(fields) < 6 {
-		return strings.TrimSpace(lines[len(lines)-1])
+		return -1, strings.TrimSpace(lines[len(lines)-1])
 	}
-	return fmt.Sprintf("%s used of %s (%s) | %s free", fields[2], fields[1], fields[4], fields[3])
+	usedPercent := -1
+	if strings.HasSuffix(fields[4], "%") {
+		if value, err := strconv.Atoi(strings.TrimSuffix(fields[4], "%")); err == nil {
+			usedPercent = value
+		}
+	}
+	return usedPercent, fmt.Sprintf("%s used of %s (%s) | %s free", fields[2], fields[1], fields[4], fields[3])
 }
 
 func monitoringZeekRuntime() string {
@@ -4610,6 +4952,10 @@ func noticeMessage(code string) string {
 		return "Run warnings were accepted and the run now appears as completed."
 	case "settings-saved":
 		return "Settings updated successfully."
+	case "satellite-registered":
+		return "Satelite registered successfully."
+	case "satellite-register-failed":
+		return "Satelite registration failed. Check the submitted values and try again."
 	default:
 		return ""
 	}

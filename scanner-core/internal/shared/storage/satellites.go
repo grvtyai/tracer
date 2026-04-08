@@ -114,9 +114,9 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 	}
 
 	now := time.Now().UTC()
-	lastSeenAt := input.LastSeenAt.UTC()
-	if input.LastSeenAt.IsZero() {
-		lastSeenAt = now
+	lastSeenAt := ""
+	if !input.LastSeenAt.IsZero() {
+		lastSeenAt = input.LastSeenAt.UTC().Format(time.RFC3339Nano)
 	}
 	capabilitiesJSON, err := marshalJSON(input.Capabilities)
 	if err != nil {
@@ -163,7 +163,7 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 		strings.TrimSpace(input.Hostname),
 		strings.TrimSpace(input.Platform),
 		strings.TrimSpace(input.Executor),
-		lastSeenAt.Format(time.RFC3339Nano),
+		lastSeenAt,
 		strings.TrimSpace(input.RegistrationTokenHint),
 		capabilitiesJSON,
 		now.Format(time.RFC3339Nano),

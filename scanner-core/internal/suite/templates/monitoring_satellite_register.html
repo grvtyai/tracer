@@ -5,32 +5,35 @@
     <div class="panel-head">
         <h2>Register new Satelite</h2>
     </div>
-    <p class="empty-note">
-        This is the prepared registration flow for future Startrace Satelites. The UI is in place now so the suite can
-        grow into distributed execution later without redesigning the module layout.
-    </p>
-    <form class="asset-form">
+    <form class="asset-form" method="post" action="/monitoring/satellites/register">
+        <input type="hidden" name="project" value="{{if .CurrentProject}}{{.CurrentProject.ID}}{{end}}" />
         <label class="form-row">
             <span class="form-label">Satelite label</span>
-            <input class="input" type="text" value="Branch Office Satelite" disabled />
+            <input class="input" type="text" name="name" value="{{.SatelliteRegisterForm.Name}}" />
         </label>
         <div class="form-grid">
             <label class="form-row">
                 <span class="form-label">Endpoint</span>
-                <input class="input" type="text" value="10.20.30.40" disabled />
+                <input class="input" type="text" name="address" value="{{.SatelliteRegisterForm.Address}}" placeholder="10.20.30.40" />
             </label>
             <label class="form-row">
                 <span class="form-label">Registration token</span>
-                <input class="input" type="text" value="STRC-REG-XXXX-XXXX" disabled />
+                <input class="input mono" type="text" name="registration_token" value="{{.SatelliteRegisterForm.RegistrationToken}}" readonly />
             </label>
         </div>
         <label class="form-row">
-            <span class="form-label">Notes</span>
-            <textarea class="input textarea" disabled>Future Satelites can be placed into additional network segments and connected back to the Startrace Mothership.</textarea>
+            <span class="form-label">Role</span>
+            <input class="input" type="text" name="role" value="{{.SatelliteRegisterForm.Role}}" />
         </label>
+        <div class="checkbox-grid">
+            <label class="check-row"><input type="checkbox" name="cap_naabu" {{if .SatelliteRegisterForm.CapabilityNaabu}}checked{{end}} /> <span>naabu<small class="check-hint">Fast port discovery on the remote node.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="cap_nmap" {{if .SatelliteRegisterForm.CapabilityNmap}}checked{{end}} /> <span>nmap<small class="check-hint">Deeper service and OS fingerprinting.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="cap_httpx" {{if .SatelliteRegisterForm.CapabilityHTTPX}}checked{{end}} /> <span>httpx<small class="check-hint">Web verification and service classification.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="cap_zeek" {{if .SatelliteRegisterForm.CapabilityZeek}}checked{{end}} /> <span>zeekctl<small class="check-hint">Passive ingest on segments that support it.</small></span></label>
+        </div>
         <div class="hero-actions">
             {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
-            <button class="button button-secondary" type="button" disabled>Registration flow comes later</button>
+            <button class="button button-primary" type="submit">Save Satelite</button>
         </div>
     </form>
 </section>
