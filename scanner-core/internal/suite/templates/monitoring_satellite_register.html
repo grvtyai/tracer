@@ -1,0 +1,37 @@
+{{define "monitoring_satellite_register.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel">
+    <div class="panel-head">
+        <h2>Register new Satelite</h2>
+    </div>
+    <p class="empty-note">
+        This is the prepared registration flow for future Startrace Satelites. The UI is in place now so the suite can
+        grow into distributed execution later without redesigning the module layout.
+    </p>
+    <form class="asset-form">
+        <label class="form-row">
+            <span class="form-label">Satelite label</span>
+            <input class="input" type="text" value="Branch Office Satelite" disabled />
+        </label>
+        <div class="form-grid">
+            <label class="form-row">
+                <span class="form-label">Endpoint</span>
+                <input class="input" type="text" value="10.20.30.40" disabled />
+            </label>
+            <label class="form-row">
+                <span class="form-label">Registration token</span>
+                <input class="input" type="text" value="STRC-REG-XXXX-XXXX" disabled />
+            </label>
+        </div>
+        <label class="form-row">
+            <span class="form-label">Notes</span>
+            <textarea class="input textarea" disabled>Future Satelites can be placed into additional network segments and connected back to the Startrace Mothership.</textarea>
+        </label>
+        <div class="hero-actions">
+            {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
+            <button class="button button-secondary" type="button" disabled>Registration flow comes later</button>
+        </div>
+    </form>
+</section>
+{{end}}

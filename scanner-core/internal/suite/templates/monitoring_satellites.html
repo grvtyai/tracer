@@ -1,0 +1,82 @@
+{{define "monitoring_satellites.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="hero-grid">
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Satelite Overview</h2>
+            <span class="pill status-success">1 active target</span>
+        </div>
+        <p class="empty-note">
+            Satelites are the execution targets behind Startrace. Right now the local Mothership is the only active target,
+            and future remote Satelites can be registered here once runner support is wired in.
+        </p>
+        <div class="hero-actions">
+            {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
+            {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
+        </div>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Execution Default</h2>
+        </div>
+        <div class="kv-grid">
+            <div class="kv-key">Default target</div>
+            <div class="kv-value">Startrace Mothership - {{if .MonitoringMothership}}{{.MonitoringMothership.Address}}{{else}}127.0.0.1{{end}}</div>
+            <div class="kv-key">Registration</div>
+            <div class="kv-value">Remote Satelite registration is prepared in the UI but not active yet.</div>
+        </div>
+    </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Registered Satelites</h2>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Address</th>
+                <th>Heartbeat</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .MonitoringSatellites}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Role}}</td>
+                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
+                <td class="mono">{{.Address}}</td>
+                <td>{{.LastSeen}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</section>
+
+{{if .MonitoringMothership}}
+<section class="panel">
+    <div class="panel-head">
+        <h2>Mothership Details</h2>
+    </div>
+    <div class="kv-grid">
+        <div class="kv-key">Name</div>
+        <div class="kv-value">{{.MonitoringMothership.Name}}</div>
+        <div class="kv-key">Hostname</div>
+        <div class="kv-value mono">{{.MonitoringMothership.Hostname}}</div>
+        <div class="kv-key">Address</div>
+        <div class="kv-value mono">{{.MonitoringMothership.Address}}</div>
+        <div class="kv-key">Platform</div>
+        <div class="kv-value mono">{{.MonitoringMothership.Platform}}</div>
+        <div class="kv-key">Executor</div>
+        <div class="kv-value">{{.MonitoringMothership.Executor}}</div>
+        <div class="kv-key">Summary</div>
+        <div class="kv-value">{{.MonitoringMothership.Summary}}</div>
+    </div>
+</section>
+{{end}}
+{{end}}

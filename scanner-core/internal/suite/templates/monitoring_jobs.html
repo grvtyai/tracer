@@ -1,0 +1,43 @@
+{{define "monitoring_jobs.html"}}{{template "base" .}}{{end}}
+
+{{define "page"}}
+<section class="panel">
+    <div class="panel-head">
+        <h2>Monitoring Jobs</h2>
+        <div class="hero-actions">
+            {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
+            {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
+        </div>
+    </div>
+    <p class="empty-note">
+        Monitoring jobs are planned here before the distributed runner system is active. This gives the suite a stable
+        place for job visibility now, while execution stays local on the Mothership.
+    </p>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Planned Job Types</h2>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Job</th>
+                <th>Target</th>
+                <th>Status</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .MonitoringJobs}}
+            <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Target}}</td>
+                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
+                <td>{{.Summary}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</section>
+{{end}}

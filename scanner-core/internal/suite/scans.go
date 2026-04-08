@@ -33,6 +33,8 @@ type preflightCheck struct {
 type scanFormData struct {
 	ProjectID               string
 	ScanName                string
+	SatelliteID             string
+	SatelliteLabel          string
 	ScopeInput              string
 	PortTemplate            string
 	ActiveInterface         string
@@ -80,7 +82,8 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form := defaultScanForm(currentProject)
+	satelliteOptions := s.satelliteOptions()
+	form := defaultScanForm(currentProject, satelliteOptions)
 	if value := strings.TrimSpace(r.URL.Query().Get("scope")); value != "" {
 		form.ScopeInput = value
 	}
@@ -92,6 +95,9 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 	}
 	if value := strings.TrimSpace(r.URL.Query().Get("scan_tag")); value != "" {
 		form.ScanTag = value
+	}
+	if value := strings.TrimSpace(r.URL.Query().Get("satellite_id")); value != "" {
+		form.SatelliteID = value
 	}
 	if value := strings.TrimSpace(r.URL.Query().Get("active_interface")); value != "" {
 		form.ActiveInterface = value
@@ -118,6 +124,9 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 	form.ZeekAutoStart = queryBoolDefault(r.URL.Query().Get("zeek_auto_start"), form.ZeekAutoStart)
 	form.ContinueOnError = queryBoolDefault(r.URL.Query().Get("continue_on_error"), form.ContinueOnError)
 	form.RetainPartialResults = queryBoolDefault(r.URL.Query().Get("retain_partial_results"), form.RetainPartialResults)
+	selectedSatellite := resolveSatelliteSelection(form.SatelliteID, satelliteOptions)
+	form.SatelliteID = selectedSatellite.ID
+	form.SatelliteLabel = selectedSatellite.Label
 
 	preflightChecks := collectPreflightChecks(s.options.DBPath)
 	data := pageData{
@@ -137,6 +146,7 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 		Settings:          appSettings,
 		PreflightChecks:   preflightChecks,
 		ScanForm:          form,
+		SatelliteOptions:  satelliteOptions,
 	}
 	s.render(w, "scan_new.html", data)
 }
@@ -162,6 +172,7 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 	form := scanFormData{
 		ProjectID:             projectID,
 		ScanName:              firstNonEmptyWeb(strings.TrimSpace(r.FormValue("scan_name")), "Browser Scan"),
+		SatelliteID:           strings.TrimSpace(r.FormValue("satellite_id")),
 		ScopeInput:            strings.TrimSpace(r.FormValue("scope_input")),
 		PortTemplate:          firstNonEmptyWeb(strings.TrimSpace(r.FormValue("port_template")), "all-default-ports"),
 		ActiveInterface:       strings.TrimSpace(r.FormValue("active_interface")),
@@ -179,6 +190,9 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 		UseLargeRangeStrategy: isChecked(r.FormValue("use_large_range_strategy")),
 		ZeekAutoStart:         isChecked(r.FormValue("zeek_auto_start")),
 	}
+	selectedSatellite := resolveSatelliteSelection(form.SatelliteID, s.satelliteOptions())
+	form.SatelliteID = selectedSatellite.ID
+	form.SatelliteLabel = selectedSatellite.Label
 	form.ReevaluatePreset = firstNonEmptyWeb(strings.TrimSpace(r.FormValue("reevaluate_after_preset")), "off")
 	form.ReevaluateCustom = strings.TrimSpace(r.FormValue("reevaluate_after_custom"))
 	form.ReevaluateAmbiguous = form.ReevaluatePreset != "off"
@@ -461,14 +475,21 @@ func preflightState(checks []preflightCheck) string {
 	return "ok"
 }
 
-func defaultScanForm(project *storage.ProjectSummary) scanFormData {
+func defaultScanForm(project *storage.ProjectSummary, satelliteOptions []satelliteOption) scanFormData {
 	scope := ""
 	if project != nil && strings.TrimSpace(project.Notes) != "" {
 		scope = ""
 	}
+	projectID := ""
+	if project != nil {
+		projectID = project.ID
+	}
+	selectedSatellite := resolveSatelliteSelection("", satelliteOptions)
 	return scanFormData{
-		ProjectID:               project.ID,
+		ProjectID:               projectID,
 		ScanName:                "Quick Sweep",
+		SatelliteID:             selectedSatellite.ID,
+		SatelliteLabel:          selectedSatellite.Label,
 		ScopeInput:              scope,
 		PortTemplate:            "all-default-ports",
 		ActiveInterface:         detectActiveInterface(),
@@ -510,8 +531,10 @@ func buildTemplateFromForm(form scanFormData, project storage.ProjectSummary, se
 			Targets: scopeTargets,
 			CIDRs:   scopeCIDRs,
 			Labels: map[string]string{
-				"scan_tag": form.ScanTag,
-				"origin":   "browser",
+				"scan_tag":                 form.ScanTag,
+				"origin":                   "browser",
+				"execution_satellite_id":   form.SatelliteID,
+				"execution_satellite_name": form.SatelliteLabel,
 			},
 		},
 		Profile: ingest.RunProfile{
@@ -654,6 +677,41 @@ func detectActiveInterface() string {
 			continue
 		}
 		return iface.Name
+	}
+	return ""
+}
+
+func detectMothershipAddress() string {
+	ifaceName := detectActiveInterface()
+	if address := interfacePrimaryAddress(ifaceName); address != "" {
+		return address
+	}
+	return "127.0.0.1"
+}
+
+func interfacePrimaryAddress(name string) string {
+	if strings.TrimSpace(name) == "" {
+		return ""
+	}
+	iface, err := net.InterfaceByName(name)
+	if err != nil {
+		return ""
+	}
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return ""
+	}
+	for _, addr := range addrs {
+		switch value := addr.(type) {
+		case *net.IPNet:
+			if ipv4 := value.IP.To4(); ipv4 != nil && !ipv4.IsLoopback() {
+				return ipv4.String()
+			}
+		case *net.IPAddr:
+			if ipv4 := value.IP.To4(); ipv4 != nil && !ipv4.IsLoopback() {
+				return ipv4.String()
+			}
+		}
 	}
 	return ""
 }

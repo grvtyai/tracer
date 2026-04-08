@@ -39,6 +39,7 @@ func buildSuiteModules(activeNav string, currentProject *storage.ProjectSummary)
 		{key: "dashboard", label: "Dashboard", path: "/"},
 		{key: "inventory", label: "Inventory", path: "/inventory"},
 		{key: "discovery", label: "Radar", path: "/discovery"},
+		{key: "monitoring", label: "Monitoring", path: "/monitoring"},
 		{key: "security", label: "Security", path: "/security"},
 		{key: "workbench", label: "Workbench", path: "/workbench"},
 		{key: "automation", label: "Automation", path: "/automation"},
@@ -105,6 +106,13 @@ func buildModuleNav(activeNav string, activeSection string, currentProject *stor
 	case "security":
 		candidates = []candidate{
 			{section: "security-overview", label: "Overview", url: "/security"},
+		}
+	case "monitoring":
+		candidates = []candidate{
+			{section: "monitoring-overview", label: "Overview", url: "/monitoring"},
+			{section: "monitoring-satellites", label: "Satelites", url: "/monitoring/satellites"},
+			{section: "monitoring-health", label: "Health", url: "/monitoring/health"},
+			{section: "monitoring-jobs", label: "Jobs", url: "/monitoring/jobs"},
 		}
 	case "workbench":
 		candidates = []candidate{

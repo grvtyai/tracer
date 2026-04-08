@@ -28,6 +28,16 @@
         </label>
 
         <label class="form-row">
+            <span class="form-label">Execution satelite</span>
+            <select class="input" name="satellite_id">
+                {{range .SatelliteOptions}}
+                <option value="{{.ID}}" {{if eq $.ScanForm.SatelliteID .ID}}selected{{end}}>{{.Label}}</option>
+                {{end}}
+            </select>
+            <span class="form-hint">Runs execute on the selected Startrace target. Right now this defaults to the local Mothership, and later registered Satelites will appear here too.</span>
+        </label>
+
+        <label class="form-row">
             <span class="form-label">Scope / IP ranges</span>
             <textarea class="input textarea" name="scope_input" placeholder="192.168.178.0/24 or one target per line">{{.ScanForm.ScopeInput}}</textarea>
             <span class="form-hint">Required. You can mix individual IPs, hostnames and CIDR ranges. Use one target per line for readability.</span>

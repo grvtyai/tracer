@@ -11,6 +11,7 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"sort"
 	"strings"
@@ -103,6 +104,38 @@ type pageData struct {
 	SecondaryAction       *pageAction
 	ModuleImageURL        string
 	DiffAPI               string
+	SatelliteOptions      []satelliteOption
+	MonitoringSatellites  []monitoringSatellite
+	MonitoringJobs        []monitoringJob
+	MonitoringMothership  *monitoringSatellite
+}
+
+type satelliteOption struct {
+	ID     string
+	Label  string
+	Detail string
+}
+
+type monitoringSatellite struct {
+	ID          string
+	Name        string
+	Role        string
+	Status      string
+	StatusClass string
+	Address     string
+	Hostname    string
+	Platform    string
+	Executor    string
+	LastSeen    string
+	Summary     string
+}
+
+type monitoringJob struct {
+	Name        string
+	Target      string
+	Status      string
+	StatusClass string
+	Summary     string
 }
 
 type dashboardStats struct {
@@ -335,6 +368,11 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/discovery/templates", s.handleDiscoveryTemplates)
 	s.mux.HandleFunc("/discovery/compare", s.handleDiscoveryCompare)
 	s.mux.HandleFunc("/discovery", s.handleDiscovery)
+	s.mux.HandleFunc("/monitoring/satellites/register", s.handleMonitoringSatelliteRegister)
+	s.mux.HandleFunc("/monitoring/satellites", s.handleMonitoringSatellites)
+	s.mux.HandleFunc("/monitoring/health", s.handleMonitoringHealth)
+	s.mux.HandleFunc("/monitoring/jobs", s.handleMonitoringJobs)
+	s.mux.HandleFunc("/monitoring", s.handleMonitoring)
 	s.mux.HandleFunc("/security", s.handleSecurity)
 	s.mux.HandleFunc("/workbench", s.handleWorkbench)
 	s.mux.HandleFunc("/automation", s.handleAutomation)
@@ -1147,6 +1185,211 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleMonitoring(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/monitoring" {
+		http.NotFound(w, r)
+		return
+	}
+	s.renderSuitePlaceholder(w, r, "Monitoring", "Monitoring is the home for Satelites, runtime health and later distributed job execution across the wider Startrace environment.", []string{
+		"The local Startrace Mothership is already exposed as the first execution target.",
+		"Monitoring gives future remote Satelites a clear place in the product before the runner protocol is wired in.",
+		"Health and Jobs can grow here without overloading Radar itself.",
+	}, []string{
+		"Track registered Satelites and show their runtime status.",
+		"Surface Mothership and later remote Satelite health from one place.",
+		"Prepare job visibility before distributed execution goes live.",
+	}, &pageAction{Label: "Open Satelites", URL: buildProjectPath("/monitoring/satellites", nil), Variant: "button-secondary"}, false)
+}
+
+func (s *Server) handleMonitoringSatellites(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/monitoring/satellites" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	mothership := s.monitoringMothership()
+	data := pageData{
+		Title:                "Monitoring - Satelites",
+		AppName:              s.options.AppName,
+		ActiveNav:            "monitoring",
+		ActiveSection:        "monitoring-satellites",
+		BasePath:             s.options.BasePath,
+		DBPath:               s.options.DBPath,
+		DataDir:              s.options.DataDir,
+		HeroNote:             "Execution targets for local and later remote jobs",
+		Projects:             projects,
+		CurrentProject:       currentProject,
+		ProjectSwitchPath:    "/monitoring/satellites",
+		Project:              currentProject,
+		Settings:             appSettings,
+		MonitoringSatellites: []monitoringSatellite{mothership},
+		MonitoringMothership: &mothership,
+		PrimaryAction: &pageAction{
+			Label:   "Register new Satelite",
+			URL:     buildProjectPath("/monitoring/satellites/register", currentProject),
+			Variant: "button-primary",
+		},
+		SecondaryAction: &pageAction{
+			Label:   "Open Health",
+			URL:     buildProjectPath("/monitoring/health", currentProject),
+			Variant: "button-secondary",
+		},
+	}
+	s.render(w, "monitoring_satellites.html", data)
+}
+
+func (s *Server) handleMonitoringSatelliteRegister(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/monitoring/satellites/register" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	mothership := s.monitoringMothership()
+	data := pageData{
+		Title:                "Register Satelite",
+		AppName:              s.options.AppName,
+		ActiveNav:            "monitoring",
+		ActiveSection:        "monitoring-satellites",
+		BasePath:             s.options.BasePath,
+		DBPath:               s.options.DBPath,
+		DataDir:              s.options.DataDir,
+		HeroNote:             "Prepared registration flow for future remote Satelites",
+		Projects:             projects,
+		CurrentProject:       currentProject,
+		ProjectSwitchPath:    "/monitoring/satellites/register",
+		Project:              currentProject,
+		Settings:             appSettings,
+		MonitoringMothership: &mothership,
+		PrimaryAction: &pageAction{
+			Label:   "Back to Satelites",
+			URL:     buildProjectPath("/monitoring/satellites", currentProject),
+			Variant: "button-secondary",
+		},
+	}
+	s.render(w, "monitoring_satellite_register.html", data)
+}
+
+func (s *Server) handleMonitoringHealth(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/monitoring/health" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	mothership := s.monitoringMothership()
+	data := pageData{
+		Title:                "Monitoring - Health",
+		AppName:              s.options.AppName,
+		ActiveNav:            "monitoring",
+		ActiveSection:        "monitoring-health",
+		BasePath:             s.options.BasePath,
+		DBPath:               s.options.DBPath,
+		DataDir:              s.options.DataDir,
+		HeroNote:             "Current health of the local Startrace execution node",
+		Projects:             projects,
+		CurrentProject:       currentProject,
+		ProjectSwitchPath:    "/monitoring/health",
+		Project:              currentProject,
+		Settings:             appSettings,
+		MonitoringMothership: &mothership,
+		PrimaryAction: &pageAction{
+			Label:   "Open Satelites",
+			URL:     buildProjectPath("/monitoring/satellites", currentProject),
+			Variant: "button-primary",
+		},
+		SecondaryAction: &pageAction{
+			Label:   "Open Jobs",
+			URL:     buildProjectPath("/monitoring/jobs", currentProject),
+			Variant: "button-secondary",
+		},
+	}
+	s.render(w, "monitoring_health.html", data)
+}
+
+func (s *Server) handleMonitoringJobs(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/monitoring/jobs" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	projects, currentProject, appSettings, err := s.loadShellContext(ctx, strings.TrimSpace(r.URL.Query().Get("project")))
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if currentProject == nil {
+		http.Redirect(w, r, "/projects/new?notice=create-first-project", http.StatusSeeOther)
+		return
+	}
+
+	mothership := s.monitoringMothership()
+	data := pageData{
+		Title:                "Monitoring - Jobs",
+		AppName:              s.options.AppName,
+		ActiveNav:            "monitoring",
+		ActiveSection:        "monitoring-jobs",
+		BasePath:             s.options.BasePath,
+		DBPath:               s.options.DBPath,
+		DataDir:              s.options.DataDir,
+		HeroNote:             "Planned execution visibility for local and later remote jobs",
+		Projects:             projects,
+		CurrentProject:       currentProject,
+		ProjectSwitchPath:    "/monitoring/jobs",
+		Project:              currentProject,
+		Settings:             appSettings,
+		MonitoringMothership: &mothership,
+		MonitoringJobs: []monitoringJob{
+			{Name: "Radar Scan Dispatch", Target: mothership.Name, Status: "Available Soon", StatusClass: "status-warning", Summary: "This area will later show queued and active Radar runs per Satelite."},
+			{Name: "Monitoring Checks", Target: mothership.Name, Status: "Planned", StatusClass: "status-info", Summary: "Recurring health and network jobs will appear here once scheduling is wired in."},
+			{Name: "Automation Tasks", Target: mothership.Name, Status: "Planned", StatusClass: "status-neutral", Summary: "Automation-backed jobs can later reuse the same execution model."},
+		},
+		PrimaryAction: &pageAction{
+			Label:   "Open Satelites",
+			URL:     buildProjectPath("/monitoring/satellites", currentProject),
+			Variant: "button-primary",
+		},
+		SecondaryAction: &pageAction{
+			Label:   "Open Health",
+			URL:     buildProjectPath("/monitoring/health", currentProject),
+			Variant: "button-secondary",
+		},
+	}
+	s.render(w, "monitoring_jobs.html", data)
+}
+
 func (s *Server) handleSecurity(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/security" {
 		http.NotFound(w, r)
@@ -1595,6 +1838,50 @@ func (s *Server) renderSuitePlaceholder(w http.ResponseWriter, r *http.Request, 
 		data.SecondaryAction.URL = buildProjectPath(strings.Split(data.SecondaryAction.URL, "?")[0], currentProject)
 	}
 	s.render(w, "module.html", data)
+}
+
+func (s *Server) satelliteOptions() []satelliteOption {
+	mothership := s.monitoringMothership()
+	return []satelliteOption{
+		{
+			ID:     mothership.ID,
+			Label:  fmt.Sprintf("Startrace Mothership - %s", mothership.Address),
+			Detail: "Built-in local execution target",
+		},
+	}
+}
+
+func resolveSatelliteSelection(selectedID string, options []satelliteOption) satelliteOption {
+	for _, option := range options {
+		if strings.TrimSpace(selectedID) != "" && option.ID == selectedID {
+			return option
+		}
+	}
+	if len(options) > 0 {
+		return options[0]
+	}
+	return satelliteOption{
+		ID:     "mothership",
+		Label:  "Startrace Mothership - 127.0.0.1",
+		Detail: "Built-in local execution target",
+	}
+}
+
+func (s *Server) monitoringMothership() monitoringSatellite {
+	address := detectMothershipAddress()
+	return monitoringSatellite{
+		ID:          "mothership",
+		Name:        "Startrace - Mothership",
+		Role:        "Local Mothership",
+		Status:      "Online",
+		StatusClass: "status-success",
+		Address:     address,
+		Hostname:    inventoryOriginHostname(),
+		Platform:    runtime.GOOS + "/" + runtime.GOARCH,
+		Executor:    "Built-in local executor",
+		LastSeen:    "Active in this process",
+		Summary:     "Default execution target for Radar runs until additional Satelites are registered.",
+	}
 }
 
 func (s *Server) handleModuleIllustration(w http.ResponseWriter, r *http.Request) {
