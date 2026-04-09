@@ -2980,6 +2980,12 @@ func toolVersionCommands(name string) [][]string {
 		return [][]string{{"scamper", "-v"}}
 	case "arp-scan":
 		return [][]string{{"arp-scan", "--version"}}
+	case "avahi-browse":
+		return [][]string{{"avahi-browse", "--version"}}
+	case "testssl.sh":
+		return [][]string{{"testssl.sh", "--version"}}
+	case "snmpwalk":
+		return [][]string{{"snmpwalk", "-V"}, {"snmpwalk", "--version"}}
 	case "zeekctl":
 		return [][]string{{"zeekctl", "version"}, {"zeekctl", "--version"}}
 	default:

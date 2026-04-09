@@ -8,6 +8,7 @@
     <ul class="bullet-list">
         <li>Scans start immediately after you submit the configuration. The displayed start time is only informational for now.</li>
         <li>Local network neighbor discovery is the clearer name for the old Layer 2 option. It only helps on the same broadcast segment and is optional.</li>
+        <li>Avahi, testssl.sh and snmpwalk are optional enrichments. Turn them on when you want extra local-service, TLS or infrastructure detail.</li>
         <li>Reevaluate is off by default. Turn it on only when you want the system to flag uncertain results for later re-checks.</li>
         <li>Passive mode can stay on auto so Zeek is available when it is useful without forcing passive ingest into every run.</li>
     </ul>
@@ -104,6 +105,9 @@
         <div class="checkbox-grid">
             <label class="check-row"><input type="checkbox" name="enable_route_sampling" {{if .ScanForm.EnableRouteSampling}}checked{{end}} /> <span>Route sampling (optional)<small class="check-hint">Adds scamper traceroute-style reachability context per discovered host.</small></span></label>
             <label class="check-row"><input type="checkbox" name="enable_service_scan" {{if .ScanForm.EnableServiceScan}}checked{{end}} /> <span>Service scan<small class="check-hint">Runs deeper service fingerprinting such as nmap on interesting ports.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="enable_avahi" {{if .ScanForm.EnableAvahi}}checked{{end}} /> <span>Avahi service discovery (optional)<small class="check-hint">Collects local mDNS / Bonjour service announcements when they are visible from the selected node.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="enable_testssl" {{if .ScanForm.EnableTestSSL}}checked{{end}} /> <span>TLS inspection with testssl.sh (optional)<small class="check-hint">Adds certificate and TLS configuration checks on likely TLS-enabled services.</small></span></label>
+            <label class="check-row"><input type="checkbox" name="enable_snmp" {{if .ScanForm.EnableSNMP}}checked{{end}} /> <span>SNMP enrichment with snmpwalk (optional)<small class="check-hint">Attempts lightweight SNMP system discovery for infrastructure-style devices.</small></span></label>
             <label class="check-row"><input type="checkbox" name="enable_passive_ingest" {{if .ScanForm.EnablePassiveIngest}}checked{{end}} /> <span>Passive ingest (optional)<small class="check-hint">Allows passive evidence such as Zeek observations to enrich the run.</small></span></label>
             <label class="check-row"><input type="checkbox" name="enable_os_detection" {{if .ScanForm.EnableOSDetection}}checked{{end}} /> <span>OS detection (optional)<small class="check-hint">Attempts host OS fingerprints where active probing makes that possible.</small></span></label>
             <label class="check-row"><input type="checkbox" name="enable_layer2" {{if .ScanForm.EnableLayer2}}checked{{end}} /> <span>Local network neighbor discovery (optional)<small class="check-hint">Useful on the same local segment for MAC- or neighbor-oriented discovery. It is not needed for every subnet scan.</small></span></label>

@@ -130,9 +130,12 @@ What the installer sets up:
 - `httpx`
 - `nmap`
 - `arp-scan`
+- `avahi-browse`
 - `zmap`
 - `scamper`
 - `zgrab2`
+- `testssl.sh`
+- `snmpwalk`
 - `Zeek`
 - `ldapdomaindump`
 - `impacket`

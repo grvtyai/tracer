@@ -11,8 +11,11 @@ const (
 	KindPortDiscover  Kind = "port_discover"
 	KindRouteProbe    Kind = "route_probe"
 	KindServiceProbe  Kind = "service_probe"
+	KindLocalService  Kind = "local_service_discover"
 	KindWebProbe      Kind = "web_probe"
 	KindGrabProbe     Kind = "grab_probe"
+	KindTLSInspect    Kind = "tls_inspect"
+	KindSNMPProbe     Kind = "snmp_probe"
 	KindPassiveIngest Kind = "passive_ingest"
 	KindAnalyze       Kind = "analyze"
 )

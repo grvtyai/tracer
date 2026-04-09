@@ -92,6 +92,7 @@ sudo apt-get update
 sudo apt-get install -y \
   apt-transport-https \
   arp-scan \
+  avahi-utils \
   build-essential \
   ca-certificates \
   curl \
@@ -106,6 +107,7 @@ sudo apt-get install -y \
   python3 \
   python3-pip \
   python3-venv \
+  snmp \
   software-properties-common \
   unzip \
   zmap
@@ -138,6 +140,10 @@ git clone --depth 1 https://github.com/zmap/zgrab2.git "${WORKDIR}/zgrab2"
   make
   install -m 0755 zgrab2 "${HOME}/.local/bin/zgrab2"
 )
+
+log "Installing testssl.sh"
+git clone --depth 1 https://github.com/testssl/testssl.sh.git "${WORKDIR}/testssl.sh"
+install -m 0755 "${WORKDIR}/testssl.sh/testssl.sh" "${HOME}/.local/bin/testssl.sh"
 
 if [[ "$SCAMPER_PPA_SUPPORTED" -eq 1 ]]; then
   log "Installing scamper from Ubuntu PPA"

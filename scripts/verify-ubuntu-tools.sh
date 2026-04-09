@@ -33,9 +33,12 @@ check_cmd naabu
 check_cmd httpx
 check_cmd nmap
 check_cmd arp-scan
+check_cmd avahi-browse
 check_cmd zmap
 check_cmd scamper
 check_cmd zgrab2
+check_cmd testssl.sh
+check_cmd snmpwalk
 check_cmd zeek
 check_cmd ldapdomaindump
 check_any impacket impacket-secretsdump secretsdump.py impacket-GetUserSPNs GetUserSPNs.py

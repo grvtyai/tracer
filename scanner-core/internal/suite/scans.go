@@ -52,6 +52,9 @@ type scanFormData struct {
 	ReevaluateCustom        string
 	EnableRouteSampling     bool
 	EnableServiceScan       bool
+	EnableAvahi             bool
+	EnableTestSSL           bool
+	EnableSNMP              bool
 	EnablePassiveIngest     bool
 	EnableOSDetection       bool
 	EnableLayer2            bool
@@ -117,6 +120,9 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 	}
 	form.EnableRouteSampling = queryBoolDefault(r.URL.Query().Get("enable_route_sampling"), form.EnableRouteSampling)
 	form.EnableServiceScan = queryBoolDefault(r.URL.Query().Get("enable_service_scan"), form.EnableServiceScan)
+	form.EnableAvahi = queryBoolDefault(r.URL.Query().Get("enable_avahi"), form.EnableAvahi)
+	form.EnableTestSSL = queryBoolDefault(r.URL.Query().Get("enable_testssl"), form.EnableTestSSL)
+	form.EnableSNMP = queryBoolDefault(r.URL.Query().Get("enable_snmp"), form.EnableSNMP)
 	form.EnablePassiveIngest = queryBoolDefault(r.URL.Query().Get("enable_passive_ingest"), form.EnablePassiveIngest)
 	form.EnableOSDetection = queryBoolDefault(r.URL.Query().Get("enable_os_detection"), form.EnableOSDetection)
 	form.EnableLayer2 = queryBoolDefault(r.URL.Query().Get("enable_layer2"), form.EnableLayer2)
@@ -184,6 +190,9 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 		RetainPartialResults:  isChecked(r.FormValue("retain_partial_results")),
 		EnableRouteSampling:   isChecked(r.FormValue("enable_route_sampling")),
 		EnableServiceScan:     isChecked(r.FormValue("enable_service_scan")),
+		EnableAvahi:           isChecked(r.FormValue("enable_avahi")),
+		EnableTestSSL:         isChecked(r.FormValue("enable_testssl")),
+		EnableSNMP:            isChecked(r.FormValue("enable_snmp")),
 		EnablePassiveIngest:   isChecked(r.FormValue("enable_passive_ingest")),
 		EnableOSDetection:     isChecked(r.FormValue("enable_os_detection")),
 		EnableLayer2:          isChecked(r.FormValue("enable_layer2")),
@@ -272,6 +281,9 @@ func collectPreflightChecks(dbPath string) []preflightCheck {
 		commandCheck("zgrab2", true),
 		commandCheck("scamper", false),
 		commandCheck("arp-scan", false),
+		commandCheck("avahi-browse", false),
+		commandCheck("testssl.sh", false),
+		commandCheck("snmpwalk", false),
 		commandCheck("zeekctl", false),
 		dbPathCheck(dbPath),
 	}
@@ -506,6 +518,9 @@ func defaultScanForm(project *storage.ProjectSummary, satelliteOptions []satelli
 		ReevaluateCustom:        "",
 		EnableRouteSampling:     true,
 		EnableServiceScan:       true,
+		EnableAvahi:             false,
+		EnableTestSSL:           false,
+		EnableSNMP:              false,
 		EnablePassiveIngest:     true,
 		EnableOSDetection:       true,
 		ScanTag:                 "internal",
@@ -559,7 +574,10 @@ func buildTemplateFromForm(form scanFormData, project storage.ProjectSummary, se
 				PassiveInterface: form.PassiveInterface,
 			},
 			Scan: options.ScanOptions{
-				PortTemplate: form.PortTemplate,
+				PortTemplate:  form.PortTemplate,
+				EnableAvahi:   boolPtr(form.EnableAvahi),
+				EnableTestSSL: boolPtr(form.EnableTestSSL),
+				EnableSNMP:    boolPtr(form.EnableSNMP),
 			},
 			Sensors: options.SensorOptions{
 				PassiveMode:   form.PassiveMode,

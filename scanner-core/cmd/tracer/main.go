@@ -36,6 +36,9 @@ func main() {
 		retainPartialFlag   optionalBool
 		reevaluateFlag      optionalBool
 		autoStartZeekFlag   optionalBool
+		enableAvahiFlag     optionalBool
+		enableTestSSLFlag   optionalBool
+		enableSNMPFlag      optionalBool
 	)
 
 	flag.StringVar(&mode, "mode", "plan", "execution mode: plan, run, execute-run, projects, runs, show-run, or diff")
@@ -56,6 +59,9 @@ func main() {
 	flag.Var(&retainPartialFlag, "retain-partial-results", "retain partial evidence even if later steps fail (true/false)")
 	flag.Var(&reevaluateFlag, "reevaluate-ambiguous", "emit reevaluation hints for ambiguous or partial results (true/false)")
 	flag.Var(&autoStartZeekFlag, "auto-start-zeek", "allow tracer to start or deploy Zeek when passive ingest is requested (true/false)")
+	flag.Var(&enableAvahiFlag, "enable-avahi", "enable Avahi / mDNS enrichment for supported runs (true/false)")
+	flag.Var(&enableTestSSLFlag, "enable-testssl", "enable TLS inspection with testssl.sh (true/false)")
+	flag.Var(&enableSNMPFlag, "enable-snmp", "enable SNMP enrichment with snmpwalk (true/false)")
 	flag.Parse()
 
 	if err := platform.RequireRootOnLinux("tracer"); err != nil {
@@ -147,12 +153,12 @@ func main() {
 		})
 		return
 	case "plan":
-		loadedTemplate, _, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag)
+		loadedTemplate, _, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag, enableAvahiFlag, enableTestSSLFlag, enableSNMPFlag)
 		_ = loadedTemplate
 		emitJSON(output)
 		return
 	case "run":
-		loadedTemplate, effectiveOptions, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag)
+		loadedTemplate, effectiveOptions, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag, enableAvahiFlag, enableTestSSLFlag, enableSNMPFlag)
 		repository, err := storage.OpenSQLite(effectiveOptions.DBPath)
 		if err != nil {
 			fail(err)
@@ -208,7 +214,7 @@ func main() {
 			fail(fmt.Errorf("execute-run mode requires --run-id"))
 		}
 
-		loadedTemplate, effectiveOptions, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag)
+		loadedTemplate, effectiveOptions, output := buildScanOutput(mode, template, activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnErrorFlag, retainPartialFlag, reevaluateFlag, autoStartZeekFlag, enableAvahiFlag, enableTestSSLFlag, enableSNMPFlag)
 		repository, err := storage.OpenSQLite(effectiveOptions.DBPath)
 		if err != nil {
 			fail(err)
@@ -277,7 +283,7 @@ func (o *optionalBool) Set(value string) error {
 	return nil
 }
 
-func buildOptionOverrides(activeInterface string, passiveInterface string, portTemplate string, passiveMode string, zeekLogDir string, project string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool, autoStartZeek optionalBool) options.TemplateOptions {
+func buildOptionOverrides(activeInterface string, passiveInterface string, portTemplate string, passiveMode string, zeekLogDir string, project string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool, autoStartZeek optionalBool, enableAvahi optionalBool, enableTestSSL optionalBool, enableSNMP optionalBool) options.TemplateOptions {
 	overrides := options.TemplateOptions{}
 
 	if activeInterface != "" {
@@ -288,6 +294,18 @@ func buildOptionOverrides(activeInterface string, passiveInterface string, portT
 	}
 	if portTemplate != "" {
 		overrides.Scan.PortTemplate = portTemplate
+	}
+	if enableAvahi.set {
+		value := enableAvahi.value
+		overrides.Scan.EnableAvahi = &value
+	}
+	if enableTestSSL.set {
+		value := enableTestSSL.value
+		overrides.Scan.EnableTestSSL = &value
+	}
+	if enableSNMP.set {
+		value := enableSNMP.value
+		overrides.Scan.EnableSNMP = &value
 	}
 	if passiveMode != "" {
 		overrides.Sensors.PassiveMode = passiveMode
@@ -337,13 +355,13 @@ type queryOutput struct {
 	Diff          *storage.RunDiff              `json:"diff,omitempty"`
 }
 
-func buildScanOutput(mode string, template string, activeInterface string, passiveInterface string, portTemplate string, passiveMode string, zeekLogDir string, projectName string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool, autoStartZeek optionalBool) (templates.Template, options.EffectiveOptions, radarruntime.Output) {
+func buildScanOutput(mode string, template string, activeInterface string, passiveInterface string, portTemplate string, passiveMode string, zeekLogDir string, projectName string, dataDir string, dbPath string, reevaluateAfter string, continueOnError optionalBool, retainPartial optionalBool, reevaluate optionalBool, autoStartZeek optionalBool, enableAvahi optionalBool, enableTestSSL optionalBool, enableSNMP optionalBool) (templates.Template, options.EffectiveOptions, radarruntime.Output) {
 	loadedTemplate, err := radarruntime.LoadTemplate(template)
 	if err != nil {
 		fail(err)
 	}
 
-	overrides := buildOptionOverrides(activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnError, retainPartial, reevaluate, autoStartZeek)
+	overrides := buildOptionOverrides(activeInterface, passiveInterface, portTemplate, passiveMode, zeekLogDir, projectName, dataDir, dbPath, reevaluateAfter, continueOnError, retainPartial, reevaluate, autoStartZeek, enableAvahi, enableTestSSL, enableSNMP)
 	effectiveOptions := radarruntime.ResolveOptions(loadedTemplate, overrides)
 	if effectiveOptions.Project == "" {
 		effectiveOptions.Project = loadedTemplate.Name

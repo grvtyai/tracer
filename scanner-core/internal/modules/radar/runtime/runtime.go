@@ -15,12 +15,15 @@ import (
 	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
 	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/arp_scan"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/avahi"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/httpx"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/ldapdomaindump"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/naabu"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/nmap"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/scamper"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/sharphound"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/snmpwalk"
+	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/testssl"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/zeek"
 	"github.com/grvtyai/tracer/scanner-core/internal/modules/radar/integrations/zgrab2"
 	"github.com/grvtyai/tracer/scanner-core/internal/options"
@@ -66,10 +69,13 @@ func DefaultPlugins() []engine.Plugin {
 	return []engine.Plugin{
 		internalPlugin{},
 		arp_scan.Plugin{},
+		avahi.New(),
 		naabu.New(),
 		nmap.New(),
 		scamper.New(),
 		httpx.New(),
+		testssl.New(),
+		snmpwalk.New(),
 		zgrab2.New(),
 		zeek.Plugin{},
 		sharphound.Plugin{},
@@ -101,6 +107,21 @@ func BuildSeedPlan(template templates.Template) []jobs.Job {
 
 func BuildSeedPlanWithOptions(template templates.Template, resolved options.EffectiveOptions) []jobs.Job {
 	plan := jobs.BuildSeedPlan(template.Scope, template.Profile)
+
+	if resolved.EnableAvahi {
+		discoveryTargets := append(append([]string{}, template.Scope.Targets...), template.Scope.CIDRs...)
+		plan = append(plan, jobs.Job{
+			ID:        "local-service-discovery",
+			Kind:      jobs.KindLocalService,
+			Plugin:    "avahi",
+			DependsOn: []string{"scope-prepare"},
+			Targets:   discoveryTargets,
+			Metadata: map[string]string{
+				"resolve":      "true",
+				"ignore_local": "true",
+			},
+		})
+	}
 
 	for i := range plan {
 		plan[i].Metadata = mergeMetadata(plan[i].Metadata, metadataForJob(plan[i], resolved))
@@ -239,6 +260,63 @@ func BuildFollowUpPlanWithOptions(template templates.Template, records []evidenc
 					},
 				})
 			}
+
+			if resolved.EnableTestSSL {
+				tlsPorts := filterLikelyTLSPorts(ports)
+				if len(tlsPorts) > 0 {
+					dependsOn := []string(nil)
+					if template.Profile.EnableServiceScan {
+						dependsOn = []string{fmt.Sprintf("service-%s", target)}
+					}
+					if len(webPorts) > 0 {
+						dependsOn = []string{fmt.Sprintf("http-%s", target)}
+					}
+
+					plan = append(plan, jobs.Job{
+						ID:             fmt.Sprintf("tls-%s", target),
+						Kind:           jobs.KindTLSInspect,
+						Plugin:         "testssl",
+						DependsOn:      dependsOn,
+						Targets:        []string{target},
+						Ports:          tlsPorts,
+						ServiceClass:   classify.FromPorts(tlsPorts),
+						ServiceClasses: classify.AllFromPorts(tlsPorts),
+						Metadata: map[string]string{
+							"fast":                       "true",
+							"severity":                   "LOW",
+							"host_primary_service_class": primaryServiceClass,
+							"host_service_classes":       strings.Join(serviceClasses, ","),
+						},
+					})
+				}
+			}
+		}
+
+		if resolved.EnableSNMP {
+			dependsOn := []string(nil)
+			if template.Profile.EnableServiceScan {
+				dependsOn = []string{fmt.Sprintf("service-%s", target)}
+			} else if template.Profile.EnableRouteSampling {
+				dependsOn = []string{fmt.Sprintf("route-%s", target)}
+			}
+
+			plan = append(plan, jobs.Job{
+				ID:             fmt.Sprintf("snmp-%s", target),
+				Kind:           jobs.KindSNMPProbe,
+				Plugin:         "snmpwalk",
+				DependsOn:      dependsOn,
+				Targets:        []string{target},
+				ServiceClass:   primaryServiceClass,
+				ServiceClasses: serviceClasses,
+				Metadata: map[string]string{
+					"community":                  "public",
+					"version":                    "2c",
+					"timeout":                    "2",
+					"retries":                    "0",
+					"host_primary_service_class": primaryServiceClass,
+					"host_service_classes":       strings.Join(serviceClasses, ","),
+				},
+			})
 		}
 	}
 
@@ -344,6 +422,17 @@ func filterPortsByClass(ports []int, class string) []int {
 			continue
 		}
 		filtered = append(filtered, port)
+	}
+	return filtered
+}
+
+func filterLikelyTLSPorts(ports []int) []int {
+	filtered := make([]int, 0)
+	for _, port := range ports {
+		switch port {
+		case 443, 465, 563, 636, 853, 989, 990, 992, 993, 995, 8443, 9443, 10443:
+			filtered = append(filtered, port)
+		}
 	}
 	return filtered
 }
