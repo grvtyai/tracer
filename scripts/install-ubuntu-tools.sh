@@ -147,12 +147,13 @@ git clone --depth 1 https://github.com/testssl/testssl.sh.git "${WORKDIR}/testss
 sudo rm -rf "$TESTSSL_INSTALL_DIR"
 sudo mkdir -p "$TESTSSL_INSTALL_DIR"
 sudo cp -R "${WORKDIR}/testssl.sh/." "$TESTSSL_INSTALL_DIR/"
-@'
+cat <<'EOF' | sudo tee /usr/local/bin/testssl.sh >/dev/null
 #!/usr/bin/env bash
 set -euo pipefail
 export TESTSSL_INSTALL_DIR="/usr/local/share/testssl"
-exec /usr/local/share/testssl/testssl.sh "$@"
-'@ | sudo tee /usr/local/bin/testssl.sh >/dev/null
+cd "$TESTSSL_INSTALL_DIR"
+exec ./testssl.sh "$@"
+EOF
 sudo chmod 0755 /usr/local/bin/testssl.sh
 
 if [[ "$SCAMPER_PPA_SUPPORTED" -eq 1 ]]; then

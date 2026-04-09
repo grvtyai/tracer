@@ -43,6 +43,12 @@ check_cmd zeek
 check_cmd ldapdomaindump
 check_any impacket impacket-secretsdump secretsdump.py impacket-GetUserSPNs GetUserSPNs.py
 
+if [[ -d "/usr/local/share/testssl/etc" ]]; then
+  printf '[ok]   testssl support dir -> %s\n' "/usr/local/share/testssl/etc"
+else
+  printf '[miss] testssl support dir\n'
+fi
+
 if [[ -f "${HOME}/.local/share/tracer/sharphound/SharpHound-latest.zip" ]]; then
   printf '[ok]   SharpHound bundle -> %s\n' "${HOME}/.local/share/tracer/sharphound/SharpHound-latest.zip"
 else

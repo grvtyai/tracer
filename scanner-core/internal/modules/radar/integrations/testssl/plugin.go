@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -25,6 +26,12 @@ type ExecRunner struct{}
 
 func (ExecRunner) Run(ctx context.Context, name string, args []string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
+	if workingDir, env := testSSLEnvironment(name); workingDir != "" {
+		cmd.Dir = workingDir
+		cmd.Env = append(os.Environ(), env...)
+	} else {
+		cmd.Env = os.Environ()
+	}
 	return cmd.CombinedOutput()
 }
 
@@ -120,6 +127,29 @@ func BuildArgs(job jobs.Job, outputPath string) []string {
 	args := []string{"--quiet", "--jsonfile", outputPath}
 	args = append(args, target)
 	return args
+}
+
+func testSSLEnvironment(binary string) (string, []string) {
+	trimmed := filepath.Clean(strings.TrimSpace(binary))
+	installDir := ""
+
+	switch {
+	case strings.HasPrefix(trimmed, filepath.Clean("/usr/local/share/testssl")):
+		installDir = filepath.Clean("/usr/local/share/testssl")
+	case strings.EqualFold(filepath.Base(trimmed), "testssl.sh"):
+		if _, err := os.Stat("/usr/local/share/testssl/etc"); err == nil {
+			installDir = filepath.Clean("/usr/local/share/testssl")
+		}
+	}
+
+	if installDir == "" {
+		return "", nil
+	}
+
+	return installDir, []string{
+		"TESTSSL_INSTALL_DIR=" + installDir,
+		"TERM=dumb",
+	}
 }
 
 func ParseOutput(data []byte, job jobs.Job, observedAt time.Time) ([]evidence.Record, error) {
