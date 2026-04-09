@@ -67,7 +67,7 @@ GO_VERSION="$(printf '%s\n' "$GO_VERSION_RAW" | head -n1 | tr -d '\r')"
 GO_TARBALL_URL="https://go.dev/dl/${GO_VERSION}.linux-amd64.tar.gz"
 GO_TARBALL="$(mktemp /tmp/go-toolchain.XXXXXX.tar.gz)"
 WORKDIR="$(mktemp -d /tmp/tracer-tools.XXXXXX)"
-PATH_LINE='export PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:$PATH'
+PATH_LINE='export PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/bin:$PATH'
 ZEEK_LIST_FILE="/etc/apt/sources.list.d/security:zeek.list"
 ZEEK_KEY_FILE="/etc/apt/trusted.gpg.d/security_zeek.gpg"
 SHARPHOUND_DEST="${HOME}/.local/share/tracer/sharphound"
@@ -120,7 +120,7 @@ sudo tar -C /usr/local -xzf "$GO_TARBALL"
 mkdir -p "${HOME}/go/bin" "${HOME}/.local/bin" "$SHARPHOUND_DEST"
 append_path_once "${HOME}/.profile" "$PATH_LINE"
 append_path_once "${HOME}/.bashrc" "$PATH_LINE"
-export PATH="/usr/local/go/bin:${HOME}/go/bin:${HOME}/.local/bin:/opt/zeek/bin:${PATH}"
+export PATH="/usr/local/go/bin:${HOME}/go/bin:${HOME}/.local/bin:/opt/zeek/bin:/usr/local/bin:${PATH}"
 
 log "Ensuring pipx PATH helpers"
 python3 -m pipx ensurepath >/dev/null || true
@@ -143,7 +143,7 @@ git clone --depth 1 https://github.com/zmap/zgrab2.git "${WORKDIR}/zgrab2"
 
 log "Installing testssl.sh"
 git clone --depth 1 https://github.com/testssl/testssl.sh.git "${WORKDIR}/testssl.sh"
-install -m 0755 "${WORKDIR}/testssl.sh/testssl.sh" "${HOME}/.local/bin/testssl.sh"
+sudo install -m 0755 "${WORKDIR}/testssl.sh/testssl.sh" "/usr/local/bin/testssl.sh"
 
 if [[ "$SCAMPER_PPA_SUPPORTED" -eq 1 ]]; then
   log "Installing scamper from Ubuntu PPA"

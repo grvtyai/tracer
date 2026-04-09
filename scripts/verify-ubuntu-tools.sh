@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-export PATH="/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:$PATH"
+export PATH="/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/bin:$PATH"
 
 check_cmd() {
   local name="$1"

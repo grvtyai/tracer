@@ -157,7 +157,7 @@ go build -o ./bin/startrace ./cmd/startrace
 Use `sudo` and keep the tool paths available:
 
 ```bash
-sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080
+sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080
 ```
 
 Then open:
