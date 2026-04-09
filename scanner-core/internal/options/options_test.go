@@ -34,7 +34,7 @@ func TestResolveDefaultsAndOverrides(t *testing.T) {
 		},
 		Storage: StorageOptions{
 			Project: "Standort A",
-			DBPath:  "/tmp/tracer.db",
+			DBPath:  "/tmp/startrace.db",
 		},
 	}
 
@@ -57,7 +57,7 @@ func TestResolveDefaultsAndOverrides(t *testing.T) {
 	if got.PassiveMode != "always" || got.AutoStartZeek || got.ZeekLogDir != "/var/log/zeek/current" {
 		t.Fatalf("expected sensor settings from base, got %#v", got)
 	}
-	if got.Project != "Standort A" || got.DBPath != "/tmp/tracer.db" {
+	if got.Project != "Standort A" || got.DBPath != "/tmp/startrace.db" {
 		t.Fatalf("expected storage overrides, got %#v", got)
 	}
 }

@@ -1289,12 +1289,12 @@ func (s *Server) handleMonitoring(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.renderSuitePlaceholder(w, r, "Monitoring", "Monitoring is the home for Satelites, runtime health and later distributed job execution across the wider Startrace environment.", []string{
-		"The local Startrace Mothership is already exposed as the first execution target.",
+		"The local Startrace Nexus is already exposed as the first execution target.",
 		"Monitoring gives future remote Satelites a clear place in the product before the runner protocol is wired in.",
 		"Health and Jobs can grow here without overloading Radar itself.",
 	}, []string{
 		"Track registered Satelites and show their runtime status.",
-		"Surface Mothership and later remote Satelite health from one place.",
+		"Surface Nexus and later remote Satelite health from one place.",
 		"Prepare job visibility before distributed execution goes live.",
 	}, &pageAction{Label: "Open Satelites", URL: buildProjectPath("/monitoring/satellites", nil), Variant: "button-secondary"}, false)
 }
@@ -2092,7 +2092,7 @@ func (s *Server) satelliteOptions(ctx context.Context) []satelliteOption {
 	if _, err := s.ensureBuiltinMonitoringSatellite(ctx, preflightChecks, nil); err != nil {
 		return []satelliteOption{{
 			ID:     mothership.ID,
-			Label:  fmt.Sprintf("Startrace Mothership - %s", mothership.Address),
+			Label:  fmt.Sprintf("Startrace Nexus - %s", mothership.Address),
 			Detail: "Built-in local execution target",
 		}}
 	}
@@ -2101,7 +2101,7 @@ func (s *Server) satelliteOptions(ctx context.Context) []satelliteOption {
 	if err != nil || len(storedSatellites) == 0 {
 		return []satelliteOption{{
 			ID:     mothership.ID,
-			Label:  fmt.Sprintf("Startrace Mothership - %s", mothership.Address),
+			Label:  fmt.Sprintf("Startrace Nexus - %s", mothership.Address),
 			Detail: "Built-in local execution target",
 		}}
 	}
@@ -2128,7 +2128,7 @@ func resolveSatelliteSelection(selectedID string, options []satelliteOption) sat
 	}
 	return satelliteOption{
 		ID:     "mothership",
-		Label:  "Startrace Mothership - 127.0.0.1",
+		Label:  "Startrace Nexus - 127.0.0.1",
 		Detail: "Built-in local execution target",
 	}
 }
@@ -2337,7 +2337,7 @@ func buildMonitoringSatelliteStats(mothership monitoringSatellite, satellites []
 
 	return []monitoringStat{
 		{Label: "Registered Satelites", Value: fmt.Sprintf("%d", registeredSatellites)},
-		{Label: "Mothership Status", Value: mothershipStatus, StatusClass: statusClass},
+		{Label: "Nexus Status", Value: mothershipStatus, StatusClass: statusClass},
 		{Label: "Inventory", Value: fmt.Sprintf("%d", len(assets))},
 		{Label: "Subnets", Value: fmt.Sprintf("%d", countUniqueSubnets(assets))},
 	}
@@ -2371,7 +2371,7 @@ func buildMonitoringHealthStats(satellites []monitoringSatellite, checks []prefl
 	}
 
 	return []monitoringStat{
-		{Label: "Mothership", Value: statusValue, StatusClass: statusClass},
+		{Label: "Nexus", Value: statusValue, StatusClass: statusClass},
 		{Label: "Registered nodes", Value: fmt.Sprintf("%d", len(satellites))},
 		{Label: "Tooling", Value: fmt.Sprintf("%d / %d ready", readyTools, totalTools)},
 		{Label: "Last success", Value: lastSuccessfulLabel},
@@ -2406,7 +2406,7 @@ func (s *Server) buildMonitoringHealthFacts(checks []preflightCheck, runs []stor
 	dataDir := firstNonEmptyWeb(s.options.DataDir, storage.DefaultDataDir())
 	facts := []monitoringFact{
 		{Key: "Hostname", Value: inventoryOriginHostname()},
-		{Key: "Primary address", Value: detectMothershipAddress()},
+		{Key: "Primary address", Value: detectNexusAddress()},
 		{Key: "Active interface", Value: firstNonEmptyWeb(detectActiveInterface(), "-")},
 		{Key: "Platform", Value: runtime.GOOS + "/" + runtime.GOARCH},
 		{Key: "Startrace process uptime", Value: formatMonitoringDuration(time.Since(s.started))},
@@ -2550,7 +2550,7 @@ func buildMonitoringChecks(checks []preflightCheck, runs []storage.RunSummary, c
 	if currentProject != nil {
 		registryCount = currentProject.RunCount
 	}
-	registryDetail := "Mothership only"
+	registryDetail := "Nexus only"
 	if registryCount > 0 {
 		registryDetail = fmt.Sprintf("%d project runs tracked", registryCount)
 	}
@@ -2618,7 +2618,7 @@ func (s *Server) buildMonitoringJobs(ctx context.Context, currentProject *storag
 	}
 
 	jobsOut := make([]monitoringJob, 0, len(sortedRuns))
-	defaultExecution := fmt.Sprintf("Startrace Mothership - %s", detectMothershipAddress())
+	defaultExecution := fmt.Sprintf("Startrace Nexus - %s", detectNexusAddress())
 	for _, runSummary := range sortedRuns {
 		targetSummary := "No scope stored"
 		executionTarget := defaultExecution
@@ -2668,11 +2668,11 @@ func (s *Server) buildMonitoringJobs(ctx context.Context, currentProject *storag
 }
 
 func (s *Server) monitoringMothership() monitoringSatellite {
-	address := detectMothershipAddress()
+	address := detectNexusAddress()
 	return monitoringSatellite{
 		ID:          "mothership",
-		Name:        "Startrace - Mothership",
-		Role:        "Local Mothership",
+		Name:        "Startrace - Nexus",
+		Role:        "Local Nexus",
 		Status:      "Online",
 		StatusClass: "status-success",
 		Address:     address,
@@ -3310,7 +3310,7 @@ func buildRunExecutionFacts(run storage.RunDetails) []monitoringFact {
 	scopeEntries := len(run.Scope.Targets) + len(run.Scope.CIDRs)
 	satelliteName := firstNonEmptyWeb(
 		strings.TrimSpace(run.Scope.Labels["execution_satellite_name"]),
-		"Startrace Mothership - "+detectMothershipAddress(),
+		"Startrace Nexus - "+detectNexusAddress(),
 	)
 	satelliteID := firstNonEmptyWeb(strings.TrimSpace(run.Scope.Labels["execution_satellite_id"]), "mothership")
 

@@ -100,7 +100,7 @@ These integrations are currently planned because they can add useful visibility 
 
 The main supported runtime target is Ubuntu.
 
-On Linux, `startrace` and `tracer` should be started with `sudo` / as `root`. Several scanners and sensors require elevated privileges, and the suite no longer tries to escalate discovery runs in the background.
+On Linux, `startrace` and `st-radar` should be started with `sudo` / as `root`. Several scanners and sensors require elevated privileges, and the suite no longer tries to escalate discovery runs in the background.
 
 ### 1. Clone the repository
 
@@ -153,7 +153,7 @@ bash scripts/run-startrace.sh
 
 What it does:
 
-- builds `tracer`
+- builds `st-radar`
 - builds `startrace`
 - starts `startrace` with `sudo`
 - keeps the common tool paths available under `sudo`
@@ -163,7 +163,7 @@ Optional overrides:
 
 ```bash
 STARTRACE_LISTEN=127.0.0.1:9090 bash scripts/run-startrace.sh
-STARTRACE_DB_PATH=/home/$USER/.local/share/tracer/tracer.db bash scripts/run-startrace.sh
+STARTRACE_DB_PATH=/home/$USER/.local/share/startrace/startrace.db bash scripts/run-startrace.sh
 ```
 
 ### 4. Manual build and start
@@ -172,14 +172,14 @@ If you want the manual commands instead:
 
 ```bash
 cd scanner-core
-go build -o ./bin/tracer ./cmd/tracer
+go build -o ./bin/st-radar ./cmd/st-radar
 go build -o ./bin/startrace ./cmd/startrace
 ```
 
 Start the suite with:
 
 ```bash
-sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080
+sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/startrace/startrace.db --listen 0.0.0.0:8080
 ```
 
 Then open:
@@ -205,17 +205,17 @@ The CLI writes to the same persistence model and should also be run with `sudo` 
 Examples:
 
 ```bash
-sudo ./bin/tracer -mode run -template examples/tracer-home-lab.json
-sudo ./bin/tracer -mode projects
-sudo ./bin/tracer -mode runs --project "Heimnetz"
-sudo ./bin/tracer -mode show-run --run-id <run-id>
-sudo ./bin/tracer -mode diff --baseline-run <run-a> --candidate-run <run-b>
+sudo ./bin/st-radar -mode run -template examples/st-radar-home-lab.json
+sudo ./bin/st-radar -mode projects
+sudo ./bin/st-radar -mode runs --project "Heimnetz"
+sudo ./bin/st-radar -mode show-run --run-id <run-id>
+sudo ./bin/st-radar -mode diff --baseline-run <run-a> --candidate-run <run-b>
 ```
 
 ## 🗂️ Repository Layout
 
 - `scanner-core/cmd/startrace`: web server entrypoint
-- `scanner-core/cmd/tracer`: CLI entrypoint
+- `scanner-core/cmd/st-radar`: Radar worker / CLI entrypoint
 - `scanner-core/internal/suite`: browser UI layer
 - `scanner-core/internal/shared/storage`: shared SQLite persistence and queries
 - `scanner-core/internal/shared/platform`: shared runtime/platform helpers

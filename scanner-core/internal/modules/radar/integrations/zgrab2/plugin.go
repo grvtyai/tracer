@@ -126,7 +126,7 @@ func (p *Plugin) tempBase() string {
 }
 
 func (p *Plugin) writeInputFile(job jobs.Job) (string, error) {
-	path := filepath.Join(p.tempBase(), fmt.Sprintf("tracer-zgrab2-%s.csv", sanitize(job.ID)))
+	path := filepath.Join(p.tempBase(), fmt.Sprintf("st-radar-zgrab2-%s.csv", sanitize(job.ID)))
 	lines := make([]string, 0, len(job.Targets)*len(job.Ports))
 
 	for _, target := range job.Targets {
@@ -144,7 +144,7 @@ func (p *Plugin) writeInputFile(job jobs.Job) (string, error) {
 }
 
 func (p *Plugin) prepareConfigEnv(job jobs.Job) (string, []string, error) {
-	configRoot, err := os.MkdirTemp(p.tempBase(), fmt.Sprintf("tracer-zgrab2-config-%s-", sanitize(job.ID)))
+	configRoot, err := os.MkdirTemp(p.tempBase(), fmt.Sprintf("st-radar-zgrab2-config-%s-", sanitize(job.ID)))
 	if err != nil {
 		return "", nil, fmt.Errorf("create zgrab2 config dir: %w", err)
 	}

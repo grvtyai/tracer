@@ -3,16 +3,16 @@
 set -euo pipefail
 
 log() {
-  printf '[tracer-install] %s\n' "$*"
+  printf '[startrace-install] %s\n' "$*"
 }
 
 warn() {
-  printf '[tracer-install][warn] %s\n' "$*" >&2
+  printf '[startrace-install][warn] %s\n' "$*" >&2
 }
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    printf '[tracer-install][error] missing required command: %s\n' "$1" >&2
+    printf '[startrace-install][error] missing required command: %s\n' "$1" >&2
     exit 1
   fi
 }
@@ -66,11 +66,11 @@ GO_VERSION_RAW="$(curl -fsSL https://go.dev/VERSION?m=text)"
 GO_VERSION="$(printf '%s\n' "$GO_VERSION_RAW" | head -n1 | tr -d '\r')"
 GO_TARBALL_URL="https://go.dev/dl/${GO_VERSION}.linux-amd64.tar.gz"
 GO_TARBALL="$(mktemp /tmp/go-toolchain.XXXXXX.tar.gz)"
-WORKDIR="$(mktemp -d /tmp/tracer-tools.XXXXXX)"
+WORKDIR="$(mktemp -d /tmp/startrace-tools.XXXXXX)"
 PATH_LINE='export PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/bin:$PATH'
 ZEEK_LIST_FILE="/etc/apt/sources.list.d/security:zeek.list"
 ZEEK_KEY_FILE="/etc/apt/trusted.gpg.d/security_zeek.gpg"
-SHARPHOUND_DEST="${HOME}/.local/share/tracer/sharphound"
+SHARPHOUND_DEST="${HOME}/.local/share/startrace/sharphound"
 SHARPHOUND_ZIP="${SHARPHOUND_DEST}/SharpHound-latest.zip"
 SCAMPER_APT_REPOSITORY="${SCAMPER_APT_REPOSITORY:-ppa:matthewluckie/scamper}"
 SCAMPER_PPA_SUPPORTED=0

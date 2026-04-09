@@ -52,19 +52,19 @@ func main() {
 	flag.StringVar(&passiveMode, "passive-mode", "", "passive sensor mode: off, auto, or always")
 	flag.StringVar(&zeekLogDir, "zeek-log-dir", "", "Zeek log directory override")
 	flag.StringVar(&projectName, "project", "", "logical project name for persisted scan data")
-	flag.StringVar(&dataDir, "data-dir", "", "directory for tracer persistent data")
+	flag.StringVar(&dataDir, "data-dir", "", "directory for st-radar persistent data")
 	flag.StringVar(&dbPath, "db-path", "", "path to the SQLite database file")
 	flag.StringVar(&reevaluateAfter, "reevaluate-after", "", "duration hint for reevaluating ambiguous or failed results")
 	flag.Var(&continueOnErrorFlag, "continue-on-error", "continue when a host or plugin slice fails (true/false)")
 	flag.Var(&retainPartialFlag, "retain-partial-results", "retain partial evidence even if later steps fail (true/false)")
 	flag.Var(&reevaluateFlag, "reevaluate-ambiguous", "emit reevaluation hints for ambiguous or partial results (true/false)")
-	flag.Var(&autoStartZeekFlag, "auto-start-zeek", "allow tracer to start or deploy Zeek when passive ingest is requested (true/false)")
+	flag.Var(&autoStartZeekFlag, "auto-start-zeek", "allow st-radar to start or deploy Zeek when passive ingest is requested (true/false)")
 	flag.Var(&enableAvahiFlag, "enable-avahi", "enable Avahi / mDNS enrichment for supported runs (true/false)")
 	flag.Var(&enableTestSSLFlag, "enable-testssl", "enable TLS inspection with testssl.sh (true/false)")
 	flag.Var(&enableSNMPFlag, "enable-snmp", "enable SNMP enrichment with snmpwalk (true/false)")
 	flag.Parse()
 
-	if err := platform.RequireRootOnLinux("tracer"); err != nil {
+	if err := platform.RequireRootOnLinux("st-radar"); err != nil {
 		fail(err)
 	}
 
@@ -257,7 +257,7 @@ func main() {
 }
 
 func fail(err error) {
-	fmt.Fprintf(os.Stderr, "tracer: %v\n", err)
+	fmt.Fprintf(os.Stderr, "st-radar: %v\n", err)
 	os.Exit(1)
 }
 

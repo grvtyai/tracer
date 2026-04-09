@@ -43,8 +43,8 @@ STARTRACE_PATH="/usr/local/go/bin:${TARGET_HOME}/go/bin:${TARGET_HOME}/.local/bi
 
 cd "${SCANNER_CORE_DIR}"
 
-log "Building tracer"
-PATH="${STARTRACE_PATH}" go build -o ./bin/tracer ./cmd/tracer
+log "Building st-radar"
+PATH="${STARTRACE_PATH}" go build -o ./bin/st-radar ./cmd/st-radar
 
 log "Building startrace"
 PATH="${STARTRACE_PATH}" go build -o ./bin/startrace ./cmd/startrace

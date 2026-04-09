@@ -1,4 +1,4 @@
-cat >/tmp/tracer-smoke.json <<'EOF'
+cat >/tmp/st-radar-smoke.json <<'EOF'
 {
   "name": "smoke-local",
   "scope": {

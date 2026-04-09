@@ -15,7 +15,7 @@ import (
 )
 
 func TestSQLiteRepositoryPersistsRunArtifacts(t *testing.T) {
-	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "tracer.db"))
+	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "startrace.db"))
 	if err != nil {
 		t.Fatalf("OpenSQLite returned error: %v", err)
 	}
@@ -28,7 +28,7 @@ func TestSQLiteRepositoryPersistsRunArtifacts(t *testing.T) {
 
 	run, runStore, err := repo.StartRun(context.Background(), project.ID, RunSpec{
 		TemplateName: "smoke-zeek-lab",
-		TemplatePath: "examples/tracer-smoke-zeek-lab.json",
+		TemplatePath: "examples/st-radar-smoke-zeek-lab.json",
 		Mode:         "run",
 		Scope: ingest.Scope{
 			Targets: []string{"192.168.77.2"},
@@ -126,9 +126,10 @@ func TestDefaultDataDirPrefersInvokingUserUnderSudo(t *testing.T) {
 			}
 			return "/home/grvty", nil
 		},
+		"startrace",
 	)
 
-	if want := filepath.Join("/home/grvty", ".local", "share", "tracer"); dir != want {
+	if want := filepath.Join("/home/grvty", ".local", "share", "startrace"); dir != want {
 		t.Fatalf("unexpected sudo-aware default data dir: want %q, got %q", want, dir)
 	}
 }
@@ -154,7 +155,7 @@ func TestInvokingUserIDsPrefersSudoUserOwnership(t *testing.T) {
 }
 
 func TestSQLiteRepositoryListsRunsAndBuildsDiff(t *testing.T) {
-	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "tracer.db"))
+	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "startrace.db"))
 	if err != nil {
 		t.Fatalf("OpenSQLite returned error: %v", err)
 	}
@@ -227,7 +228,7 @@ func TestSQLiteRepositoryListsRunsAndBuildsDiff(t *testing.T) {
 }
 
 func TestSQLiteRepositoryBackfillsAssetsAndSupportsManualOverrides(t *testing.T) {
-	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "tracer.db"))
+	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "startrace.db"))
 	if err != nil {
 		t.Fatalf("OpenSQLite returned error: %v", err)
 	}
@@ -240,7 +241,7 @@ func TestSQLiteRepositoryBackfillsAssetsAndSupportsManualOverrides(t *testing.T)
 
 	run, runStore, err := repo.StartRun(context.Background(), project.ID, RunSpec{
 		TemplateName: "home-lab",
-		TemplatePath: "examples/tracer-home-lab.json",
+		TemplatePath: "examples/st-radar-home-lab.json",
 		Mode:         "run",
 		Scope: ingest.Scope{
 			Targets: []string{"192.168.178.50"},

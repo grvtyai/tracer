@@ -76,7 +76,7 @@ Inside `scanner-core/` the structure now trends toward:
 ```text
 scanner-core/
 |-- cmd/
-|   |-- tracer/
+|   |-- st-radar/
 |   `-- startrace/
 |-- internal/
 |   |-- modules/

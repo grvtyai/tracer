@@ -277,7 +277,7 @@ func TestServerCanCreateProjectAndPersistDefaultProject(t *testing.T) {
 
 func openTestRepo(t *testing.T) *storage.SQLiteRepository {
 	t.Helper()
-	repo, err := storage.OpenSQLite(filepath.Join(t.TempDir(), "tracer.db"))
+	repo, err := storage.OpenSQLite(filepath.Join(t.TempDir(), "startrace.db"))
 	if err != nil {
 		t.Fatalf("OpenSQLite returned error: %v", err)
 	}
@@ -295,7 +295,7 @@ func seedTestRun(t *testing.T, repo *storage.SQLiteRepository) string {
 
 	run, store, err := repo.StartRun(ctx, project.ID, storage.RunSpec{
 		TemplateName: "home-lab",
-		TemplatePath: "examples/tracer-home-lab.json",
+		TemplatePath: "examples/st-radar-home-lab.json",
 		Mode:         "run",
 		Scope: ingest.Scope{
 			Name:    "home",
@@ -384,7 +384,7 @@ func seedTestAsset(t *testing.T, repo *storage.SQLiteRepository) (string, string
 
 	run, store, err := repo.StartRun(ctx, project.ID, storage.RunSpec{
 		TemplateName: "home-assets",
-		TemplatePath: "examples/tracer-home-lab.json",
+		TemplatePath: "examples/st-radar-home-lab.json",
 		Mode:         "run",
 		Scope: ingest.Scope{
 			Targets: []string{"192.168.178.50"},

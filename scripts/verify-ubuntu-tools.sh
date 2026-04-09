@@ -49,8 +49,8 @@ else
   printf '[miss] testssl support dir\n'
 fi
 
-if [[ -f "${HOME}/.local/share/tracer/sharphound/SharpHound-latest.zip" ]]; then
-  printf '[ok]   SharpHound bundle -> %s\n' "${HOME}/.local/share/tracer/sharphound/SharpHound-latest.zip"
+if [[ -f "${HOME}/.local/share/startrace/sharphound/SharpHound-latest.zip" ]]; then
+  printf '[ok]   SharpHound bundle -> %s\n' "${HOME}/.local/share/startrace/sharphound/SharpHound-latest.zip"
 else
   printf '[miss] SharpHound bundle\n'
 fi

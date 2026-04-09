@@ -354,13 +354,13 @@ func writeTemporaryTemplate(template templates.Template) (string, error) {
 }
 
 func buildScanWorkerCommand(runID string, projectName string, templatePath string, effective options.EffectiveOptions) (*exec.Cmd, error) {
-	tracerBinary, err := resolveTracerBinaryPath()
+	radarBinary, err := resolveSTRadarBinaryPath()
 	if err != nil {
 		return nil, err
 	}
 
 	args := []string{
-		tracerBinary,
+		radarBinary,
 		"-mode", "execute-run",
 		"-run-id", runID,
 		"-template", templatePath,
@@ -400,26 +400,44 @@ func buildScanWorkerCommand(runID string, projectName string, templatePath strin
 	return cmd, nil
 }
 
-func resolveTracerBinaryPath() (string, error) {
+func resolveSTRadarBinaryPath() (string, error) {
 	if executable, err := os.Executable(); err == nil {
-		sibling := filepath.Join(filepath.Dir(executable), "tracer")
+		sibling := filepath.Join(filepath.Dir(executable), "st-radar")
 		if runtime.GOOS == "windows" {
 			sibling += ".exe"
 		}
 		if _, err := os.Stat(sibling); err == nil {
 			return sibling, nil
 		}
+		legacySibling := filepath.Join(filepath.Dir(executable), "tracer")
+		if runtime.GOOS == "windows" {
+			legacySibling += ".exe"
+		}
+		if _, err := os.Stat(legacySibling); err == nil {
+			return legacySibling, nil
+		}
 	}
 
-	tracerBinary, err := exec.LookPath("tracer")
+	radarBinary, err := exec.LookPath("st-radar")
 	if err == nil {
-		return tracerBinary, nil
+		return radarBinary, nil
 	}
-	tracerBinary, err = platform.ResolveExecutable("tracer")
+	radarBinary, err = platform.ResolveExecutable("st-radar")
+	if err == nil {
+		return radarBinary, nil
+	}
+	legacyBinary, legacyErr := exec.LookPath("tracer")
+	if legacyErr == nil {
+		return legacyBinary, nil
+	}
+	legacyBinary, legacyErr = platform.ResolveExecutable("tracer")
+	if legacyErr == nil {
+		return legacyBinary, nil
+	}
 	if err != nil {
-		return "", fmt.Errorf("locate tracer worker binary: %w", err)
+		return "", fmt.Errorf("locate st-radar worker binary: %w", err)
 	}
-	return tracerBinary, nil
+	return "", fmt.Errorf("locate st-radar worker binary")
 }
 
 func (s *Server) runStillRunning(ctx context.Context, runID string) (bool, error) {
@@ -706,7 +724,7 @@ func detectActiveInterface() string {
 	return ""
 }
 
-func detectMothershipAddress() string {
+func detectNexusAddress() string {
 	ifaceName := detectActiveInterface()
 	if address := interfacePrimaryAddress(ifaceName); address != "" {
 		return address

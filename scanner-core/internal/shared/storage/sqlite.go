@@ -132,11 +132,24 @@ type RunDiff struct {
 }
 
 func DefaultDataDir() string {
-	return defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir)
+	preferred := defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "startrace")
+	legacy := defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "tracer")
+	if preferred == "" {
+		return legacy
+	}
+	if legacy != "" && !pathExists(preferred) && pathExists(legacy) {
+		return legacy
+	}
+	return preferred
 }
 
 func DefaultDBPath() string {
-	return filepath.Join(DefaultDataDir(), "tracer.db")
+	preferred := filepath.Join(defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "startrace"), "startrace.db")
+	legacy := filepath.Join(defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "tracer"), "tracer.db")
+	if legacy != "" && !pathExists(preferred) && (pathExists(legacy) || pathExists(filepath.Dir(legacy))) {
+		return legacy
+	}
+	return preferred
 }
 
 func ResolveDBPath(dataDir string, dbPath string) string {
@@ -144,7 +157,7 @@ func ResolveDBPath(dataDir string, dbPath string) string {
 		return dbPath
 	}
 	if strings.TrimSpace(dataDir) != "" {
-		return filepath.Join(dataDir, "tracer.db")
+		return filepath.Join(dataDir, "startrace.db")
 	}
 	return DefaultDBPath()
 }
@@ -1009,20 +1022,20 @@ func ensureColumnExists(ctx context.Context, db *sql.DB, tableName string, colum
 	return nil
 }
 
-func defaultDataDir(goos string, getenv func(string) string, userHomeDir func() (string, error), lookupUserHome func(string) (string, error)) string {
+func defaultDataDir(goos string, getenv func(string) string, userHomeDir func() (string, error), lookupUserHome func(string) (string, error), appName string) string {
 	if goos == "windows" {
 		if localAppData := strings.TrimSpace(getenv("LOCALAPPDATA")); localAppData != "" {
-			return filepath.Join(localAppData, "tracer")
+			return filepath.Join(localAppData, appName)
 		}
 	}
 
 	if goos != "windows" {
 		if xdgDataHome := strings.TrimSpace(getenv("XDG_DATA_HOME")); xdgDataHome != "" {
-			return filepath.Join(xdgDataHome, "tracer")
+			return filepath.Join(xdgDataHome, appName)
 		}
 		if sudoUser := strings.TrimSpace(getenv("SUDO_USER")); sudoUser != "" && sudoUser != "root" {
 			if sudoHome, err := lookupUserHome(sudoUser); err == nil && strings.TrimSpace(sudoHome) != "" {
-				return filepath.Join(sudoHome, ".local", "share", "tracer")
+				return filepath.Join(sudoHome, ".local", "share", appName)
 			}
 		}
 	}
@@ -1034,12 +1047,20 @@ func defaultDataDir(goos string, getenv func(string) string, userHomeDir func() 
 
 	switch goos {
 	case "windows":
-		return filepath.Join(homeDir, "AppData", "Local", "tracer")
+		return filepath.Join(homeDir, "AppData", "Local", appName)
 	case "darwin":
-		return filepath.Join(homeDir, "Library", "Application Support", "tracer")
+		return filepath.Join(homeDir, "Library", "Application Support", appName)
 	default:
-		return filepath.Join(homeDir, ".local", "share", "tracer")
+		return filepath.Join(homeDir, ".local", "share", appName)
 	}
+}
+
+func pathExists(path string) bool {
+	if strings.TrimSpace(path) == "" {
+		return false
+	}
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 func lookupUserHomeDir(username string) (string, error) {

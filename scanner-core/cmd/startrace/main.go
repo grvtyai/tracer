@@ -20,7 +20,7 @@ func main() {
 	)
 
 	flag.StringVar(&listenAddr, "listen", "127.0.0.1:8080", "HTTP listen address")
-	flag.StringVar(&dataDir, "data-dir", "", "directory for startrace/tracer persistent data")
+	flag.StringVar(&dataDir, "data-dir", "", "directory for Startrace persistent data")
 	flag.StringVar(&dbPath, "db-path", "", "path to the SQLite database file")
 	flag.Parse()
 

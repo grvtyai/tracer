@@ -35,14 +35,14 @@ func helpTopicDefinitions() []helpTopicPage {
 			Slug:     "installation",
 			Title:    "Installation",
 			Category: "Getting Started",
-			Summary:  "Linux-first setup, privileges, binaries and the current runtime assumptions for Startrace and tracer.",
+			Summary:  "Linux-first setup, privileges, binaries and the current runtime assumptions for Startrace and st-radar.",
 			Sections: []helpSection{
 				{Title: "Current Direction", Content: []string{
 					"Startrace is intended to run on Linux and currently expects elevated privileges for scanner and sensor workflows.",
 					"Docker or a dedicated small server remains a good long-term packaging path, but the current baseline is a direct Linux runtime.",
 				}},
 				{Title: "Setup Areas", Content: []string{
-					"Binary build and placement for startrace and tracer.",
+					"Binary build and placement for startrace and st-radar.",
 					"SQLite database path and data directory planning.",
 					"External tool availability such as naabu, nmap, httpx, zgrab2, scamper, avahi-browse, testssl.sh, snmpwalk and zeekctl.",
 				}},
@@ -55,18 +55,18 @@ func helpTopicDefinitions() []helpTopicPage {
 			Slug:     "infrastructure",
 			Title:    "Infrastructure",
 			Category: "Getting Started",
-			Summary:  "How Startrace is split between the Mothership, future Satelites and the module-driven suite architecture.",
+			Summary:  "How Startrace is split between the Nexus, future Satelites and the module-driven suite architecture.",
 			Sections: []helpSection{
-				{Title: "Mothership", Content: []string{
-					"The Mothership is the main Startrace host. It runs the browser UI, stores the shared SQLite data and currently executes jobs locally.",
+				{Title: "Nexus", Content: []string{
+					"The Nexus is the main Startrace host. It runs the browser UI, stores the shared SQLite data and currently executes jobs locally.",
 					"It is the first execution target shown in the suite and acts as the default home for Radar runs until remote Satelites are available.",
 				}},
 				{Title: "Satelites", Content: []string{
 					"Satelites are the planned Startrace runners for other network segments or remote environments.",
-					"A Satelite should receive jobs from the Mothership, execute them with the local toolkit and report health, status and results back to the main host.",
+					"A Satelite should receive jobs from the Nexus, execute them with the local toolkit and report health, status and results back to the main host.",
 				}},
 				{Title: "Responsibilities", Content: []string{
-					"The Mothership owns the product UI, shared state and orchestration.",
+					"The Nexus owns the product UI, shared state and orchestration.",
 					"Satelites are meant to own execution in places where keeping everything on one host is not practical.",
 					"This split keeps Startrace usable as a single-node deployment today while leaving room for a distributed model later.",
 				}},
