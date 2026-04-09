@@ -40,19 +40,19 @@ install_or_upgrade_pipx_pkg() {
 }
 
 if [[ "${EUID}" -eq 0 ]]; then
-  warn "Bitte das Skript als normaler Benutzer ausfuehren, nicht direkt als root."
+  warn "Please run this script as your normal user, not directly as root."
   exit 1
 fi
 
 if [[ ! -r /etc/os-release ]]; then
-  warn "Dieses Skript erwartet Ubuntu."
+  warn "This script expects Ubuntu."
   exit 1
 fi
 
 # shellcheck disable=SC1091
 source /etc/os-release
 if [[ "${ID:-}" != "ubuntu" ]]; then
-  warn "Unterstuetzt ist Ubuntu. Erkannt wurde: ${ID:-unknown}"
+  warn "Ubuntu is the supported target. Detected: ${ID:-unknown}"
   exit 1
 fi
 
@@ -67,13 +67,14 @@ GO_VERSION="$(printf '%s\n' "$GO_VERSION_RAW" | head -n1 | tr -d '\r')"
 GO_TARBALL_URL="https://go.dev/dl/${GO_VERSION}.linux-amd64.tar.gz"
 GO_TARBALL="$(mktemp /tmp/go-toolchain.XXXXXX.tar.gz)"
 WORKDIR="$(mktemp -d /tmp/tracer-tools.XXXXXX)"
-PATH_LINE='export PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:$PATH'
+PATH_LINE='export PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/bin:$PATH'
 ZEEK_LIST_FILE="/etc/apt/sources.list.d/security:zeek.list"
 ZEEK_KEY_FILE="/etc/apt/trusted.gpg.d/security_zeek.gpg"
 SHARPHOUND_DEST="${HOME}/.local/share/tracer/sharphound"
 SHARPHOUND_ZIP="${SHARPHOUND_DEST}/SharpHound-latest.zip"
 SCAMPER_APT_REPOSITORY="${SCAMPER_APT_REPOSITORY:-ppa:matthewluckie/scamper}"
 SCAMPER_PPA_SUPPORTED=0
+TESTSSL_INSTALL_DIR="/usr/local/share/testssl"
 
 case "${UBUNTU_VERSION}" in
   "20.04"|"22.04"|"24.04")
@@ -92,6 +93,7 @@ sudo apt-get update
 sudo apt-get install -y \
   apt-transport-https \
   arp-scan \
+  avahi-utils \
   build-essential \
   ca-certificates \
   curl \
@@ -106,6 +108,7 @@ sudo apt-get install -y \
   python3 \
   python3-pip \
   python3-venv \
+  snmp \
   software-properties-common \
   unzip \
   zmap
@@ -118,7 +121,7 @@ sudo tar -C /usr/local -xzf "$GO_TARBALL"
 mkdir -p "${HOME}/go/bin" "${HOME}/.local/bin" "$SHARPHOUND_DEST"
 append_path_once "${HOME}/.profile" "$PATH_LINE"
 append_path_once "${HOME}/.bashrc" "$PATH_LINE"
-export PATH="/usr/local/go/bin:${HOME}/go/bin:${HOME}/.local/bin:/opt/zeek/bin:${PATH}"
+export PATH="/usr/local/go/bin:${HOME}/go/bin:${HOME}/.local/bin:/opt/zeek/bin:/usr/local/bin:${PATH}"
 
 log "Ensuring pipx PATH helpers"
 python3 -m pipx ensurepath >/dev/null || true
@@ -139,16 +142,30 @@ git clone --depth 1 https://github.com/zmap/zgrab2.git "${WORKDIR}/zgrab2"
   install -m 0755 zgrab2 "${HOME}/.local/bin/zgrab2"
 )
 
+log "Installing testssl.sh"
+git clone --depth 1 https://github.com/testssl/testssl.sh.git "${WORKDIR}/testssl.sh"
+sudo rm -rf "$TESTSSL_INSTALL_DIR"
+sudo mkdir -p "$TESTSSL_INSTALL_DIR"
+sudo cp -R "${WORKDIR}/testssl.sh/." "$TESTSSL_INSTALL_DIR/"
+cat <<'EOF' | sudo tee /usr/local/bin/testssl.sh >/dev/null
+#!/usr/bin/env bash
+set -euo pipefail
+export TESTSSL_INSTALL_DIR="/usr/local/share/testssl"
+cd "$TESTSSL_INSTALL_DIR"
+exec ./testssl.sh "$@"
+EOF
+sudo chmod 0755 /usr/local/bin/testssl.sh
+
 if [[ "$SCAMPER_PPA_SUPPORTED" -eq 1 ]]; then
   log "Installing scamper from Ubuntu PPA"
   sudo add-apt-repository -y "$SCAMPER_APT_REPOSITORY"
   sudo apt-get update
   if ! sudo apt-get install -y scamper scamper-utils; then
-    warn "scamper-utils war nicht verfuegbar; installiere nur scamper."
+    warn "scamper-utils was not available; installing scamper only."
     sudo apt-get install -y scamper
   fi
 else
-  warn "Scamper-PPA ist nur fuer Ubuntu 20.04/22.04/24.04 direkt hinterlegt. Bitte manuell nachziehen."
+  warn "The scamper PPA is only preconfigured for Ubuntu 20.04/22.04/24.04. Please install scamper manually on this release."
 fi
 
 log "Installing Zeek from official OBS repository"
@@ -158,7 +175,7 @@ curl -fsSL "https://download.opensuse.org/repositories/security:/zeek/${UBUNTU_D
   | sudo tee "$ZEEK_KEY_FILE" >/dev/null
 sudo apt-get update
 if ! sudo apt-get install -y zeek; then
-  warn "Zeek Paket 'zeek' nicht verfuegbar; versuche 'zeek-lts'."
+  warn "The 'zeek' package was not available; trying 'zeek-lts' instead."
   sudo apt-get install -y zeek-lts
 fi
 
@@ -176,8 +193,8 @@ SHARPHOUND_ASSET_URL="$(
 if [[ -n "$SHARPHOUND_ASSET_URL" && "$SHARPHOUND_ASSET_URL" != "null" ]]; then
   curl -fsSL "$SHARPHOUND_ASSET_URL" -o "$SHARPHOUND_ZIP"
 else
-  warn "Konnte keine SharpHound-ZIP in der aktuellen Release finden."
+  warn "Could not find a SharpHound ZIP asset in the latest release."
 fi
 
-log "Installation abgeschlossen"
-log "Starte jetzt idealerweise: bash scripts/verify-ubuntu-tools.sh"
+log "Installation finished"
+log "Recommended next step: bash scripts/verify-ubuntu-tools.sh"

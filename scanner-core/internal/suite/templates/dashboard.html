@@ -4,9 +4,19 @@
 <section class="panel project-summary-panel">
     <details class="panel-disclosure">
         <summary class="panel-disclosure-summary">
-            <div class="panel-head compact-head">
-                <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{else}}No Project{{end}}</h2>
-                {{if .CurrentProject}}<span class="pill">{{.CurrentProject.PublicID}}</span>{{end}}
+            <div class="panel-head compact-head project-summary-head">
+                <div class="project-summary-title">
+                    <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{else}}No Project{{end}}</h2>
+                    {{if .CurrentProject}}<span class="pill">{{.CurrentProject.PublicID}}</span>{{end}}
+                </div>
+                {{if .CurrentProject}}
+                <div class="tag-row project-summary-tags">
+                    <span class="tag">Assets {{.Stats.AssetCount}}</span>
+                    <span class="tag">Evidence {{.Stats.EvidenceCount}}</span>
+                    <span class="tag">Reevaluation {{.Stats.ReevalCount}}</span>
+                    <span class="tag">Satelites Online {{.Stats.SatelliteCount}}</span>
+                </div>
+                {{end}}
             </div>
         </summary>
         {{if .CurrentProject}}
@@ -27,11 +37,6 @@
             <div class="kv-value">{{if .CurrentProject.LastRunAt.IsZero}}-{{else}}{{.CurrentProject.LastRunAt.Format "2006-01-02 15:04"}}{{end}}</div>
             <div class="kv-key">Notes</div>
             <div class="kv-value">{{if .CurrentProject.Notes}}{{.CurrentProject.Notes}}{{else}}-{{end}}</div>
-        </div>
-        <div class="tag-row">
-            <span class="tag">Assets {{.Stats.AssetCount}}</span>
-            <span class="tag">Evidence {{.Stats.EvidenceCount}}</span>
-            <span class="tag">Reevaluation {{.Stats.ReevalCount}}</span>
         </div>
         {{else}}
         <p class="empty-note disclosure-body">Create your first project to start organizing shared data across Discovery, Inventory and the next suite modules.</p>

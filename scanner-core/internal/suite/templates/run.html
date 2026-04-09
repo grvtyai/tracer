@@ -65,52 +65,6 @@
     </article>
 </section>
 
-<section class="panel">
-    <div class="panel-head">
-        <h2>Execution Steps</h2>
-        <span class="pill">{{len .RunJobItems}} steps</span>
-    </div>
-    {{if .RunJobItems}}
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Step</th>
-                <th>Plugin</th>
-                <th>Target</th>
-                <th>Status</th>
-                <th>Started</th>
-                <th>Finished</th>
-                <th>Duration</th>
-                <th>Records</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .RunJobItems}}
-            <tr>
-                <td>{{.Kind}}</td>
-                <td>{{.Plugin}}</td>
-                <td>{{.Target}}</td>
-                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
-                <td>{{.StartedAt}}</td>
-                <td>{{.FinishedAt}}</td>
-                <td>{{.Duration}}</td>
-                <td>{{.RecordsWritten}}</td>
-            </tr>
-            {{if or .Error .NeedsReevaluation}}
-            <tr>
-                <td colspan="8" class="reason-row">
-                    {{if .Error}}Error: {{.Error}}{{end}}{{if and .Error .NeedsReevaluation}} | {{end}}{{if .NeedsReevaluation}}Reevaluation: {{if .ReevaluationAfter}}{{.ReevaluationAfter}}{{else}}scheduled{{end}}{{if .ReevaluationReason}} | {{.ReevaluationReason}}{{end}}{{end}}
-                </td>
-            </tr>
-            {{end}}
-            {{end}}
-        </tbody>
-    </table>
-    {{else}}
-    <p class="empty-note">No execution steps were recorded for this run yet.</p>
-    {{end}}
-</section>
-
 <section class="panel-grid">
     <article class="panel wide">
         <div class="panel-head">
@@ -226,5 +180,51 @@
         </div>
         {{end}}
     </article>
+</section>
+
+<section class="panel">
+    <div class="panel-head">
+        <h2>Execution Steps</h2>
+        <span class="pill">{{len .RunJobItems}} steps</span>
+    </div>
+    {{if .RunJobItems}}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Step</th>
+                <th>Plugin</th>
+                <th>Target</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>Finished</th>
+                <th>Duration</th>
+                <th>Records</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .RunJobItems}}
+            <tr>
+                <td>{{.Kind}}</td>
+                <td>{{.Plugin}}</td>
+                <td>{{.Target}}</td>
+                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
+                <td>{{.StartedAt}}</td>
+                <td>{{.FinishedAt}}</td>
+                <td>{{.Duration}}</td>
+                <td>{{.RecordsWritten}}</td>
+            </tr>
+            {{if or .Error .NeedsReevaluation}}
+            <tr>
+                <td colspan="8" class="reason-row">
+                    {{if .Error}}Error: {{.Error}}{{end}}{{if and .Error .NeedsReevaluation}} | {{end}}{{if .NeedsReevaluation}}Reevaluation: {{if .ReevaluationAfter}}{{.ReevaluationAfter}}{{else}}scheduled{{end}}{{if .ReevaluationReason}} | {{.ReevaluationReason}}{{end}}{{end}}
+                </td>
+            </tr>
+            {{end}}
+            {{end}}
+        </tbody>
+    </table>
+    {{else}}
+    <p class="empty-note">No execution steps were recorded for this run yet.</p>
+    {{end}}
 </section>
 {{end}}

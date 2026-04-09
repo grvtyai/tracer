@@ -347,6 +347,27 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     margin-bottom: 16px;
 }
 
+.project-summary-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.project-summary-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.project-summary-tags {
+    margin-top: 0;
+    justify-content: flex-end;
+}
+
 .disclosure-body {
     margin-top: 18px;
 }
@@ -605,6 +626,22 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     display: inline-flex;
     align-items: center;
     gap: 8px;
+}
+
+.tag-internal {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+        rgba(103,162,255,0.14);
+    border-color: rgba(103,162,255,0.34);
+    color: #dce8ff;
+}
+
+.tag-external {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+        rgba(255,107,107,0.14);
+    border-color: rgba(255,107,107,0.34);
+    color: #ffe1e1;
 }
 
 .status-dot {
@@ -1622,6 +1659,20 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     margin-top: 18px;
 }
 
+.settings-runtime-grid {
+    margin-bottom: 18px;
+}
+
+.settings-form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.settings-checkbox-grid {
+    margin-top: 4px;
+}
+
 .schedule-disclosure {
     display: inline-flex;
     flex-direction: column;
@@ -1812,7 +1863,10 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
 
 @media (max-width: 720px) {
     .content { padding: 18px; }
-    .topbar { flex-direction: column; }
+    .topbar,
+    .project-summary-head {
+        flex-direction: column;
+    }
     .module-header {
         flex-wrap: wrap;
     }
@@ -1839,6 +1893,9 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     }
     .template-card-head {
         flex-direction: column;
+    }
+    .project-summary-tags {
+        justify-content: flex-start;
     }
     .preflight-card {
         right: auto;

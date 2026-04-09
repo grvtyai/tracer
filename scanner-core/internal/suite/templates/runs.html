@@ -37,7 +37,10 @@
                         {{.StatusLabel}}
                     </span>
                 </td>
-                <td>{{.Run.TemplateName}}</td>
+                <td>
+                    <div>{{.Run.TemplateName}}</div>
+                    {{if .ScanTag}}<div class="tag-row"><span class="tag {{.ScanTagClass}}">{{.ScanTag}}</span></div>{{end}}
+                </td>
                 <td>{{.HostCount}}</td>
                 <td>{{.SubnetCount}}</td>
                 <td class="mono">{{.Run.ID}}</td>
@@ -117,7 +120,20 @@
         row.appendChild(statusCell);
 
         const nameCell = document.createElement("td");
-        nameCell.textContent = item.run.template_name || "-";
+        const nameWrap = document.createElement("div");
+        const nameMain = document.createElement("div");
+        nameMain.textContent = item.run.template_name || "-";
+        nameWrap.appendChild(nameMain);
+        if (item.scan_tag) {
+            const tagRow = document.createElement("div");
+            tagRow.className = "tag-row";
+            const tag = document.createElement("span");
+            tag.className = `tag ${item.scan_tag_class || ""}`.trim();
+            tag.textContent = item.scan_tag;
+            tagRow.appendChild(tag);
+            nameWrap.appendChild(tagRow);
+        }
+        nameCell.appendChild(nameWrap);
         row.appendChild(nameCell);
 
         const hostCell = document.createElement("td");

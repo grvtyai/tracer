@@ -1,39 +1,135 @@
 {{define "settings.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-<section class="panel-grid">
-    <article class="panel">
+<section class="panel-grid settings-runtime-grid">
+    <article class="panel settings-runtime-panel">
         <div class="panel-head">
             <h2>Current Runtime</h2>
         </div>
         <div class="kv-grid">
+            <div class="kv-key">GitHub Repo</div>
+            <div class="kv-value"><a href="{{.RepoURL}}" target="_blank" rel="noreferrer">{{.RepoURL}}</a></div>
+            <div class="kv-key">Local Workspace</div>
+            <div class="kv-value mono">{{.RepoPath}}</div>
             <div class="kv-key">Data directory</div>
             <div class="kv-value mono">{{.DataDir}}</div>
             <div class="kv-key">SQLite database</div>
             <div class="kv-value mono">{{.DBPath}}</div>
             <div class="kv-key">Default project</div>
-            <div class="kv-value">{{if .Settings.DefaultProjectID}}{{.Settings.DefaultProjectID}}{{else}}not set{{end}}</div>
+            <div class="kv-value">{{.DefaultProjectLabel}}</div>
+            <div class="kv-key">Default satelite</div>
+            <div class="kv-value">{{.DefaultSatelliteLabel}}</div>
         </div>
     </article>
+</section>
+
+<form method="post" action="/settings" class="settings-form-stack">
+    <input type="hidden" name="project" value="{{if .CurrentProject}}{{.CurrentProject.ID}}{{end}}" />
+
+    <section class="panel-grid settings-panel-grid">
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Startup Defaults</h2>
+            </div>
+            <div class="asset-form">
+                <label class="form-row">
+                    <span class="form-label">Default project</span>
+                    <select class="input" name="default_project_id">
+                        <option value="">No default project</option>
+                        {{range .Projects}}
+                        <option value="{{.ID}}" {{if eq $.Settings.DefaultProjectID .ID}}selected{{end}}>{{.Name}} {{if .PublicID}}({{.PublicID}}){{end}}</option>
+                        {{end}}
+                    </select>
+                </label>
+
+                <label class="form-row">
+                    <span class="form-label">Default execution satelite</span>
+                    <select class="input" name="default_satellite_id">
+                        {{range .SatelliteOptions}}
+                        <option value="{{.ID}}" {{if eq $.Settings.DefaultSatelliteID .ID}}selected{{end}}>{{.Label}}</option>
+                        {{end}}
+                    </select>
+                </label>
+
+                <div class="form-grid">
+                    <label class="form-row">
+                        <span class="form-label">Default scan tag</span>
+                        <select class="input" name="default_scan_tag">
+                            <option value="internal" {{if eq .Settings.DefaultScanTag "internal"}}selected{{end}}>internal</option>
+                            <option value="external" {{if eq .Settings.DefaultScanTag "external"}}selected{{end}}>external</option>
+                        </select>
+                    </label>
+
+                    <label class="form-row">
+                        <span class="form-label">Default port template</span>
+                        <select class="input" name="default_port_template">
+                            <option value="all-default-ports" {{if eq .Settings.DefaultPortTemplate "all-default-ports"}}selected{{end}}>All Default Ports</option>
+                            <option value="top-1000-ports" {{if eq .Settings.DefaultPortTemplate "top-1000-ports"}}selected{{end}}>Top 1000 Ports</option>
+                            <option value="web-only" {{if eq .Settings.DefaultPortTemplate "web-only"}}selected{{end}}>Web Only</option>
+                            <option value="entra-id" {{if eq .Settings.DefaultPortTemplate "entra-id"}}selected{{end}}>Entra ID</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <div class="panel-head">
+                <h2>Radar Runtime Defaults</h2>
+            </div>
+            <div class="asset-form">
+                <div class="form-grid">
+                    <label class="form-row">
+                        <span class="form-label">Active interface</span>
+                        <input class="input" type="text" name="default_active_interface" value="{{.Settings.DefaultActiveInterface}}" placeholder="auto detect" />
+                    </label>
+
+                    <label class="form-row">
+                        <span class="form-label">Passive interface</span>
+                        <input class="input" type="text" name="default_passive_interface" value="{{.Settings.DefaultPassiveInterface}}" placeholder="optional" />
+                    </label>
+                </div>
+
+                <div class="form-grid">
+                    <label class="form-row">
+                        <span class="form-label">Passive mode</span>
+                        <select class="input" name="default_passive_mode">
+                            <option value="off" {{if eq .Settings.DefaultPassiveMode "off"}}selected{{end}}>off</option>
+                            <option value="auto" {{if eq .Settings.DefaultPassiveMode "auto"}}selected{{end}}>auto</option>
+                            <option value="always" {{if eq .Settings.DefaultPassiveMode "always"}}selected{{end}}>always</option>
+                        </select>
+                    </label>
+
+                    <label class="form-row">
+                        <span class="form-label">Zeek log dir</span>
+                        <input class="input" type="text" name="default_zeek_log_dir" value="{{.Settings.DefaultZeekLogDir}}" />
+                    </label>
+                </div>
+            </div>
+        </article>
+    </section>
 
     <article class="panel">
         <div class="panel-head">
-            <h2>Startup Behavior</h2>
+            <h2>Radar Launch Defaults</h2>
         </div>
-        <form method="post" action="/settings" class="asset-form">
-            <label class="form-row">
-                <span class="form-label">Default project</span>
-                <select class="input" name="default_project_id">
-                    <option value="">No default project</option>
-                    {{range .Projects}}
-                    <option value="{{.ID}}" {{if eq $.Settings.DefaultProjectID .ID}}selected{{end}}>{{.Name}} {{if .PublicID}}({{.PublicID}}){{end}}</option>
-                    {{end}}
-                </select>
-            </label>
-            <div class="hero-actions">
-                <button class="button button-primary" type="submit">Save settings</button>
-            </div>
-        </form>
+        <div class="checkbox-grid settings-checkbox-grid">
+            <label class="check-row"><input type="checkbox" name="default_route_sampling" {{if .Settings.DefaultRouteSampling}}checked{{end}} /> <span>Route sampling</span></label>
+            <label class="check-row"><input type="checkbox" name="default_service_scan" {{if .Settings.DefaultServiceScan}}checked{{end}} /> <span>Service scan</span></label>
+            <label class="check-row"><input type="checkbox" name="default_avahi" {{if .Settings.DefaultAvahi}}checked{{end}} /> <span>Avahi service discovery</span></label>
+            <label class="check-row"><input type="checkbox" name="default_testssl" {{if .Settings.DefaultTestSSL}}checked{{end}} /> <span>TLS inspection with testssl.sh</span></label>
+            <label class="check-row"><input type="checkbox" name="default_snmp" {{if .Settings.DefaultSNMP}}checked{{end}} /> <span>SNMP enrichment with snmpwalk</span></label>
+            <label class="check-row"><input type="checkbox" name="default_passive_ingest" {{if .Settings.DefaultPassiveIngest}}checked{{end}} /> <span>Passive ingest</span></label>
+            <label class="check-row"><input type="checkbox" name="default_os_detection" {{if .Settings.DefaultOSDetection}}checked{{end}} /> <span>OS detection</span></label>
+            <label class="check-row"><input type="checkbox" name="default_layer2" {{if .Settings.DefaultLayer2}}checked{{end}} /> <span>Local network neighbor discovery</span></label>
+            <label class="check-row"><input type="checkbox" name="default_large_range_strategy" {{if .Settings.DefaultLargeRangeStrategy}}checked{{end}} /> <span>Large range strategy</span></label>
+            <label class="check-row"><input type="checkbox" name="default_zeek_auto_start" {{if .Settings.DefaultZeekAutoStart}}checked{{end}} /> <span>Zeek auto start</span></label>
+            <label class="check-row"><input type="checkbox" name="default_continue_on_error" {{if .Settings.DefaultContinueOnError}}checked{{end}} /> <span>Continue on error</span></label>
+            <label class="check-row"><input type="checkbox" name="default_retain_partial_results" {{if .Settings.DefaultRetainPartialResult}}checked{{end}} /> <span>Retain partial results</span></label>
+        </div>
+        <div class="hero-actions">
+            <button class="button button-primary" type="submit">Save settings</button>
+        </div>
     </article>
-</section>
+</form>
 {{end}}

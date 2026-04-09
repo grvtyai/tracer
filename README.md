@@ -81,6 +81,21 @@ These areas already exist in the UI as product spaces, but are still early:
 - `Automation`
 - `Help`
 
+## 🧰 Planned Tooling
+
+These integrations are currently planned because they can add useful visibility for home networks and smaller environments:
+
+- `fping` for fast reachability, latency and packet-loss checks
+- `snmpwalk` / `Net-SNMP` for switches, access points, printers, NAS systems and other SNMP-speaking devices
+- `Avahi` for mDNS / Bonjour discovery on local networks
+- `testssl.sh` for TLS and certificate inspection on exposed services
+- `mtr` for path quality, latency and packet-loss diagnostics
+- `Suricata` for passive network security telemetry and eventing
+- `TShark` for packet capture and protocol-level troubleshooting
+- `enum4linux-ng` for SMB / Windows network enumeration
+- `Nuclei` for controlled template-based security checks
+- `Amass` for broader attack-surface and external asset discovery
+
 ## 🚀 Ubuntu Installation
 
 The main supported runtime target is Ubuntu.
@@ -115,9 +130,12 @@ What the installer sets up:
 - `httpx`
 - `nmap`
 - `arp-scan`
+- `avahi-browse`
 - `zmap`
 - `scamper`
 - `zgrab2`
+- `testssl.sh`
+- `snmpwalk`
 - `Zeek`
 - `ldapdomaindump`
 - `impacket`
@@ -139,7 +157,7 @@ go build -o ./bin/startrace ./cmd/startrace
 Use `sudo` and keep the tool paths available:
 
 ```bash
-sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080
+sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080
 ```
 
 Then open:

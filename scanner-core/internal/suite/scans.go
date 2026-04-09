@@ -52,6 +52,9 @@ type scanFormData struct {
 	ReevaluateCustom        string
 	EnableRouteSampling     bool
 	EnableServiceScan       bool
+	EnableAvahi             bool
+	EnableTestSSL           bool
+	EnableSNMP              bool
 	EnablePassiveIngest     bool
 	EnableOSDetection       bool
 	EnableLayer2            bool
@@ -83,7 +86,7 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	satelliteOptions := s.satelliteOptions(ctx)
-	form := defaultScanForm(currentProject, satelliteOptions)
+	form := defaultScanForm(currentProject, satelliteOptions, appSettings)
 	if value := strings.TrimSpace(r.URL.Query().Get("scope")); value != "" {
 		form.ScopeInput = value
 	}
@@ -117,6 +120,9 @@ func (s *Server) renderScanNew(w http.ResponseWriter, r *http.Request) {
 	}
 	form.EnableRouteSampling = queryBoolDefault(r.URL.Query().Get("enable_route_sampling"), form.EnableRouteSampling)
 	form.EnableServiceScan = queryBoolDefault(r.URL.Query().Get("enable_service_scan"), form.EnableServiceScan)
+	form.EnableAvahi = queryBoolDefault(r.URL.Query().Get("enable_avahi"), form.EnableAvahi)
+	form.EnableTestSSL = queryBoolDefault(r.URL.Query().Get("enable_testssl"), form.EnableTestSSL)
+	form.EnableSNMP = queryBoolDefault(r.URL.Query().Get("enable_snmp"), form.EnableSNMP)
 	form.EnablePassiveIngest = queryBoolDefault(r.URL.Query().Get("enable_passive_ingest"), form.EnablePassiveIngest)
 	form.EnableOSDetection = queryBoolDefault(r.URL.Query().Get("enable_os_detection"), form.EnableOSDetection)
 	form.EnableLayer2 = queryBoolDefault(r.URL.Query().Get("enable_layer2"), form.EnableLayer2)
@@ -184,6 +190,9 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 		RetainPartialResults:  isChecked(r.FormValue("retain_partial_results")),
 		EnableRouteSampling:   isChecked(r.FormValue("enable_route_sampling")),
 		EnableServiceScan:     isChecked(r.FormValue("enable_service_scan")),
+		EnableAvahi:           isChecked(r.FormValue("enable_avahi")),
+		EnableTestSSL:         isChecked(r.FormValue("enable_testssl")),
+		EnableSNMP:            isChecked(r.FormValue("enable_snmp")),
 		EnablePassiveIngest:   isChecked(r.FormValue("enable_passive_ingest")),
 		EnableOSDetection:     isChecked(r.FormValue("enable_os_detection")),
 		EnableLayer2:          isChecked(r.FormValue("enable_layer2")),
@@ -272,6 +281,9 @@ func collectPreflightChecks(dbPath string) []preflightCheck {
 		commandCheck("zgrab2", true),
 		commandCheck("scamper", false),
 		commandCheck("arp-scan", false),
+		commandCheck("avahi-browse", false),
+		commandCheck("testssl.sh", false),
+		commandCheck("snmpwalk", false),
 		commandCheck("zeekctl", false),
 		dbPathCheck(dbPath),
 	}
@@ -475,7 +487,7 @@ func preflightState(checks []preflightCheck) string {
 	return "ok"
 }
 
-func defaultScanForm(project *storage.ProjectSummary, satelliteOptions []satelliteOption) scanFormData {
+func defaultScanForm(project *storage.ProjectSummary, satelliteOptions []satelliteOption, appSettings storage.AppSettings) scanFormData {
 	scope := ""
 	if project != nil && strings.TrimSpace(project.Notes) != "" {
 		scope = ""
@@ -484,31 +496,41 @@ func defaultScanForm(project *storage.ProjectSummary, satelliteOptions []satelli
 	if project != nil {
 		projectID = project.ID
 	}
-	selectedSatellite := resolveSatelliteSelection("", satelliteOptions)
+	selectedSatellite := resolveSatelliteSelection(appSettings.DefaultSatelliteID, satelliteOptions)
+	activeInterface := detectActiveInterface()
+	if trimmed := strings.TrimSpace(appSettings.DefaultActiveInterface); trimmed != "" {
+		activeInterface = trimmed
+	}
 	return scanFormData{
 		ProjectID:               projectID,
 		ScanName:                "Quick Sweep",
 		SatelliteID:             selectedSatellite.ID,
 		SatelliteLabel:          selectedSatellite.Label,
 		ScopeInput:              scope,
-		PortTemplate:            "all-default-ports",
-		ActiveInterface:         detectActiveInterface(),
+		PortTemplate:            firstNonEmptyWeb(strings.TrimSpace(appSettings.DefaultPortTemplate), "all-default-ports"),
+		ActiveInterface:         activeInterface,
 		DetectedActiveInterface: detectActiveInterface(),
 		StartTimeDisplay:        time.Now().Format("2006-01-02 15:04"),
-		PassiveMode:             "auto",
-		ZeekAutoStart:           true,
-		ZeekLogDir:              "/opt/zeek/logs/current",
-		ContinueOnError:         true,
-		RetainPartialResults:    true,
+		PassiveInterface:        strings.TrimSpace(appSettings.DefaultPassiveInterface),
+		PassiveMode:             firstNonEmptyWeb(strings.TrimSpace(appSettings.DefaultPassiveMode), "auto"),
+		ZeekAutoStart:           appSettings.DefaultZeekAutoStart,
+		ZeekLogDir:              firstNonEmptyWeb(strings.TrimSpace(appSettings.DefaultZeekLogDir), "/opt/zeek/logs/current"),
+		ContinueOnError:         appSettings.DefaultContinueOnError,
+		RetainPartialResults:    appSettings.DefaultRetainPartialResult,
 		ReevaluateAmbiguous:     false,
 		ReevaluatePreset:        "off",
 		ReevaluateAfter:         "",
 		ReevaluateCustom:        "",
-		EnableRouteSampling:     true,
-		EnableServiceScan:       true,
-		EnablePassiveIngest:     true,
-		EnableOSDetection:       true,
-		ScanTag:                 "internal",
+		EnableRouteSampling:     appSettings.DefaultRouteSampling,
+		EnableServiceScan:       appSettings.DefaultServiceScan,
+		EnableAvahi:             appSettings.DefaultAvahi,
+		EnableTestSSL:           appSettings.DefaultTestSSL,
+		EnableSNMP:              appSettings.DefaultSNMP,
+		EnablePassiveIngest:     appSettings.DefaultPassiveIngest,
+		EnableOSDetection:       appSettings.DefaultOSDetection,
+		EnableLayer2:            appSettings.DefaultLayer2,
+		UseLargeRangeStrategy:   appSettings.DefaultLargeRangeStrategy,
+		ScanTag:                 firstNonEmptyWeb(strings.TrimSpace(appSettings.DefaultScanTag), "internal"),
 	}
 }
 
@@ -559,7 +581,10 @@ func buildTemplateFromForm(form scanFormData, project storage.ProjectSummary, se
 				PassiveInterface: form.PassiveInterface,
 			},
 			Scan: options.ScanOptions{
-				PortTemplate: form.PortTemplate,
+				PortTemplate:  form.PortTemplate,
+				EnableAvahi:   boolPtr(form.EnableAvahi),
+				EnableTestSSL: boolPtr(form.EnableTestSSL),
+				EnableSNMP:    boolPtr(form.EnableSNMP),
 			},
 			Sensors: options.SensorOptions{
 				PassiveMode:   form.PassiveMode,

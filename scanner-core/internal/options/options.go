@@ -23,7 +23,10 @@ type NetworkOptions struct {
 }
 
 type ScanOptions struct {
-	PortTemplate string `json:"port_template,omitempty"`
+	PortTemplate  string `json:"port_template,omitempty"`
+	EnableAvahi   *bool  `json:"enable_avahi,omitempty"`
+	EnableTestSSL *bool  `json:"enable_testssl,omitempty"`
+	EnableSNMP    *bool  `json:"enable_snmp,omitempty"`
 }
 
 type SensorOptions struct {
@@ -47,6 +50,9 @@ type EffectiveOptions struct {
 	ActiveInterface      string `json:"active_interface,omitempty"`
 	PassiveInterface     string `json:"passive_interface,omitempty"`
 	PortTemplate         string `json:"port_template,omitempty"`
+	EnableAvahi          bool   `json:"enable_avahi"`
+	EnableTestSSL        bool   `json:"enable_testssl"`
+	EnableSNMP           bool   `json:"enable_snmp"`
 	PassiveMode          string `json:"passive_mode,omitempty"`
 	AutoStartZeek        bool   `json:"auto_start_zeek"`
 	ZeekLogDir           string `json:"zeek_log_dir,omitempty"`
@@ -98,6 +104,15 @@ func mergeTemplateOptions(dst *EffectiveOptions, src TemplateOptions) {
 
 	if src.Scan.PortTemplate != "" {
 		dst.PortTemplate = src.Scan.PortTemplate
+	}
+	if src.Scan.EnableAvahi != nil {
+		dst.EnableAvahi = *src.Scan.EnableAvahi
+	}
+	if src.Scan.EnableTestSSL != nil {
+		dst.EnableTestSSL = *src.Scan.EnableTestSSL
+	}
+	if src.Scan.EnableSNMP != nil {
+		dst.EnableSNMP = *src.Scan.EnableSNMP
 	}
 
 	if src.Sensors.PassiveMode != "" {

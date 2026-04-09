@@ -44,7 +44,7 @@ func helpTopicDefinitions() []helpTopicPage {
 				{Title: "Setup Areas", Content: []string{
 					"Binary build and placement for startrace and tracer.",
 					"SQLite database path and data directory planning.",
-					"External tool availability such as naabu, nmap, httpx, zgrab2, scamper and zeekctl.",
+					"External tool availability such as naabu, nmap, httpx, zgrab2, scamper, avahi-browse, testssl.sh, snmpwalk and zeekctl.",
 				}},
 			},
 			Links: []helpExternalLink{
@@ -69,6 +69,10 @@ func helpTopicDefinitions() []helpTopicPage {
 					"The Mothership owns the product UI, shared state and orchestration.",
 					"Satelites are meant to own execution in places where keeping everything on one host is not practical.",
 					"This split keeps Startrace usable as a single-node deployment today while leaving room for a distributed model later.",
+				}},
+				{Title: "Project Context", Content: []string{
+					"The primary repository is https://github.com/grvtyai/startrace.",
+					"Runtime paths such as the local workspace, SQLite database and data directory are shown in Settings so operators can confirm the current host context quickly.",
 				}},
 			},
 		},
@@ -107,6 +111,11 @@ func helpTopicDefinitions() []helpTopicPage {
 					"zgrab2 is used for additional layer-7 grabbing when deeper protocol detail is useful.",
 					"Zeek is used as the passive ingest path when passive observations are enabled.",
 				}},
+				{Title: "Optional Enrichment Stack", Content: []string{
+					"Avahi is available for mDNS / Bonjour discovery and can surface local service announcements that active port scanning alone would miss.",
+					"testssl.sh is available for TLS and certificate inspection on likely TLS-enabled services such as HTTPS and related encrypted endpoints.",
+					"snmpwalk is available for lightweight SNMP system discovery on infrastructure-style devices such as switches, printers, access points and NAS systems.",
+				}},
 				{Title: "Additional Integrations", Content: []string{
 					"arp-scan is available for local-segment discovery where layer-2 visibility helps.",
 					"ldapdomaindump and SharpHound-related paths are early integrations for later identity- and directory-oriented workflows.",
@@ -123,6 +132,9 @@ func helpTopicDefinitions() []helpTopicPage {
 				{Label: "httpx", URL: "https://github.com/projectdiscovery/httpx"},
 				{Label: "zgrab2", URL: "https://github.com/zmap/zgrab2"},
 				{Label: "scamper", URL: "https://www.caida.org/catalog/software/scamper/"},
+				{Label: "Avahi", URL: "https://github.com/avahi/avahi"},
+				{Label: "testssl.sh", URL: "https://github.com/testssl/testssl.sh"},
+				{Label: "Net-SNMP", URL: "https://www.net-snmp.org/"},
 				{Label: "Zeek", URL: "https://zeek.org/"},
 			},
 		},
@@ -167,6 +179,7 @@ func helpTopicDefinitions() []helpTopicPage {
 			Sections: []helpSection{
 				{Title: "Typical Problems", Content: []string{
 					"Missing binary in PATH, especially under sudo/root execution.",
+					"Optional tools such as avahi-browse, testssl.sh or snmpwalk installed for the normal user but not visible to Startrace when it runs as sudo/root.",
 					"Passive ingest available but no logs visible.",
 					"Runs fail early because the suite or worker process cannot see the external scanning tools.",
 				}},
