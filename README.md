@@ -143,18 +143,40 @@ What the installer sets up:
 
 For more detail see [docs/INSTALL-UBUNTU.md](docs/INSTALL-UBUNTU.md).
 
-### 3. Build the binaries
+### 3. Start Startrace the simple way
+
+For normal day-to-day testing on Ubuntu, use the helper script:
+
+```bash
+bash scripts/run-startrace.sh
+```
+
+What it does:
+
+- builds `tracer`
+- builds `startrace`
+- starts `startrace` with `sudo`
+- keeps the common tool paths available under `sudo`
+- listens on `0.0.0.0:8080` by default
+
+Optional overrides:
+
+```bash
+STARTRACE_LISTEN=127.0.0.1:9090 bash scripts/run-startrace.sh
+STARTRACE_DB_PATH=/home/$USER/.local/share/tracer/tracer.db bash scripts/run-startrace.sh
+```
+
+### 4. Manual build and start
+
+If you want the manual commands instead:
 
 ```bash
 cd scanner-core
-go test ./...
 go build -o ./bin/tracer ./cmd/tracer
 go build -o ./bin/startrace ./cmd/startrace
 ```
 
-### 4. Start the suite
-
-Use `sudo` and keep the tool paths available:
+Start the suite with:
 
 ```bash
 sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/tracer/tracer.db --listen 0.0.0.0:8080

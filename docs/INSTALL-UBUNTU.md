@@ -12,6 +12,27 @@ After that, verify the installation with:
 bash scripts/verify-ubuntu-tools.sh
 ```
 
+To build and start the suite in one step:
+
+```bash
+bash scripts/run-startrace.sh
+```
+
+By default the helper script:
+
+- builds `tracer`
+- builds `startrace`
+- starts `startrace` with `sudo`
+- uses the common Linux tool paths that Startrace expects
+- listens on `0.0.0.0:8080`
+
+Optional overrides:
+
+```bash
+STARTRACE_LISTEN=127.0.0.1:9090 bash scripts/run-startrace.sh
+STARTRACE_DB_PATH=/home/$USER/.local/share/tracer/tracer.db bash scripts/run-startrace.sh
+```
+
 ## What gets installed
 
 - Go from `go.dev`
