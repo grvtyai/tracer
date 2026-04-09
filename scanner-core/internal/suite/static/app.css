@@ -607,6 +607,22 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     gap: 8px;
 }
 
+.tag-internal {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+        rgba(103,162,255,0.14);
+    border-color: rgba(103,162,255,0.34);
+    color: #dce8ff;
+}
+
+.tag-external {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)),
+        rgba(255,107,107,0.14);
+    border-color: rgba(255,107,107,0.34);
+    color: #ffe1e1;
+}
+
 .status-dot {
     display: inline-flex;
     width: 10px;

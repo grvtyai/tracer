@@ -1,43 +1,45 @@
 # Ubuntu Installation
 
-Diese Repo bringt einen Ubuntu-Installer fuer die Scan-Toolchain mit:
+This repository includes an Ubuntu installer for the current Startrace scan and enrichment toolchain:
 
 ```bash
 bash scripts/install-ubuntu-tools.sh
 ```
 
-Danach kannst du die Installation mit diesem Check verifizieren:
+After that, verify the installation with:
 
 ```bash
 bash scripts/verify-ubuntu-tools.sh
 ```
 
-## Was installiert wird
+## What gets installed
 
-- Go von `go.dev`
-- `naabu` und `httpx` via `go install`
-- `nmap`, `arp-scan`, `zmap` via `apt`
-- `scamper` via Ubuntu-PPA
-- `zgrab2` aus dem offiziellen GitHub-Repository gebaut
-- `ldapdomaindump` und `impacket` via `pipx`
-- Zeek aus dem offiziellen OBS-Repository
-- SharpHound CE als heruntergeladene Release-ZIP fuer spaeteren Einsatz
+- Go from `go.dev`
+- `naabu` and `httpx` via `go install`
+- `nmap`, `arp-scan`, `avahi-utils`, `snmp`, and `zmap` via `apt`
+- `scamper` via Ubuntu PPA where supported
+- `zgrab2` built from the official GitHub repository
+- `testssl.sh` installed with its full support files
+- `ldapdomaindump` and `impacket` via `pipx`
+- Zeek from the official OBS repository
+- SharpHound CE as a downloaded release ZIP for later use
 
-## Wichtige Hinweise
+## Important notes
 
-- `SharpHound` ist kein normaler Linux-Collector in deinem geplanten Ablauf. Das Skript laedt die Release-Datei nur bequem herunter. Fuer produktiven Einsatz solltest du die Version an die in BloodHound CE angezeigte Collector-Version anpassen.
-- `scamper` und teils auch `naabu`, `nmap`, `zmap` oder `arp-scan` brauchen je nach Probe-Art Root-Rechte oder Capabilities.
-- Zeek wird aus den offiziellen Paketen unter `/opt/zeek` installiert; das Skript erweitert deshalb deinen `PATH`.
+- `SharpHound` is not treated as a normal Linux collector in the current Startrace flow. The script only downloads the release ZIP for convenience. For production use, align the version with the collector version shown in BloodHound CE.
+- `scamper` and in some cases `naabu`, `nmap`, `zmap`, or `arp-scan` may require root privileges or capabilities depending on how they are used.
+- Zeek is installed under `/opt/zeek`, so the installer extends your `PATH`.
+- `testssl.sh` now installs with its supporting files under `/usr/local/share/testssl` and is exposed through `/usr/local/bin/testssl.sh` so it keeps working under `sudo`.
 
-## Einordnung der Installationswege
+## Installation approach
 
-- Offiziell bestaetigt durch Quellen:
-  - Go von `go.dev`
-  - `naabu`/`httpx` via Go
-  - `zgrab2` aus Source-Build
-  - Zeek via offizielles OBS-Repo
-- Bewusste pragmatische Ableitung:
-  - `impacket` wird hier via `pipx` statt plain `pip` installiert, damit das CLI isoliert bleibt.
-  - `ldapdomaindump` wird hier via `pipx` statt plain `pip` installiert, damit das CLI isoliert bleibt.
-  - `nmap`, `arp-scan` und `zmap` werden ueber Ubuntu-Pakete installiert, weil das fuer die VM der einfachste und robusteste Weg ist.
-  - `scamper` wird im Skript ueber ein Ubuntu-PPA installiert; das ist fuer die VM bequem, sollte aber auf deiner Ziel-Ubuntu-Version einmal real gegengeprueft werden.
+- Confirmed primary paths:
+  - Go from `go.dev`
+  - `naabu` and `httpx` via Go
+  - `zgrab2` from a source build
+  - Zeek via the official OBS repository
+- Deliberately pragmatic paths:
+  - `impacket` is installed via `pipx` so the CLI stays isolated
+  - `ldapdomaindump` is installed via `pipx` so the CLI stays isolated
+  - `nmap`, `arp-scan`, `avahi-utils`, `snmp`, and `zmap` come from Ubuntu packages because that is the simplest and most reliable path on the VM
+  - `scamper` is installed through an Ubuntu PPA in the script; that is convenient for the VM, but still worth validating against the exact Ubuntu release you plan to keep

@@ -40,19 +40,19 @@ install_or_upgrade_pipx_pkg() {
 }
 
 if [[ "${EUID}" -eq 0 ]]; then
-  warn "Bitte das Skript als normaler Benutzer ausfuehren, nicht direkt als root."
+  warn "Please run this script as your normal user, not directly as root."
   exit 1
 fi
 
 if [[ ! -r /etc/os-release ]]; then
-  warn "Dieses Skript erwartet Ubuntu."
+  warn "This script expects Ubuntu."
   exit 1
 fi
 
 # shellcheck disable=SC1091
 source /etc/os-release
 if [[ "${ID:-}" != "ubuntu" ]]; then
-  warn "Unterstuetzt ist Ubuntu. Erkannt wurde: ${ID:-unknown}"
+  warn "Ubuntu is the supported target. Detected: ${ID:-unknown}"
   exit 1
 fi
 
@@ -74,6 +74,7 @@ SHARPHOUND_DEST="${HOME}/.local/share/tracer/sharphound"
 SHARPHOUND_ZIP="${SHARPHOUND_DEST}/SharpHound-latest.zip"
 SCAMPER_APT_REPOSITORY="${SCAMPER_APT_REPOSITORY:-ppa:matthewluckie/scamper}"
 SCAMPER_PPA_SUPPORTED=0
+TESTSSL_INSTALL_DIR="/usr/local/share/testssl"
 
 case "${UBUNTU_VERSION}" in
   "20.04"|"22.04"|"24.04")
@@ -143,18 +144,27 @@ git clone --depth 1 https://github.com/zmap/zgrab2.git "${WORKDIR}/zgrab2"
 
 log "Installing testssl.sh"
 git clone --depth 1 https://github.com/testssl/testssl.sh.git "${WORKDIR}/testssl.sh"
-sudo install -m 0755 "${WORKDIR}/testssl.sh/testssl.sh" "/usr/local/bin/testssl.sh"
+sudo rm -rf "$TESTSSL_INSTALL_DIR"
+sudo mkdir -p "$TESTSSL_INSTALL_DIR"
+sudo cp -R "${WORKDIR}/testssl.sh/." "$TESTSSL_INSTALL_DIR/"
+@'
+#!/usr/bin/env bash
+set -euo pipefail
+export TESTSSL_INSTALL_DIR="/usr/local/share/testssl"
+exec /usr/local/share/testssl/testssl.sh "$@"
+'@ | sudo tee /usr/local/bin/testssl.sh >/dev/null
+sudo chmod 0755 /usr/local/bin/testssl.sh
 
 if [[ "$SCAMPER_PPA_SUPPORTED" -eq 1 ]]; then
   log "Installing scamper from Ubuntu PPA"
   sudo add-apt-repository -y "$SCAMPER_APT_REPOSITORY"
   sudo apt-get update
   if ! sudo apt-get install -y scamper scamper-utils; then
-    warn "scamper-utils war nicht verfuegbar; installiere nur scamper."
+    warn "scamper-utils was not available; installing scamper only."
     sudo apt-get install -y scamper
   fi
 else
-  warn "Scamper-PPA ist nur fuer Ubuntu 20.04/22.04/24.04 direkt hinterlegt. Bitte manuell nachziehen."
+  warn "The scamper PPA is only preconfigured for Ubuntu 20.04/22.04/24.04. Please install scamper manually on this release."
 fi
 
 log "Installing Zeek from official OBS repository"
@@ -164,7 +174,7 @@ curl -fsSL "https://download.opensuse.org/repositories/security:/zeek/${UBUNTU_D
   | sudo tee "$ZEEK_KEY_FILE" >/dev/null
 sudo apt-get update
 if ! sudo apt-get install -y zeek; then
-  warn "Zeek Paket 'zeek' nicht verfuegbar; versuche 'zeek-lts'."
+  warn "The 'zeek' package was not available; trying 'zeek-lts' instead."
   sudo apt-get install -y zeek-lts
 fi
 
@@ -182,8 +192,8 @@ SHARPHOUND_ASSET_URL="$(
 if [[ -n "$SHARPHOUND_ASSET_URL" && "$SHARPHOUND_ASSET_URL" != "null" ]]; then
   curl -fsSL "$SHARPHOUND_ASSET_URL" -o "$SHARPHOUND_ZIP"
 else
-  warn "Konnte keine SharpHound-ZIP in der aktuellen Release finden."
+  warn "Could not find a SharpHound ZIP asset in the latest release."
 fi
 
-log "Installation abgeschlossen"
-log "Starte jetzt idealerweise: bash scripts/verify-ubuntu-tools.sh"
+log "Installation finished"
+log "Recommended next step: bash scripts/verify-ubuntu-tools.sh"

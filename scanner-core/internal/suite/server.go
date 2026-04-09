@@ -398,6 +398,8 @@ type runListItem struct {
 	SubnetCount int                `json:"subnet_count"`
 	StatusLabel string             `json:"status_label"`
 	StatusClass string             `json:"status_class"`
+	ScanTag     string             `json:"scan_tag"`
+	ScanTagClass string            `json:"scan_tag_class"`
 	Clickable   bool               `json:"clickable"`
 }
 
@@ -3228,19 +3230,43 @@ func buildRunListItems(ctx context.Context, repo *storage.SQLiteRepository, runs
 	items := make([]runListItem, 0, len(runs))
 	for _, run := range runs {
 		item := runListItem{
-			Run:         run,
-			StatusLabel: runStatusLabel(run.Status),
-			StatusClass: runStatusClass(run.Status),
-			Clickable:   strings.TrimSpace(strings.ToLower(run.Status)) != "running",
+			Run:          run,
+			StatusLabel:  runStatusLabel(run.Status),
+			StatusClass:  runStatusClass(run.Status),
+			Clickable:    strings.TrimSpace(strings.ToLower(run.Status)) != "running",
 		}
 		details, err := repo.GetRun(ctx, run.ID)
 		if err == nil {
 			item.HostCount = countRunHosts(details)
 			item.SubnetCount = len(details.Scope.CIDRs)
+			item.ScanTag = runTagLabel(details.Scope.Labels["scan_tag"])
+			item.ScanTagClass = runTagClass(details.Scope.Labels["scan_tag"])
 		}
 		items = append(items, item)
 	}
 	return items
+}
+
+func runTagLabel(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "external":
+		return "External"
+	case "internal":
+		return "Internal"
+	default:
+		return ""
+	}
+}
+
+func runTagClass(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "external":
+		return "tag-external"
+	case "internal":
+		return "tag-internal"
+	default:
+		return ""
+	}
 }
 
 func buildWarningDetails(run storage.RunDetails) []warningDetail {

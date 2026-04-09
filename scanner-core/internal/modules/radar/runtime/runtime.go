@@ -282,7 +282,6 @@ func BuildFollowUpPlanWithOptions(template templates.Template, records []evidenc
 						ServiceClass:   classify.FromPorts(tlsPorts),
 						ServiceClasses: classify.AllFromPorts(tlsPorts),
 						Metadata: map[string]string{
-							"fast":                       "true",
 							"severity":                   "LOW",
 							"host_primary_service_class": primaryServiceClass,
 							"host_service_classes":       strings.Join(serviceClasses, ","),

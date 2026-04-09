@@ -118,9 +118,6 @@ func BuildArgs(job jobs.Job, outputPath string) []string {
 	}
 
 	args := []string{"--quiet", "--jsonfile", outputPath}
-	if strings.TrimSpace(job.Metadata["fast"]) == "true" {
-		args = append(args, "--fast")
-	}
 	args = append(args, target)
 	return args
 }
