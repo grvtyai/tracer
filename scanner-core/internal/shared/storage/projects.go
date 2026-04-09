@@ -22,7 +22,26 @@ type ProjectCreateInput struct {
 }
 
 type AppSettings struct {
-	DefaultProjectID string `json:"default_project_id,omitempty"`
+	DefaultProjectID           string `json:"default_project_id,omitempty"`
+	DefaultSatelliteID         string `json:"default_satellite_id,omitempty"`
+	DefaultScanTag             string `json:"default_scan_tag,omitempty"`
+	DefaultPortTemplate        string `json:"default_port_template,omitempty"`
+	DefaultActiveInterface     string `json:"default_active_interface,omitempty"`
+	DefaultPassiveInterface    string `json:"default_passive_interface,omitempty"`
+	DefaultPassiveMode         string `json:"default_passive_mode,omitempty"`
+	DefaultZeekLogDir          string `json:"default_zeek_log_dir,omitempty"`
+	DefaultRouteSampling       bool   `json:"default_route_sampling"`
+	DefaultServiceScan         bool   `json:"default_service_scan"`
+	DefaultAvahi               bool   `json:"default_avahi"`
+	DefaultTestSSL             bool   `json:"default_testssl"`
+	DefaultSNMP                bool   `json:"default_snmp"`
+	DefaultPassiveIngest       bool   `json:"default_passive_ingest"`
+	DefaultOSDetection         bool   `json:"default_os_detection"`
+	DefaultLayer2              bool   `json:"default_layer2"`
+	DefaultLargeRangeStrategy  bool   `json:"default_large_range_strategy"`
+	DefaultZeekAutoStart       bool   `json:"default_zeek_auto_start"`
+	DefaultContinueOnError     bool   `json:"default_continue_on_error"`
+	DefaultRetainPartialResult bool   `json:"default_retain_partial_results"`
 }
 
 func (r *SQLiteRepository) CreateProject(ctx context.Context, input ProjectCreateInput) (Project, error) {
@@ -149,35 +168,191 @@ func (r *SQLiteRepository) GetProject(ctx context.Context, ref string) (ProjectS
 }
 
 func (r *SQLiteRepository) GetAppSettings(ctx context.Context) (AppSettings, error) {
-	settings := AppSettings{}
-	row := r.db.QueryRowContext(ctx, `SELECT value FROM app_settings WHERE key = 'default_project_id'`)
-	var defaultProjectID string
-	switch err := row.Scan(&defaultProjectID); err {
-	case nil:
-		settings.DefaultProjectID = strings.TrimSpace(defaultProjectID)
-	case sql.ErrNoRows:
-	default:
+	settings := defaultAppSettings()
+	rows, err := r.db.QueryContext(ctx, `SELECT key, value FROM app_settings`)
+	if err != nil {
 		return AppSettings{}, fmt.Errorf("query app settings: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var key string
+		var value string
+		if err := rows.Scan(&key, &value); err != nil {
+			return AppSettings{}, fmt.Errorf("scan app setting: %w", err)
+		}
+		switch strings.TrimSpace(key) {
+		case "default_project_id":
+			settings.DefaultProjectID = strings.TrimSpace(value)
+		case "default_satellite_id":
+			settings.DefaultSatelliteID = strings.TrimSpace(value)
+		case "default_scan_tag":
+			settings.DefaultScanTag = normalizeScanTag(value)
+		case "default_port_template":
+			settings.DefaultPortTemplate = firstNonEmptySetting(strings.TrimSpace(value), settings.DefaultPortTemplate)
+		case "default_active_interface":
+			settings.DefaultActiveInterface = strings.TrimSpace(value)
+		case "default_passive_interface":
+			settings.DefaultPassiveInterface = strings.TrimSpace(value)
+		case "default_passive_mode":
+			settings.DefaultPassiveMode = normalizePassiveMode(value)
+		case "default_zeek_log_dir":
+			settings.DefaultZeekLogDir = firstNonEmptySetting(strings.TrimSpace(value), settings.DefaultZeekLogDir)
+		case "default_route_sampling":
+			settings.DefaultRouteSampling = parseAppSettingBool(value, settings.DefaultRouteSampling)
+		case "default_service_scan":
+			settings.DefaultServiceScan = parseAppSettingBool(value, settings.DefaultServiceScan)
+		case "default_avahi":
+			settings.DefaultAvahi = parseAppSettingBool(value, settings.DefaultAvahi)
+		case "default_testssl":
+			settings.DefaultTestSSL = parseAppSettingBool(value, settings.DefaultTestSSL)
+		case "default_snmp":
+			settings.DefaultSNMP = parseAppSettingBool(value, settings.DefaultSNMP)
+		case "default_passive_ingest":
+			settings.DefaultPassiveIngest = parseAppSettingBool(value, settings.DefaultPassiveIngest)
+		case "default_os_detection":
+			settings.DefaultOSDetection = parseAppSettingBool(value, settings.DefaultOSDetection)
+		case "default_layer2":
+			settings.DefaultLayer2 = parseAppSettingBool(value, settings.DefaultLayer2)
+		case "default_large_range_strategy":
+			settings.DefaultLargeRangeStrategy = parseAppSettingBool(value, settings.DefaultLargeRangeStrategy)
+		case "default_zeek_auto_start":
+			settings.DefaultZeekAutoStart = parseAppSettingBool(value, settings.DefaultZeekAutoStart)
+		case "default_continue_on_error":
+			settings.DefaultContinueOnError = parseAppSettingBool(value, settings.DefaultContinueOnError)
+		case "default_retain_partial_results":
+			settings.DefaultRetainPartialResult = parseAppSettingBool(value, settings.DefaultRetainPartialResult)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return AppSettings{}, fmt.Errorf("iterate app settings: %w", err)
 	}
 	return settings, nil
 }
 
 func (r *SQLiteRepository) SetDefaultProject(ctx context.Context, projectID string) error {
-	trimmed := strings.TrimSpace(projectID)
-	if trimmed != "" {
+	settings, err := r.GetAppSettings(ctx)
+	if err != nil {
+		return err
+	}
+	settings.DefaultProjectID = strings.TrimSpace(projectID)
+	return r.SaveAppSettings(ctx, settings)
+}
+
+func (r *SQLiteRepository) SaveAppSettings(ctx context.Context, settings AppSettings) error {
+	if trimmed := strings.TrimSpace(settings.DefaultProjectID); trimmed != "" {
 		if _, err := r.GetProject(ctx, trimmed); err != nil {
 			return err
 		}
 	}
-	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO app_settings (key, value, updated_at)
-		VALUES ('default_project_id', ?, ?)
-		ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
-	`, trimmed, time.Now().UTC().Format(time.RFC3339Nano))
+
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("set default project: %w", err)
+		return fmt.Errorf("begin app settings transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	pairs := map[string]string{
+		"default_project_id":             strings.TrimSpace(settings.DefaultProjectID),
+		"default_satellite_id":           strings.TrimSpace(settings.DefaultSatelliteID),
+		"default_scan_tag":               normalizeScanTag(settings.DefaultScanTag),
+		"default_port_template":          firstNonEmptySetting(strings.TrimSpace(settings.DefaultPortTemplate), defaultAppSettings().DefaultPortTemplate),
+		"default_active_interface":       strings.TrimSpace(settings.DefaultActiveInterface),
+		"default_passive_interface":      strings.TrimSpace(settings.DefaultPassiveInterface),
+		"default_passive_mode":           normalizePassiveMode(settings.DefaultPassiveMode),
+		"default_zeek_log_dir":           firstNonEmptySetting(strings.TrimSpace(settings.DefaultZeekLogDir), defaultAppSettings().DefaultZeekLogDir),
+		"default_route_sampling":         formatAppSettingBool(settings.DefaultRouteSampling),
+		"default_service_scan":           formatAppSettingBool(settings.DefaultServiceScan),
+		"default_avahi":                  formatAppSettingBool(settings.DefaultAvahi),
+		"default_testssl":                formatAppSettingBool(settings.DefaultTestSSL),
+		"default_snmp":                   formatAppSettingBool(settings.DefaultSNMP),
+		"default_passive_ingest":         formatAppSettingBool(settings.DefaultPassiveIngest),
+		"default_os_detection":           formatAppSettingBool(settings.DefaultOSDetection),
+		"default_layer2":                 formatAppSettingBool(settings.DefaultLayer2),
+		"default_large_range_strategy":   formatAppSettingBool(settings.DefaultLargeRangeStrategy),
+		"default_zeek_auto_start":        formatAppSettingBool(settings.DefaultZeekAutoStart),
+		"default_continue_on_error":      formatAppSettingBool(settings.DefaultContinueOnError),
+		"default_retain_partial_results": formatAppSettingBool(settings.DefaultRetainPartialResult),
+	}
+
+	for key, value := range pairs {
+		if err := setAppSettingTx(ctx, tx, key, value); err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit app settings transaction: %w", err)
 	}
 	return nil
+}
+
+func defaultAppSettings() AppSettings {
+	return AppSettings{
+		DefaultScanTag:             "internal",
+		DefaultPortTemplate:        "all-default-ports",
+		DefaultPassiveMode:         "auto",
+		DefaultZeekLogDir:          "/opt/zeek/logs/current",
+		DefaultRouteSampling:       true,
+		DefaultServiceScan:         true,
+		DefaultAvahi:               false,
+		DefaultTestSSL:             false,
+		DefaultSNMP:                false,
+		DefaultPassiveIngest:       true,
+		DefaultOSDetection:         true,
+		DefaultLayer2:              false,
+		DefaultLargeRangeStrategy:  false,
+		DefaultZeekAutoStart:       true,
+		DefaultContinueOnError:     true,
+		DefaultRetainPartialResult: true,
+	}
+}
+
+func normalizeScanTag(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "external":
+		return "external"
+	default:
+		return "internal"
+	}
+}
+
+func normalizePassiveMode(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "off":
+		return "off"
+	case "always":
+		return "always"
+	default:
+		return "auto"
+	}
+}
+
+func parseAppSettingBool(value string, fallback bool) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
+		return fallback
+	}
+}
+
+func formatAppSettingBool(value bool) string {
+	if value {
+		return "true"
+	}
+	return "false"
+}
+
+func firstNonEmptySetting(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
+	}
+	return ""
 }
 
 func (r *SQLiteRepository) ensureProjectMetadata(ctx context.Context, projectID string, projectName string, notes string) error {

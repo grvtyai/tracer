@@ -1,10 +1,10 @@
 package suite
 
 import (
-	"crypto/rand"
 	"context"
-	"encoding/hex"
+	"crypto/rand"
 	"embed"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -100,6 +100,8 @@ type pageData struct {
 	HelpSearchQuery       string
 	RepoURL               string
 	RepoPath              string
+	DefaultProjectLabel   string
+	DefaultSatelliteLabel string
 	DeviceTypeStats       []labelCount
 	ConnectionStats       []labelCount
 	StatusStats           []labelCount
@@ -148,8 +150,8 @@ type monitoringSatellite struct {
 }
 
 type monitoringJob struct {
-	ID           string
-	URL          string
+	ID          string
+	URL         string
 	Name        string
 	Project     string
 	Target      string
@@ -165,9 +167,9 @@ type monitoringJob struct {
 }
 
 type monitoringStat struct {
-	Label  string
-	Value  string
-	Detail string
+	Label       string
+	Value       string
+	Detail      string
 	StatusClass string
 }
 
@@ -211,26 +213,27 @@ type runJobItem struct {
 }
 
 type satelliteRegisterFormData struct {
-	Name             string
-	Address          string
-	Role             string
+	Name              string
+	Address           string
+	Role              string
 	RegistrationToken string
-	CapabilityNaabu  bool
-	CapabilityNmap   bool
-	CapabilityHTTPX  bool
-	CapabilityZeek   bool
+	CapabilityNaabu   bool
+	CapabilityNmap    bool
+	CapabilityHTTPX   bool
+	CapabilityZeek    bool
 }
 
 type dashboardStats struct {
-	RunCount      int
-	AssetCount    int
-	HostCount     int
-	EvidenceCount int
-	ReevalCount   int
-	SubnetCount   int
-	OpenPortCount int
-	CVECount      int
-	CriticalCVEs  int
+	RunCount       int
+	AssetCount     int
+	HostCount      int
+	EvidenceCount  int
+	ReevalCount    int
+	SatelliteCount int
+	SubnetCount    int
+	OpenPortCount  int
+	CVECount       int
+	CriticalCVEs   int
 }
 
 type hostSummary struct {
@@ -393,14 +396,14 @@ type warningDetail struct {
 }
 
 type runListItem struct {
-	Run         storage.RunSummary `json:"run"`
-	HostCount   int                `json:"host_count"`
-	SubnetCount int                `json:"subnet_count"`
-	StatusLabel string             `json:"status_label"`
-	StatusClass string             `json:"status_class"`
-	ScanTag     string             `json:"scan_tag"`
-	ScanTagClass string            `json:"scan_tag_class"`
-	Clickable   bool               `json:"clickable"`
+	Run          storage.RunSummary `json:"run"`
+	HostCount    int                `json:"host_count"`
+	SubnetCount  int                `json:"subnet_count"`
+	StatusLabel  string             `json:"status_label"`
+	StatusClass  string             `json:"status_class"`
+	ScanTag      string             `json:"scan_tag"`
+	ScanTagClass string             `json:"scan_tag_class"`
+	Clickable    bool               `json:"clickable"`
 }
 
 type projectFormData struct {
@@ -517,6 +520,12 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	preflightChecks := collectPreflightChecks(s.options.DBPath)
+	monitoringSatellites, _, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	data := pageData{
 		Title:             "Dashboard",
@@ -537,11 +546,12 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 		Assets:            takeAssets(projectAssets, 8),
 		HelpLink:          buildProjectPath("/help", currentProject),
 		Stats: dashboardStats{
-			RunCount:      len(runs),
-			AssetCount:    len(projectAssets),
-			HostCount:     len(projectAssets),
-			EvidenceCount: countEvidence(runs),
-			ReevalCount:   countReevaluationAcrossRuns(ctx, s.repo, runs),
+			RunCount:       len(runs),
+			AssetCount:     len(projectAssets),
+			HostCount:      len(projectAssets),
+			EvidenceCount:  countEvidence(runs),
+			ReevalCount:    countReevaluationAcrossRuns(ctx, s.repo, runs),
+			SatelliteCount: countOnlineRegisteredSatellites(monitoringSatellites),
 		},
 		DashboardCharts: buildDashboardCharts(projectAssets),
 		Settings:        appSettings,
@@ -1393,22 +1403,22 @@ func (s *Server) renderMonitoringSatelliteRegister(w http.ResponseWriter, r *htt
 		return
 	}
 	data := pageData{
-		Title:                "Register Satelite",
-		AppName:              s.options.AppName,
-		ActiveNav:            "monitoring",
-		ActiveSection:        "monitoring-satellites",
-		BasePath:             s.options.BasePath,
-		DBPath:               s.options.DBPath,
-		DataDir:              s.options.DataDir,
-		HeroNote:             "Prepared registration flow for future remote Satelites",
-		Projects:             projects,
-		CurrentProject:       currentProject,
-		ProjectSwitchPath:    "/monitoring/satellites/register",
-		Project:              currentProject,
-		PreflightChecks:      preflightChecks,
-		Notice:               noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
-		Settings:             appSettings,
-		MonitoringMothership: &mothership,
+		Title:                 "Register Satelite",
+		AppName:               s.options.AppName,
+		ActiveNav:             "monitoring",
+		ActiveSection:         "monitoring-satellites",
+		BasePath:              s.options.BasePath,
+		DBPath:                s.options.DBPath,
+		DataDir:               s.options.DataDir,
+		HeroNote:              "Prepared registration flow for future remote Satelites",
+		Projects:              projects,
+		CurrentProject:        currentProject,
+		ProjectSwitchPath:     "/monitoring/satellites/register",
+		Project:               currentProject,
+		PreflightChecks:       preflightChecks,
+		Notice:                noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Settings:              appSettings,
+		MonitoringMothership:  &mothership,
 		SatelliteRegisterForm: form,
 		PrimaryAction: &pageAction{
 			Label:   "Back to Satelites",
@@ -1675,23 +1685,29 @@ func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	satelliteOptions := s.satelliteOptions(ctx)
 
 	data := pageData{
-		Title:             "Settings",
-		AppName:           s.options.AppName,
-		ActiveNav:         "settings",
-		ActiveSection:     "settings-overview",
-		BasePath:          s.options.BasePath,
-		DBPath:            s.options.DBPath,
-		DataDir:           s.options.DataDir,
-		HeroNote:          "Global defaults and project-centric startup behavior",
-		Notice:            noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
-		Projects:          projects,
-		CurrentProject:    currentProject,
-		ProjectSwitchPath: "/settings",
-		Project:           currentProject,
-		HelpLink:          buildProjectPath("/help", currentProject),
-		Settings:          appSettings,
+		Title:                 "Settings",
+		AppName:               s.options.AppName,
+		ActiveNav:             "settings",
+		ActiveSection:         "settings-overview",
+		BasePath:              s.options.BasePath,
+		DBPath:                s.options.DBPath,
+		DataDir:               s.options.DataDir,
+		HeroNote:              "Global defaults and project-centric startup behavior",
+		Notice:                noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
+		Projects:              projects,
+		CurrentProject:        currentProject,
+		ProjectSwitchPath:     "/settings",
+		Project:               currentProject,
+		HelpLink:              buildProjectPath("/help", currentProject),
+		Settings:              appSettings,
+		SatelliteOptions:      satelliteOptions,
+		DefaultProjectLabel:   appSettingProjectLabel(projects, appSettings.DefaultProjectID),
+		DefaultSatelliteLabel: appSettingSatelliteLabel(satelliteOptions, appSettings.DefaultSatelliteID),
+		RepoURL:               "https://github.com/grvtyai/startrace",
+		RepoPath:              currentWorkspacePath(),
 	}
 	s.render(w, "settings.html", data)
 }
@@ -1720,8 +1736,8 @@ func (s *Server) handleHelp(w http.ResponseWriter, r *http.Request) {
 		HelpLink:          buildProjectPath("/help", currentProject),
 		HelpTopics:        helpCards,
 		HelpLatest:        latestHelpCards(helpCards, 3),
-		RepoURL:           "https://github.com/grvtyai/tracer",
-		RepoPath:          "C:\\Users\\andre\\Desktop\\repos\\tracer\\tracer",
+		RepoURL:           "https://github.com/grvtyai/startrace",
+		RepoPath:          currentWorkspacePath(),
 		Settings:          appSettings,
 	}
 	s.render(w, "help.html", data)
@@ -1761,8 +1777,8 @@ func (s *Server) handleHelpTopic(w http.ResponseWriter, r *http.Request) {
 		Project:           currentProject,
 		HelpLink:          buildProjectPath("/help", currentProject),
 		HelpTopic:         &topic,
-		RepoURL:           "https://github.com/grvtyai/tracer",
-		RepoPath:          "C:\\Users\\andre\\Desktop\\repos\\tracer\\tracer",
+		RepoURL:           "https://github.com/grvtyai/startrace",
+		RepoPath:          currentWorkspacePath(),
 		Settings:          appSettings,
 	}
 	s.render(w, "help_topic.html", data)
@@ -1773,11 +1789,11 @@ func (s *Server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	if err := s.repo.SetDefaultProject(r.Context(), r.FormValue("default_project_id")); err != nil {
+	if err := s.repo.SaveAppSettings(r.Context(), appSettingsFromForm(r)); err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	http.Redirect(w, r, "/settings?notice=settings-saved", http.StatusSeeOther)
+	http.Redirect(w, r, buildNoticeURL("/settings", strings.TrimSpace(r.FormValue("project")), "settings-saved"), http.StatusSeeOther)
 }
 
 func (s *Server) handleHealthAPI(w http.ResponseWriter, r *http.Request) {
@@ -1812,7 +1828,7 @@ func (s *Server) handleSettingsAPI(w http.ResponseWriter, r *http.Request) {
 			s.writeError(w, http.StatusBadRequest, err)
 			return
 		}
-		if err := s.repo.SetDefaultProject(r.Context(), r.FormValue("default_project_id")); err != nil {
+		if err := s.repo.SaveAppSettings(r.Context(), appSettingsFromForm(r)); err != nil {
 			s.writeError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -2632,20 +2648,20 @@ func (s *Server) buildMonitoringJobs(ctx context.Context, currentProject *storag
 		}
 
 		jobsOut = append(jobsOut, monitoringJob{
-			ID:           runSummary.ID,
-			URL:          buildProjectPath("/runs/"+runSummary.ID, currentProject),
-			Name:         firstNonEmptyWeb(strings.TrimSpace(runSummary.TemplateName), "Radar run"),
-			Project:      firstNonEmptyWeb(strings.TrimSpace(runSummary.ProjectName), currentProjectName(currentProject)),
-			Target:       targetSummary,
-			Execution:    executionTarget,
-			Status:       runStatusLabel(runSummary.Status),
-			StatusClass:  runStatusClass(runSummary.Status),
-			StartedAt:    formatMonitoringTimestamp(runSummary.StartedAt),
-			FinishedAt:   formatMonitoringTimestamp(runSummary.FinishedAt),
-			JobCount:     runSummary.JobCount,
-			Evidence:     runSummary.EvidenceCount,
-			Running:      strings.EqualFold(strings.TrimSpace(runSummary.Status), "running"),
-			Summary:      strings.Join(summaryParts, " | "),
+			ID:          runSummary.ID,
+			URL:         buildProjectPath("/runs/"+runSummary.ID, currentProject),
+			Name:        firstNonEmptyWeb(strings.TrimSpace(runSummary.TemplateName), "Radar run"),
+			Project:     firstNonEmptyWeb(strings.TrimSpace(runSummary.ProjectName), currentProjectName(currentProject)),
+			Target:      targetSummary,
+			Execution:   executionTarget,
+			Status:      runStatusLabel(runSummary.Status),
+			StatusClass: runStatusClass(runSummary.Status),
+			StartedAt:   formatMonitoringTimestamp(runSummary.StartedAt),
+			FinishedAt:  formatMonitoringTimestamp(runSummary.FinishedAt),
+			JobCount:    runSummary.JobCount,
+			Evidence:    runSummary.EvidenceCount,
+			Running:     strings.EqualFold(strings.TrimSpace(runSummary.Status), "running"),
+			Summary:     strings.Join(summaryParts, " | "),
 		})
 	}
 	return jobsOut
@@ -3230,10 +3246,10 @@ func buildRunListItems(ctx context.Context, repo *storage.SQLiteRepository, runs
 	items := make([]runListItem, 0, len(runs))
 	for _, run := range runs {
 		item := runListItem{
-			Run:          run,
-			StatusLabel:  runStatusLabel(run.Status),
-			StatusClass:  runStatusClass(run.Status),
-			Clickable:    strings.TrimSpace(strings.ToLower(run.Status)) != "running",
+			Run:         run,
+			StatusLabel: runStatusLabel(run.Status),
+			StatusClass: runStatusClass(run.Status),
+			Clickable:   strings.TrimSpace(strings.ToLower(run.Status)) != "running",
 		}
 		details, err := repo.GetRun(ctx, run.ID)
 		if err == nil {
@@ -4921,6 +4937,92 @@ func splitTags(raw string) []string {
 		}
 	}
 	return tags
+}
+
+func appSettingsFromForm(r *http.Request) storage.AppSettings {
+	return storage.AppSettings{
+		DefaultProjectID:           strings.TrimSpace(r.FormValue("default_project_id")),
+		DefaultSatelliteID:         strings.TrimSpace(r.FormValue("default_satellite_id")),
+		DefaultScanTag:             strings.TrimSpace(r.FormValue("default_scan_tag")),
+		DefaultPortTemplate:        strings.TrimSpace(r.FormValue("default_port_template")),
+		DefaultActiveInterface:     strings.TrimSpace(r.FormValue("default_active_interface")),
+		DefaultPassiveInterface:    strings.TrimSpace(r.FormValue("default_passive_interface")),
+		DefaultPassiveMode:         strings.TrimSpace(r.FormValue("default_passive_mode")),
+		DefaultZeekLogDir:          strings.TrimSpace(r.FormValue("default_zeek_log_dir")),
+		DefaultRouteSampling:       isChecked(r.FormValue("default_route_sampling")),
+		DefaultServiceScan:         isChecked(r.FormValue("default_service_scan")),
+		DefaultAvahi:               isChecked(r.FormValue("default_avahi")),
+		DefaultTestSSL:             isChecked(r.FormValue("default_testssl")),
+		DefaultSNMP:                isChecked(r.FormValue("default_snmp")),
+		DefaultPassiveIngest:       isChecked(r.FormValue("default_passive_ingest")),
+		DefaultOSDetection:         isChecked(r.FormValue("default_os_detection")),
+		DefaultLayer2:              isChecked(r.FormValue("default_layer2")),
+		DefaultLargeRangeStrategy:  isChecked(r.FormValue("default_large_range_strategy")),
+		DefaultZeekAutoStart:       isChecked(r.FormValue("default_zeek_auto_start")),
+		DefaultContinueOnError:     isChecked(r.FormValue("default_continue_on_error")),
+		DefaultRetainPartialResult: isChecked(r.FormValue("default_retain_partial_results")),
+	}
+}
+
+func appSettingProjectLabel(projects []storage.ProjectSummary, selectedID string) string {
+	selectedID = strings.TrimSpace(selectedID)
+	if selectedID == "" {
+		return "Not set"
+	}
+	for _, project := range projects {
+		if project.ID == selectedID {
+			if strings.TrimSpace(project.PublicID) != "" {
+				return project.Name + " (" + project.PublicID + ")"
+			}
+			return project.Name
+		}
+	}
+	return selectedID
+}
+
+func appSettingSatelliteLabel(options []satelliteOption, selectedID string) string {
+	selectedID = strings.TrimSpace(selectedID)
+	if selectedID == "" {
+		selectedID = "mothership"
+	}
+	for _, option := range options {
+		if option.ID == selectedID {
+			return option.Label
+		}
+	}
+	return selectedID
+}
+
+func countOnlineRegisteredSatellites(satellites []monitoringSatellite) int {
+	count := 0
+	for _, satellite := range filterRegisteredSatellites(satellites) {
+		if satellite.StatusClass == "status-success" {
+			count++
+		}
+	}
+	return count
+}
+
+func currentWorkspacePath() string {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return "Unavailable"
+	}
+	return workingDir
+}
+
+func buildNoticeURL(path string, projectID string, notice string) string {
+	query := make([]string, 0, 2)
+	if trimmed := strings.TrimSpace(projectID); trimmed != "" {
+		query = append(query, "project="+urlQueryEscape(trimmed))
+	}
+	if trimmed := strings.TrimSpace(notice); trimmed != "" {
+		query = append(query, "notice="+urlQueryEscape(trimmed))
+	}
+	if len(query) == 0 {
+		return path
+	}
+	return path + "?" + strings.Join(query, "&")
 }
 
 func previewPublicID() string {

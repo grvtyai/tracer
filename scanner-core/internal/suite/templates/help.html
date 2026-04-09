@@ -4,16 +4,8 @@
 <section class="panel">
     <div class="panel-head">
         <h2>Startrace Help Center</h2>
-        <span class="pill subtle">{{len .HelpTopics}} topics</span>
     </div>
-    <div class="kv-grid">
-        <div class="kv-key">Tool</div>
-        <div class="kv-value">Startrace is the suite shell. tracer remains the scanner/worker core inside it.</div>
-        <div class="kv-key">GitHub Repo</div>
-        <div class="kv-value"><a href="{{.RepoURL}}" target="_blank" rel="noreferrer">{{.RepoURL}}</a></div>
-        <div class="kv-key">Local Workspace</div>
-        <div class="kv-value mono">{{.RepoPath}}</div>
-    </div>
+    <p class="empty-note">Find setup notes, module references and day-to-day workflow guidance across Startrace.</p>
     <div class="help-search-row">
         <input id="help-search" class="input" type="search" placeholder="Search help topics, plugins, runs, reevaluation..." value="{{.HelpSearchQuery}}" />
     </div>

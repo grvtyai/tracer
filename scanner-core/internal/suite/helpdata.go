@@ -70,6 +70,10 @@ func helpTopicDefinitions() []helpTopicPage {
 					"Satelites are meant to own execution in places where keeping everything on one host is not practical.",
 					"This split keeps Startrace usable as a single-node deployment today while leaving room for a distributed model later.",
 				}},
+				{Title: "Project Context", Content: []string{
+					"The primary repository is https://github.com/grvtyai/startrace.",
+					"Runtime paths such as the local workspace, SQLite database and data directory are shown in Settings so operators can confirm the current host context quickly.",
+				}},
 			},
 		},
 		{
