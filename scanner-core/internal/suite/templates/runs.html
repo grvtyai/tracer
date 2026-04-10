@@ -6,16 +6,53 @@
         <h2>{{if .CurrentProject}}{{.CurrentProject.Name}}{{end}} Run History</h2>
         <div class="hero-actions">
             <a class="button button-primary" href="/scans/new?project={{.CurrentProject.ID}}">Start Scan</a>
-            <span class="pill" id="runs-count">{{len .Runs}} runs</span>
+            <span class="pill" id="runs-count">{{len .RunItems}} runs</span>
         </div>
     </div>
-    {{if .RunItems}}
-    <table class="table" id="runs-table" data-runs-api="/api/projects/{{.CurrentProject.ID}}/runs" data-project-id="{{.CurrentProject.ID}}">
+
+    <div class="run-controls" aria-label="Run filters">
+        <label class="form-row">
+            <span class="form-label">Search</span>
+            <input class="input" id="runs-search" type="search" placeholder="Run name or ID" />
+        </label>
+        <label class="form-row">
+            <span class="form-label">Tag</span>
+            <select class="input" id="runs-tag-filter">
+                <option value="">All tags</option>
+                <option value="internal">Internal</option>
+                <option value="external">External</option>
+            </select>
+        </label>
+        <label class="form-row">
+            <span class="form-label">Status</span>
+            <select class="input" id="runs-status-filter">
+                <option value="">All statuses</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+                <option value="partial">Partial</option>
+                <option value="failed">Failed</option>
+            </select>
+        </label>
+        <label class="form-row">
+            <span class="form-label">Sort</span>
+            <select class="input" id="runs-sort">
+                <option value="started-desc">Started newest</option>
+                <option value="started-asc">Started oldest</option>
+                <option value="name-asc">Run name A-Z</option>
+                <option value="name-desc">Run name Z-A</option>
+                <option value="status-asc">Status A-Z</option>
+            </select>
+        </label>
+    </div>
+
+    <table class="table runs-table" id="runs-table" data-runs-api="/api/projects/{{.CurrentProject.ID}}/runs" data-project-id="{{.CurrentProject.ID}}" {{if not .RunItems}}hidden{{end}}>
         <thead>
             <tr>
-                <th>Started</th>
-                <th>Status</th>
+                <th class="run-action-column"></th>
                 <th>Run Name</th>
+                <th>Status</th>
+                <th>Tag</th>
+                <th>Started</th>
                 <th>Hosts</th>
                 <th>Subnets</th>
                 <th>Run ID</th>
@@ -23,13 +60,16 @@
         </thead>
         <tbody id="runs-table-body">
             {{range .RunItems}}
-            <tr class="{{if not .Clickable}}row-disabled{{end}}">
-                <td>
+            <tr class="run-row {{if not .Clickable}}row-disabled{{end}}" data-run-name="{{.Run.TemplateName}}" data-run-status="{{.Run.Status}}" data-scan-tag="{{.ScanTag}}" data-started="{{.Run.StartedAt.Unix}}" data-run-id="{{.Run.ID}}">
+                <td class="run-action-cell">
                     {{if .Clickable}}
-                    <a class="table-link" href="/runs/{{.Run.ID}}">{{.Run.StartedAt.Format "2006-01-02 15:04"}}</a>
+                    <a class="run-inspect-link" href="/runs/{{.Run.ID}}" aria-label="Open run {{.Run.TemplateName}}" title="Open run">&#128269;</a>
                     {{else}}
-                    <span>{{.Run.StartedAt.Format "2006-01-02 15:04"}}</span>
+                    <span class="run-inspect-link disabled" title="Run is still running">&#128269;</span>
                     {{end}}
+                </td>
+                <td>
+                    <div class="run-name-cell">{{.Run.TemplateName}}</div>
                 </td>
                 <td>
                     <span class="status-label {{.StatusClass}}">
@@ -37,10 +77,8 @@
                         {{.StatusLabel}}
                     </span>
                 </td>
-                <td>
-                    <div>{{.Run.TemplateName}}</div>
-                    {{if .ScanTag}}<div class="tag-row"><span class="tag {{.ScanTagClass}}">{{.ScanTag}}</span></div>{{end}}
-                </td>
+                <td>{{if .ScanTag}}<span class="tag {{.ScanTagClass}}">{{.ScanTag}}</span>{{else}}<span class="list-meta">-</span>{{end}}</td>
+                <td>{{.Run.StartedAt.Format "2006-01-02 15:04"}}</td>
                 <td>{{.HostCount}}</td>
                 <td>{{.SubnetCount}}</td>
                 <td class="mono">{{.Run.ID}}</td>
@@ -48,23 +86,7 @@
             {{end}}
         </tbody>
     </table>
-    <p class="empty-note" id="runs-empty-note" hidden>No runs stored for this project yet.</p>
-    {{else}}
-    <table class="table" id="runs-table" data-runs-api="/api/projects/{{.CurrentProject.ID}}/runs" data-project-id="{{.CurrentProject.ID}}" hidden>
-        <thead>
-            <tr>
-                <th>Started</th>
-                <th>Status</th>
-                <th>Run Name</th>
-                <th>Hosts</th>
-                <th>Subnets</th>
-                <th>Run ID</th>
-            </tr>
-        </thead>
-        <tbody id="runs-table-body"></tbody>
-    </table>
-    <p class="empty-note" id="runs-empty-note">No runs stored for this project yet.</p>
-    {{end}}
+    <p class="empty-note" id="runs-empty-note" {{if .RunItems}}hidden{{end}}>No runs stored for this project yet.</p>
 </section>
 
 <script>
@@ -73,6 +95,10 @@
     const body = document.getElementById("runs-table-body");
     const emptyNote = document.getElementById("runs-empty-note");
     const count = document.getElementById("runs-count");
+    const search = document.getElementById("runs-search");
+    const tagFilter = document.getElementById("runs-tag-filter");
+    const statusFilter = document.getElementById("runs-status-filter");
+    const sortControl = document.getElementById("runs-sort");
     if (!table || !body) {
         return;
     }
@@ -86,31 +112,48 @@
         minute: "2-digit",
     });
 
+    const statusKey = (value) => (value || "").toLowerCase().trim();
+    const scanTagKey = (value) => (value || "").toLowerCase().trim();
+
     const renderRow = (item) => {
         const row = document.createElement("tr");
-        if (!item.clickable) {
-            row.classList.add("row-disabled");
-        }
+        row.className = `run-row ${item.clickable ? "" : "row-disabled"}`.trim();
+        row.dataset.runName = item.run.template_name || "";
+        row.dataset.runStatus = item.run.status || "";
+        row.dataset.scanTag = item.scan_tag || "";
+        row.dataset.started = item.run.started_at ? `${Math.floor(new Date(item.run.started_at).getTime() / 1000)}` : "0";
+        row.dataset.runId = item.run.id || "";
 
-        const startedCell = document.createElement("td");
-        const startedText = item.run.started_at ? formatter.format(new Date(item.run.started_at)) : "-";
+        const actionCell = document.createElement("td");
+        actionCell.className = "run-action-cell";
         if (item.clickable) {
             const link = document.createElement("a");
-            link.className = "table-link";
+            link.className = "run-inspect-link";
             link.href = `/runs/${item.run.id}`;
-            link.textContent = startedText;
-            startedCell.appendChild(link);
+            link.title = "Open run";
+            link.setAttribute("aria-label", `Open run ${item.run.template_name || item.run.id || ""}`.trim());
+            link.innerHTML = "&#128269;";
+            actionCell.appendChild(link);
         } else {
-            const span = document.createElement("span");
-            span.textContent = startedText;
-            startedCell.appendChild(span);
+            const disabled = document.createElement("span");
+            disabled.className = "run-inspect-link disabled";
+            disabled.title = "Run is still running";
+            disabled.innerHTML = "&#128269;";
+            actionCell.appendChild(disabled);
         }
-        row.appendChild(startedCell);
+        row.appendChild(actionCell);
+
+        const nameCell = document.createElement("td");
+        const nameMain = document.createElement("div");
+        nameMain.className = "run-name-cell";
+        nameMain.textContent = item.run.template_name || "-";
+        nameCell.appendChild(nameMain);
+        row.appendChild(nameCell);
 
         const statusCell = document.createElement("td");
         const status = document.createElement("span");
         status.className = `status-label ${item.status_class || ""}`.trim();
-        if ((item.run.status || "").toLowerCase() === "running") {
+        if (statusKey(item.run.status) === "running") {
             const spinner = document.createElement("span");
             spinner.className = "spinner";
             status.appendChild(spinner);
@@ -119,22 +162,23 @@
         statusCell.appendChild(status);
         row.appendChild(statusCell);
 
-        const nameCell = document.createElement("td");
-        const nameWrap = document.createElement("div");
-        const nameMain = document.createElement("div");
-        nameMain.textContent = item.run.template_name || "-";
-        nameWrap.appendChild(nameMain);
+        const tagCell = document.createElement("td");
         if (item.scan_tag) {
-            const tagRow = document.createElement("div");
-            tagRow.className = "tag-row";
             const tag = document.createElement("span");
             tag.className = `tag ${item.scan_tag_class || ""}`.trim();
             tag.textContent = item.scan_tag;
-            tagRow.appendChild(tag);
-            nameWrap.appendChild(tagRow);
+            tagCell.appendChild(tag);
+        } else {
+            const empty = document.createElement("span");
+            empty.className = "list-meta";
+            empty.textContent = "-";
+            tagCell.appendChild(empty);
         }
-        nameCell.appendChild(nameWrap);
-        row.appendChild(nameCell);
+        row.appendChild(tagCell);
+
+        const startedCell = document.createElement("td");
+        startedCell.textContent = item.run.started_at ? formatter.format(new Date(item.run.started_at)) : "-";
+        row.appendChild(startedCell);
 
         const hostCell = document.createElement("td");
         hostCell.textContent = `${item.host_count ?? 0}`;
@@ -152,12 +196,74 @@
         return row;
     };
 
+    const rowMatchesFilters = (row) => {
+        const query = (search?.value || "").toLowerCase().trim();
+        const selectedTag = scanTagKey(tagFilter?.value);
+        const selectedStatus = statusKey(statusFilter?.value);
+        const name = (row.dataset.runName || "").toLowerCase();
+        const id = (row.dataset.runId || "").toLowerCase();
+        const tag = scanTagKey(row.dataset.scanTag);
+        const status = statusKey(row.dataset.runStatus);
+
+        if (query && !name.includes(query) && !id.includes(query)) {
+            return false;
+        }
+        if (selectedTag && tag !== selectedTag) {
+            return false;
+        }
+        if (selectedStatus && status !== selectedStatus) {
+            return false;
+        }
+        return true;
+    };
+
+    const sortRows = (rows) => {
+        const sortValue = sortControl?.value || "started-desc";
+        return rows.sort((left, right) => {
+            if (sortValue === "started-asc" || sortValue === "started-desc") {
+                const leftStarted = Number(left.dataset.started || 0);
+                const rightStarted = Number(right.dataset.started || 0);
+                return sortValue === "started-asc" ? leftStarted - rightStarted : rightStarted - leftStarted;
+            }
+            if (sortValue === "name-desc") {
+                return (right.dataset.runName || "").localeCompare(left.dataset.runName || "");
+            }
+            if (sortValue === "status-asc") {
+                return statusKey(left.dataset.runStatus).localeCompare(statusKey(right.dataset.runStatus));
+            }
+            return (left.dataset.runName || "").localeCompare(right.dataset.runName || "");
+        });
+    };
+
+    const applyRunControls = () => {
+        const rows = sortRows(Array.from(body.querySelectorAll("tr")));
+        let visible = 0;
+        rows.forEach((row) => {
+            const matches = rowMatchesFilters(row);
+            row.hidden = !matches;
+            if (matches) {
+                visible += 1;
+            }
+            body.appendChild(row);
+        });
+
+        table.hidden = rows.length === 0;
+        if (emptyNote) {
+            emptyNote.hidden = rows.length !== 0 && visible !== 0;
+            emptyNote.textContent = rows.length === 0 ? "No runs stored for this project yet." : "No runs match the current filters.";
+        }
+        if (count) {
+            count.textContent = `${visible} / ${rows.length} runs`;
+        }
+    };
+
     const renderRuns = (items) => {
         body.innerHTML = "";
         if (!Array.isArray(items) || items.length === 0) {
             table.hidden = true;
             if (emptyNote) {
                 emptyNote.hidden = false;
+                emptyNote.textContent = "No runs stored for this project yet.";
             }
             if (count) {
                 count.textContent = "0 runs";
@@ -167,12 +273,7 @@
 
         items.forEach((item) => body.appendChild(renderRow(item)));
         table.hidden = false;
-        if (emptyNote) {
-            emptyNote.hidden = true;
-        }
-        if (count) {
-            count.textContent = `${items.length} runs`;
-        }
+        applyRunControls();
     };
 
     const refreshRuns = async () => {
@@ -190,6 +291,15 @@
         }
     };
 
+    [search, tagFilter, statusFilter, sortControl].forEach((control) => {
+        if (!control) {
+            return;
+        }
+        control.addEventListener("input", applyRunControls);
+        control.addEventListener("change", applyRunControls);
+    });
+
+    applyRunControls();
     window.setInterval(refreshRuns, 5000);
 })();
 </script>

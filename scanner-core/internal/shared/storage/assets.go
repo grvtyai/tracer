@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net"
 	"net/netip"
+	"net/url"
 	"slices"
 	"strings"
 	"time"
@@ -110,14 +112,18 @@ func (r *SQLiteRepository) ListAssets(ctx context.Context, projectRef string) ([
 		return nil, err
 	}
 	if len(assets) > 0 {
-		return assets, nil
+		return normalizeAssetSummaries(assets), nil
 	}
 
 	if err := r.ensureAssetsForProject(ctx, projectRef); err != nil {
 		return nil, err
 	}
 
-	return r.queryAssets(ctx, projectRef)
+	assets, err = r.queryAssets(ctx, projectRef)
+	if err != nil {
+		return nil, err
+	}
+	return normalizeAssetSummaries(assets), nil
 }
 
 func (r *SQLiteRepository) queryAssets(ctx context.Context, projectRef string) ([]AssetSummary, error) {
@@ -598,6 +604,31 @@ func hydrateAssetSummary(asset AssetSummary) AssetSummary {
 	return asset
 }
 
+func normalizeAssetSummaries(assets []AssetSummary) []AssetSummary {
+	normalized := make([]AssetSummary, 0, len(assets))
+	seen := make(map[string]struct{}, len(assets))
+	for _, asset := range assets {
+		originalTarget := strings.TrimSpace(asset.PrimaryTarget)
+		target := normalizeAssetTarget(originalTarget)
+		if target == "" {
+			continue
+		}
+		key := strings.ToLower(target)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		if target != originalTarget {
+			asset.PrimaryTarget = target
+			if strings.TrimSpace(asset.DisplayName) == "" || strings.EqualFold(strings.TrimSpace(asset.DisplayName), originalTarget) {
+				asset.DisplayName = target
+			}
+		}
+		normalized = append(normalized, asset)
+	}
+	return normalized
+}
+
 func deriveObservedAssets(run RunDetails) []observedAsset {
 	perTarget := make(map[string]*observedAsset)
 	portSet := make(map[string]map[int]struct{})
@@ -848,11 +879,57 @@ func normalizeAssetTarget(target string) string {
 	if trimmed == "" {
 		return ""
 	}
+
+	if parsedURL, err := url.Parse(trimmed); err == nil && strings.TrimSpace(parsedURL.Host) != "" {
+		trimmed = strings.TrimSpace(parsedURL.Host)
+	}
+	trimmed = strings.TrimSpace(trimmed)
+	if trimmed == "" || trimmed == "/" || trimmed == "." {
+		return ""
+	}
+
+	if addrPort, err := netip.ParseAddrPort(trimmed); err == nil {
+		return addrPort.Addr().String()
+	}
+	if host, _, err := net.SplitHostPort(trimmed); err == nil {
+		trimmed = strings.Trim(host, "[]")
+	}
+	trimmed = strings.Trim(strings.TrimSpace(trimmed), "[]")
+
 	if prefix, err := netip.ParsePrefix(trimmed); err == nil {
-		return prefix.String()
+		if prefix.Bits() == prefix.Addr().BitLen() {
+			return prefix.Addr().String()
+		}
+		return ""
 	}
 	if addr, err := netip.ParseAddr(trimmed); err == nil {
 		return addr.String()
+	}
+
+	if beforeSlash, _, ok := strings.Cut(trimmed, "/"); ok {
+		beforeSlash = strings.TrimSpace(beforeSlash)
+		if beforeSlash == "" {
+			return ""
+		}
+		if addr, err := netip.ParseAddr(beforeSlash); err == nil {
+			return addr.String()
+		}
+		trimmed = beforeSlash
+	}
+
+	if strings.ContainsAny(trimmed, "/\\ ") {
+		return ""
+	}
+	if strings.Count(trimmed, ":") == 1 {
+		host, port, found := strings.Cut(trimmed, ":")
+		if found && strings.TrimSpace(host) != "" && strings.TrimSpace(port) != "" {
+			trimmed = strings.TrimSpace(host)
+		}
+	}
+
+	trimmed = strings.TrimSuffix(strings.TrimSpace(trimmed), ".")
+	if trimmed == "" {
+		return ""
 	}
 	return trimmed
 }

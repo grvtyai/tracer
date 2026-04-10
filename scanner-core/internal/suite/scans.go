@@ -30,6 +30,14 @@ type preflightCheck struct {
 	Required bool
 }
 
+type preflightGroup struct {
+	Name        string
+	Status      string
+	StatusLabel string
+	StatusClass string
+	Checks      []preflightCheck
+}
+
 type scanFormData struct {
 	ProjectID               string
 	ScanName                string
@@ -488,6 +496,57 @@ func preflightState(checks []preflightCheck) string {
 		}
 	}
 	return "ok"
+}
+
+func buildPreflightGroups(checks []preflightCheck) []preflightGroup {
+	groups := []preflightGroup{
+		{Name: "Nexus Core"},
+		{Name: "Radar Module"},
+	}
+	for _, check := range checks {
+		if isNexusCorePreflightCheck(check.Name) {
+			groups[0].Checks = append(groups[0].Checks, check)
+			continue
+		}
+		groups[1].Checks = append(groups[1].Checks, check)
+	}
+	for idx := range groups {
+		groups[idx].Status = preflightState(groups[idx].Checks)
+		groups[idx].StatusLabel = preflightGroupStatusLabel(groups[idx].Status)
+		groups[idx].StatusClass = preflightGroupStatusClass(groups[idx].Status)
+	}
+	return groups
+}
+
+func isNexusCorePreflightCheck(name string) bool {
+	switch strings.TrimSpace(name) {
+	case "process-privileges", "sqlite-store":
+		return true
+	default:
+		return false
+	}
+}
+
+func preflightGroupStatusLabel(status string) string {
+	switch status {
+	case "ok":
+		return "ready"
+	case "warning":
+		return "warning"
+	default:
+		return "error"
+	}
+}
+
+func preflightGroupStatusClass(status string) string {
+	switch status {
+	case "ok":
+		return "status-success"
+	case "warning":
+		return "status-warning"
+	default:
+		return "status-danger"
+	}
 }
 
 func defaultScanForm(project *storage.ProjectSummary, satelliteOptions []satelliteOption, appSettings storage.AppSettings) scanFormData {

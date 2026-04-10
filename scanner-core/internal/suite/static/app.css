@@ -488,7 +488,7 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    width: 320px;
+    width: 380px;
     padding: 16px;
     border-radius: 18px;
     background:
@@ -531,6 +531,38 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     align-items: flex-start;
 }
 
+.preflight-group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.preflight-group {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.025);
+}
+
+.preflight-group summary {
+    display: grid;
+    grid-template-columns: 12px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.preflight-group summary::-webkit-details-marker { display: none; }
+
+.preflight-group-name {
+    font-weight: 650;
+}
+
+.preflight-group .preflight-mini-list {
+    padding: 0 10px 10px;
+}
+
 .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -540,6 +572,55 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
 
 .stats-grid-wide {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.monitoring-health-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.012)),
+        rgba(255,255,255,0.03);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        0 14px 30px rgba(0,0,0,0.14);
+}
+
+.monitoring-health-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 46px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: var(--panel-2);
+    border: 1px solid rgba(255,255,255,0.075);
+}
+
+.monitoring-health-stat .stat-label {
+    margin-bottom: 0;
+}
+
+.monitoring-health-stat .stat-value {
+    font-size: 15px;
+    text-align: right;
+}
+
+.monitoring-health-top {
+    align-items: start;
+}
+
+.monitoring-check-table tbody tr {
+    cursor: help;
+}
+
+.monitoring-check-table tbody tr:hover {
+    background: rgba(103,162,255,0.08);
 }
 
 .stat-card {
@@ -620,6 +701,70 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
 
 .row-disabled {
     opacity: 0.58;
+}
+
+.run-controls {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(150px, 0.8fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.runs-table tbody tr {
+    transition: background 0.16s ease;
+}
+
+.runs-table tbody tr:hover {
+    background: rgba(103,162,255,0.06);
+}
+
+.run-action-column,
+.run-action-cell {
+    width: 42px;
+    min-width: 42px;
+    text-align: center;
+}
+
+.run-inspect-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    opacity: 0;
+    transform: translateY(2px);
+    color: var(--accent-2);
+    background: rgba(55,227,255,0.1);
+    border: 1px solid rgba(55,227,255,0.2);
+    text-decoration: none;
+    transition: opacity 0.16s ease, transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.run-row:hover .run-inspect-link,
+.run-inspect-link:focus-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.run-inspect-link:hover {
+    background: rgba(55,227,255,0.18);
+    border-color: rgba(55,227,255,0.36);
+}
+
+.run-inspect-link.disabled {
+    pointer-events: none;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    border-color: var(--border);
+}
+
+.run-row:hover .run-inspect-link.disabled {
+    opacity: 0.38;
+}
+
+.run-name-cell {
+    font-weight: 650;
 }
 
 .status-label {
@@ -1858,6 +2003,8 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     .inventory-network-detail-grid { grid-template-columns: 1fr; }
     .chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .stats-grid-wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .monitoring-health-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .run-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .panel.wide { grid-column: auto; }
 }
 
@@ -1897,10 +2044,21 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     .project-summary-tags {
         justify-content: flex-start;
     }
+    .monitoring-health-strip,
+    .run-controls {
+        grid-template-columns: 1fr;
+    }
+    .monitoring-health-stat {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+    .monitoring-health-stat .stat-value {
+        text-align: left;
+    }
     .preflight-card {
         right: auto;
         left: 0;
-        width: min(320px, calc(100vw - 48px));
+        width: min(380px, calc(100vw - 48px));
     }
 }
 

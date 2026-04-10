@@ -136,6 +136,42 @@ func TestProjectRunsAPIIncludesRunItems(t *testing.T) {
 	}
 }
 
+func TestRunsAndMonitoringHealthPagesRender(t *testing.T) {
+	repo := openTestRepo(t)
+	defer repo.Close()
+
+	runID := seedTestRun(t, repo)
+	run, err := repo.GetRun(context.Background(), runID)
+	if err != nil {
+		t.Fatalf("GetRun returned error: %v", err)
+	}
+
+	server, err := NewServer(repo, Options{
+		DBPath:  repo.Path(),
+		DataDir: filepath.Dir(repo.Path()),
+		AppName: "Startrace",
+	})
+	if err != nil {
+		t.Fatalf("NewServer returned error: %v", err)
+	}
+
+	pages := map[string]string{
+		"/runs?project=" + url.QueryEscape(run.Run.ProjectID):              "Run History",
+		"/monitoring/health?project=" + url.QueryEscape(run.Run.ProjectID): "Monitoring Checks",
+	}
+	for path, expected := range pages {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		recorder := httptest.NewRecorder()
+		server.Handler().ServeHTTP(recorder, req)
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("expected %s page 200, got %d: %s", path, recorder.Code, recorder.Body.String())
+		}
+		if !strings.Contains(recorder.Body.String(), expected) {
+			t.Fatalf("expected %s page to contain %q, body=%q", path, expected, recorder.Body.String())
+		}
+	}
+}
+
 func TestServerAssetsAPIAndPageSupportManualOverrides(t *testing.T) {
 	repo := openTestRepo(t)
 	defer repo.Close()

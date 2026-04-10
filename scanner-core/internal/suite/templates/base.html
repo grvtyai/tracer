@@ -68,15 +68,26 @@
                                     <strong>System Check</strong>
                                     <span class="pill subtle">{{if eq .PreflightState "ok"}}ready{{else if eq .PreflightState "warning"}}warning{{else}}error{{end}}</span>
                                 </div>
-                                <div class="preflight-mini-list">
-                                    {{range .PreflightChecks}}
-                                    <div class="preflight-mini-item">
-                                        <span class="mini-state state-{{.Status}}"></span>
-                                        <div>
-                                            <div class="list-title">{{.Name}}</div>
-                                            <div class="list-meta">{{.Detail}}</div>
+                                <div class="preflight-group-list">
+                                    {{range .PreflightGroups}}
+                                    <details class="preflight-group">
+                                        <summary>
+                                            <span class="mini-state state-{{.Status}}"></span>
+                                            <span class="preflight-group-name">{{.Name}}</span>
+                                            <span class="pill {{.StatusClass}}">{{.StatusLabel}}</span>
+                                        </summary>
+                                        <div class="preflight-mini-list">
+                                            {{range .Checks}}
+                                            <div class="preflight-mini-item">
+                                                <span class="mini-state state-{{.Status}}"></span>
+                                                <div>
+                                                    <div class="list-title">{{.Name}}</div>
+                                                    <div class="list-meta">{{.Detail}}</div>
+                                                </div>
+                                            </div>
+                                            {{end}}
                                         </div>
-                                    </div>
+                                    </details>
                                     {{end}}
                                 </div>
                             </div>

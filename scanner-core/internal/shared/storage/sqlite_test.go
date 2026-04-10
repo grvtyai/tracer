@@ -354,6 +354,100 @@ func TestSQLiteRepositoryBackfillsAssetsAndSupportsManualOverrides(t *testing.T)
 	}
 }
 
+func TestNormalizeAssetTargetFiltersNonHostTargets(t *testing.T) {
+	tests := map[string]string{
+		"":                            "",
+		"/":                           "",
+		"192.168.178.0/24":            "",
+		"192.168.178.1/192.168.178.1": "192.168.178.1",
+		"https://192.168.178.1:443/":  "192.168.178.1",
+		"http://fritz.box/login.lua":  "fritz.box",
+		"192.168.178.1:8443":          "192.168.178.1",
+		"fritz.box:443":               "fritz.box",
+		"printer.local.":              "printer.local",
+		"bad target with spaces":      "",
+		"2001:db8::1":                 "2001:db8::1",
+		"[2001:db8::1]:443":           "2001:db8::1",
+		"2001:db8::/64":               "",
+	}
+
+	for input, want := range tests {
+		if got := normalizeAssetTarget(input); got != want {
+			t.Fatalf("normalizeAssetTarget(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestNormalizeAssetSummariesSkipsInvalidAndDuplicateTargets(t *testing.T) {
+	assets := normalizeAssetSummaries([]AssetSummary{
+		{ID: "bad-path", PrimaryTarget: "/", DisplayName: "/"},
+		{ID: "router", PrimaryTarget: "192.168.178.1", DisplayName: "fritz.box"},
+		{ID: "router-duplicate", PrimaryTarget: "192.168.178.1/192.168.178.1", DisplayName: "192.168.178.1/192.168.178.1"},
+		{ID: "server", PrimaryTarget: "https://server.local:8443/", DisplayName: "https://server.local:8443/"},
+	})
+
+	if len(assets) != 2 {
+		t.Fatalf("unexpected asset count: want 2, got %d (%#v)", len(assets), assets)
+	}
+	if assets[0].ID != "router" || assets[0].PrimaryTarget != "192.168.178.1" {
+		t.Fatalf("unexpected first asset: %#v", assets[0])
+	}
+	if assets[1].ID != "server" || assets[1].PrimaryTarget != "server.local" || assets[1].DisplayName != "server.local" {
+		t.Fatalf("unexpected second asset: %#v", assets[1])
+	}
+}
+
+func TestAssetSyncSkipsInvalidInventoryTargets(t *testing.T) {
+	repo, err := OpenSQLite(filepath.Join(t.TempDir(), "startrace.db"))
+	if err != nil {
+		t.Fatalf("OpenSQLite returned error: %v", err)
+	}
+	defer repo.Close()
+
+	project, err := repo.EnsureProject(context.Background(), "Heimnetz", "")
+	if err != nil {
+		t.Fatalf("EnsureProject returned error: %v", err)
+	}
+
+	run, runStore, err := repo.StartRun(context.Background(), project.ID, RunSpec{
+		TemplateName: "bad-targets",
+		TemplatePath: "gui://test",
+		Mode:         "run",
+		Scope: ingest.Scope{
+			CIDRs: []string{"192.168.178.0/24"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("StartRun returned error: %v", err)
+	}
+
+	if err := runStore.WriteEvidence(context.Background(), []evidence.Record{
+		record("path-only", "httpx", "http_probe", "/", 443, "tcp", "bad path target", nil),
+		record("cidr-only", "naabu", "open_port", "192.168.178.0/24", 80, "tcp", "bad subnet target", nil),
+		record("joined-host", "testssl.sh", "tls_check", "192.168.178.1/192.168.178.1", 443, "tcp", "normalizable host target", nil),
+	}); err != nil {
+		t.Fatalf("WriteEvidence returned error: %v", err)
+	}
+
+	if err := repo.CompleteRun(context.Background(), run.ID, RunCompletion{
+		Status: "completed",
+		Plan:   []jobs.Job{{ID: "bad-targets-job", Kind: jobs.KindWebProbe, Plugin: "httpx"}},
+	}); err != nil {
+		t.Fatalf("CompleteRun returned error: %v", err)
+	}
+
+	assets, err := repo.ListAssets(context.Background(), project.ID)
+	if err != nil {
+		t.Fatalf("ListAssets returned error: %v", err)
+	}
+	if len(assets) != 1 {
+		t.Fatalf("unexpected asset count: want 1, got %d (%#v)", len(assets), assets)
+	}
+	if assets[0].PrimaryTarget != "192.168.178.1" {
+		t.Fatalf("unexpected primary target: got %q", assets[0].PrimaryTarget)
+	}
+}
+
 func assertCount(t *testing.T, repo *SQLiteRepository, table string, want int) {
 	t.Helper()
 

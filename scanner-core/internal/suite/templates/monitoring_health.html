@@ -1,18 +1,19 @@
 {{define "monitoring_health.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-{{if .MonitoringNexus}}
-<section class="hero-grid">
-    <article class="stats-grid">
-        {{range .MonitoringStats}}
-        <div class="stat-card">
-            <div class="stat-label">{{.Label}}</div>
-            <div class="stat-value">{{if .StatusClass}}<span class="status-label {{.StatusClass}}"><span class="status-dot"></span>{{.Value}}</span>{{else}}{{.Value}}{{end}}</div>
-            {{if .Detail}}<div class="list-meta">{{.Detail}}</div>{{end}}
-        </div>
-        {{end}}
-    </article>
+{{if .MonitoringStats}}
+<section class="monitoring-health-strip" aria-label="Monitoring health summary">
+    {{range .MonitoringStats}}
+    <div class="monitoring-health-stat">
+        <span class="stat-label">{{.Label}}</span>
+        <span class="stat-value">{{if .StatusClass}}<span class="status-label {{.StatusClass}}"><span class="status-dot"></span>{{.Value}}</span>{{else}}{{.Value}}{{end}}</span>
+    </div>
+    {{end}}
+</section>
+{{end}}
 
+{{if .MonitoringNexus}}
+<section class="hero-grid monitoring-health-top">
     <article class="panel">
         <div class="panel-head">
             <h2>Nexus Runtime</h2>
@@ -29,32 +30,30 @@
             {{if .SecondaryAction}}<a class="button {{.SecondaryAction.Variant}}" href="{{.SecondaryAction.URL}}">{{.SecondaryAction.Label}}</a>{{end}}
         </div>
     </article>
+
+    <article class="panel">
+        <div class="panel-head">
+            <h2>Monitoring Checks</h2>
+        </div>
+        <table class="table monitoring-check-table">
+            <thead>
+                <tr>
+                    <th>Check</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .MonitoringChecks}}
+                <tr title="{{.Detail}}">
+                    <td>{{.Name}}</td>
+                    <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </article>
 </section>
 {{end}}
-
-<section class="panel">
-    <div class="panel-head">
-        <h2>Monitoring Checks</h2>
-    </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Check</th>
-                <th>Status</th>
-                <th>Detail</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .MonitoringChecks}}
-            <tr>
-                <td>{{.Name}}</td>
-                <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
-                <td>{{.Detail}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
-</section>
 
 <section class="panel">
     <div class="panel-head">

@@ -67,6 +67,7 @@ type pageData struct {
 	ProjectForm           projectFormData
 	Settings              storage.AppSettings
 	PreflightChecks       []preflightCheck
+	PreflightGroups       []preflightGroup
 	PreflightHealthy      bool
 	PreflightState        string
 	ScanForm              scanFormData
@@ -2019,6 +2020,7 @@ func (s *Server) render(w http.ResponseWriter, name string, data pageData) {
 	}
 	data.PreflightHealthy = preflightHealthy(data.PreflightChecks)
 	data.PreflightState = preflightState(data.PreflightChecks)
+	data.PreflightGroups = buildPreflightGroups(data.PreflightChecks)
 	if data.SuiteModules == nil {
 		data.SuiteModules = buildSuiteModules(data.ActiveNav, data.CurrentProject)
 	}
