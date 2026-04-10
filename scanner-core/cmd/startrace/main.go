@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
-	"github.com/grvtyai/tracer/scanner-core/internal/suite"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/platform"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/storage"
+	"github.com/grvtyai/startrace/scanner-core/internal/suite"
 )
 
 func main() {

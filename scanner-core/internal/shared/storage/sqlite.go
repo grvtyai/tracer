@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/grvtyai/tracer/scanner-core/internal/analysis"
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
-	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	"github.com/grvtyai/tracer/scanner-core/internal/options"
+	"github.com/grvtyai/startrace/scanner-core/internal/analysis"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/ingest"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/options"
 	_ "modernc.org/sqlite"
 )
 
@@ -132,24 +132,11 @@ type RunDiff struct {
 }
 
 func DefaultDataDir() string {
-	preferred := defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "startrace")
-	legacy := defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "tracer")
-	if preferred == "" {
-		return legacy
-	}
-	if legacy != "" && !pathExists(preferred) && pathExists(legacy) {
-		return legacy
-	}
-	return preferred
+	return defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "startrace")
 }
 
 func DefaultDBPath() string {
-	preferred := filepath.Join(defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "startrace"), "startrace.db")
-	legacy := filepath.Join(defaultDataDir(runtime.GOOS, os.Getenv, os.UserHomeDir, lookupUserHomeDir, "tracer"), "tracer.db")
-	if legacy != "" && !pathExists(preferred) && (pathExists(legacy) || pathExists(filepath.Dir(legacy))) {
-		return legacy
-	}
-	return preferred
+	return filepath.Join(DefaultDataDir(), "startrace.db")
 }
 
 func ResolveDBPath(dataDir string, dbPath string) string {
@@ -1053,14 +1040,6 @@ func defaultDataDir(goos string, getenv func(string) string, userHomeDir func() 
 	default:
 		return filepath.Join(homeDir, ".local", "share", appName)
 	}
-}
-
-func pathExists(path string) bool {
-	if strings.TrimSpace(path) == "" {
-		return false
-	}
-	_, err := os.Stat(path)
-	return err == nil
 }
 
 func lookupUserHomeDir(username string) (string, error) {

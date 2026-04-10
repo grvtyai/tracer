@@ -3,7 +3,7 @@ package jobs
 import (
 	"fmt"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
+	"github.com/grvtyai/startrace/scanner-core/internal/ingest"
 )
 
 // BuildSeedPlan creates the low-cost opening moves of a run.

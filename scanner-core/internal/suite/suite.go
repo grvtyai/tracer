@@ -1,6 +1,6 @@
 package suite
 
-import "github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
+import "github.com/grvtyai/startrace/scanner-core/internal/shared/storage"
 
 type suiteModule struct {
 	Key    string

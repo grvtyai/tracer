@@ -21,12 +21,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/classify"
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
+	"github.com/grvtyai/startrace/scanner-core/internal/classify"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/options"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/platform"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/storage"
 )
 
 //go:embed templates/*.html static/*
@@ -116,7 +116,7 @@ type pageData struct {
 	SatelliteOptions      []satelliteOption
 	MonitoringSatellites  []monitoringSatellite
 	MonitoringJobs        []monitoringJob
-	MonitoringMothership  *monitoringSatellite
+	MonitoringNexus       *monitoringSatellite
 	MonitoringStats       []monitoringStat
 	MonitoringFacts       []monitoringFact
 	MonitoringTooling     []monitoringTool
@@ -1322,7 +1322,7 @@ func (s *Server) handleMonitoringSatellites(w http.ResponseWriter, r *http.Reque
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	monitoringSatellites, mothership, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	monitoringSatellites, nexus, err := s.monitoringSatellites(ctx, preflightChecks, runs)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
@@ -1344,8 +1344,8 @@ func (s *Server) handleMonitoringSatellites(w http.ResponseWriter, r *http.Reque
 		Notice:               noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Settings:             appSettings,
 		MonitoringSatellites: filterRegisteredSatellites(monitoringSatellites),
-		MonitoringMothership: &mothership,
-		MonitoringStats:      buildMonitoringSatelliteStats(mothership, monitoringSatellites, mustListAssets(ctx, s.repo, currentProject.ID)),
+		MonitoringNexus:      &nexus,
+		MonitoringStats:      buildMonitoringSatelliteStats(nexus, monitoringSatellites, mustListAssets(ctx, s.repo, currentProject.ID)),
 		PrimaryAction: &pageAction{
 			Label:   "Register new Satelite",
 			URL:     buildProjectPath("/monitoring/satellites/register", currentProject),
@@ -1397,7 +1397,7 @@ func (s *Server) renderMonitoringSatelliteRegister(w http.ResponseWriter, r *htt
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	_, mothership, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	_, nexus, err := s.monitoringSatellites(ctx, preflightChecks, runs)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
@@ -1418,7 +1418,7 @@ func (s *Server) renderMonitoringSatelliteRegister(w http.ResponseWriter, r *htt
 		PreflightChecks:       preflightChecks,
 		Notice:                noticeMessage(strings.TrimSpace(r.URL.Query().Get("notice"))),
 		Settings:              appSettings,
-		MonitoringMothership:  &mothership,
+		MonitoringNexus:       &nexus,
 		SatelliteRegisterForm: form,
 		PrimaryAction: &pageAction{
 			Label:   "Back to Satelites",
@@ -1526,31 +1526,31 @@ func (s *Server) handleMonitoringHealth(w http.ResponseWriter, r *http.Request) 
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	monitoringSatellites, mothership, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	monitoringSatellites, nexus, err := s.monitoringSatellites(ctx, preflightChecks, runs)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
 	data := pageData{
-		Title:                "Monitoring - Health",
-		AppName:              s.options.AppName,
-		ActiveNav:            "monitoring",
-		ActiveSection:        "monitoring-health",
-		BasePath:             s.options.BasePath,
-		DBPath:               s.options.DBPath,
-		DataDir:              s.options.DataDir,
-		HeroNote:             "Current health of the local Startrace execution node",
-		Projects:             projects,
-		CurrentProject:       currentProject,
-		ProjectSwitchPath:    "/monitoring/health",
-		Project:              currentProject,
-		PreflightChecks:      preflightChecks,
-		Settings:             appSettings,
-		MonitoringMothership: &mothership,
-		MonitoringStats:      buildMonitoringHealthStats(monitoringSatellites, preflightChecks, runs),
-		MonitoringFacts:      s.buildMonitoringHealthFacts(preflightChecks, runs),
-		MonitoringTooling:    buildMonitoringTooling(preflightChecks),
-		MonitoringChecks:     buildMonitoringChecks(preflightChecks, runs, currentProject, s.options),
+		Title:             "Monitoring - Health",
+		AppName:           s.options.AppName,
+		ActiveNav:         "monitoring",
+		ActiveSection:     "monitoring-health",
+		BasePath:          s.options.BasePath,
+		DBPath:            s.options.DBPath,
+		DataDir:           s.options.DataDir,
+		HeroNote:          "Current health of the local Startrace execution node",
+		Projects:          projects,
+		CurrentProject:    currentProject,
+		ProjectSwitchPath: "/monitoring/health",
+		Project:           currentProject,
+		PreflightChecks:   preflightChecks,
+		Settings:          appSettings,
+		MonitoringNexus:   &nexus,
+		MonitoringStats:   buildMonitoringHealthStats(monitoringSatellites, preflightChecks, runs),
+		MonitoringFacts:   s.buildMonitoringHealthFacts(preflightChecks, runs),
+		MonitoringTooling: buildMonitoringTooling(preflightChecks),
+		MonitoringChecks:  buildMonitoringChecks(preflightChecks, runs, currentProject, s.options),
 		PrimaryAction: &pageAction{
 			Label:   "Open Satelites",
 			URL:     buildProjectPath("/monitoring/satellites", currentProject),
@@ -1588,7 +1588,7 @@ func (s *Server) handleMonitoringJobs(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	monitoringSatellites, mothership, err := s.monitoringSatellites(ctx, preflightChecks, runs)
+	monitoringSatellites, nexus, err := s.monitoringSatellites(ctx, preflightChecks, runs)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, err)
 		return
@@ -1597,25 +1597,25 @@ func (s *Server) handleMonitoringJobs(w http.ResponseWriter, r *http.Request) {
 	monitoringJobStatus := firstNonEmptyWeb(strings.TrimSpace(r.URL.Query().Get("status")), "all")
 	monitoringJobs := filterMonitoringJobs(s.buildMonitoringJobs(ctx, currentProject, runs), monitoringJobQuery, monitoringJobStatus)
 	data := pageData{
-		Title:                "Monitoring - Jobs",
-		AppName:              s.options.AppName,
-		ActiveNav:            "monitoring",
-		ActiveSection:        "monitoring-jobs",
-		BasePath:             s.options.BasePath,
-		DBPath:               s.options.DBPath,
-		DataDir:              s.options.DataDir,
-		HeroNote:             "Planned execution visibility for local and later remote jobs",
-		Projects:             projects,
-		CurrentProject:       currentProject,
-		ProjectSwitchPath:    "/monitoring/jobs",
-		Project:              currentProject,
-		PreflightChecks:      preflightChecks,
-		Settings:             appSettings,
-		MonitoringMothership: &mothership,
-		MonitoringJobs:       monitoringJobs,
-		MonitoringStats:      buildMonitoringJobStats(monitoringSatellites, monitoringJobs),
-		MonitoringJobQuery:   monitoringJobQuery,
-		MonitoringJobStatus:  monitoringJobStatus,
+		Title:               "Monitoring - Jobs",
+		AppName:             s.options.AppName,
+		ActiveNav:           "monitoring",
+		ActiveSection:       "monitoring-jobs",
+		BasePath:            s.options.BasePath,
+		DBPath:              s.options.DBPath,
+		DataDir:             s.options.DataDir,
+		HeroNote:            "Planned execution visibility for local and later remote jobs",
+		Projects:            projects,
+		CurrentProject:      currentProject,
+		ProjectSwitchPath:   "/monitoring/jobs",
+		Project:             currentProject,
+		PreflightChecks:     preflightChecks,
+		Settings:            appSettings,
+		MonitoringNexus:     &nexus,
+		MonitoringJobs:      monitoringJobs,
+		MonitoringStats:     buildMonitoringJobStats(monitoringSatellites, monitoringJobs),
+		MonitoringJobQuery:  monitoringJobQuery,
+		MonitoringJobStatus: monitoringJobStatus,
 		PrimaryAction: &pageAction{
 			Label:   "Open Satelites",
 			URL:     buildProjectPath("/monitoring/satellites", currentProject),
@@ -2088,11 +2088,11 @@ func (s *Server) renderSuitePlaceholder(w http.ResponseWriter, r *http.Request, 
 
 func (s *Server) satelliteOptions(ctx context.Context) []satelliteOption {
 	preflightChecks := collectPreflightChecks(s.options.DBPath)
-	mothership := s.buildMonitoringMothership(preflightChecks, nil)
+	nexus := s.buildMonitoringNexus(preflightChecks, nil)
 	if _, err := s.ensureBuiltinMonitoringSatellite(ctx, preflightChecks, nil); err != nil {
 		return []satelliteOption{{
-			ID:     mothership.ID,
-			Label:  fmt.Sprintf("Startrace Nexus - %s", mothership.Address),
+			ID:     nexus.ID,
+			Label:  fmt.Sprintf("Startrace Nexus - %s", nexus.Address),
 			Detail: "Built-in local execution target",
 		}}
 	}
@@ -2100,8 +2100,8 @@ func (s *Server) satelliteOptions(ctx context.Context) []satelliteOption {
 	storedSatellites, err := s.repo.ListSatellites(ctx)
 	if err != nil || len(storedSatellites) == 0 {
 		return []satelliteOption{{
-			ID:     mothership.ID,
-			Label:  fmt.Sprintf("Startrace Nexus - %s", mothership.Address),
+			ID:     nexus.ID,
+			Label:  fmt.Sprintf("Startrace Nexus - %s", nexus.Address),
 			Detail: "Built-in local execution target",
 		}}
 	}
@@ -2127,14 +2127,14 @@ func resolveSatelliteSelection(selectedID string, options []satelliteOption) sat
 		return options[0]
 	}
 	return satelliteOption{
-		ID:     "mothership",
+		ID:     "nexus",
 		Label:  "Startrace Nexus - 127.0.0.1",
 		Detail: "Built-in local execution target",
 	}
 }
 
 func (s *Server) monitoringSatellites(ctx context.Context, checks []preflightCheck, runs []storage.RunSummary) ([]monitoringSatellite, monitoringSatellite, error) {
-	mothershipStored, err := s.ensureBuiltinMonitoringSatellite(ctx, checks, runs)
+	nexusStored, err := s.ensureBuiltinMonitoringSatellite(ctx, checks, runs)
 	if err != nil {
 		return nil, monitoringSatellite{}, err
 	}
@@ -2145,34 +2145,34 @@ func (s *Server) monitoringSatellites(ctx context.Context, checks []preflightChe
 	}
 
 	monitoringSatellites := make([]monitoringSatellite, 0, len(storedSatellites))
-	mothershipView := s.buildMonitoringMothership(checks, runs)
-	mothershipView.FirstSeen = formatMonitoringTimestamp(mothershipStored.CreatedAt)
+	nexusView := s.buildMonitoringNexus(checks, runs)
+	nexusView.FirstSeen = formatMonitoringTimestamp(nexusStored.CreatedAt)
 	if len(storedSatellites) == 0 {
-		return []monitoringSatellite{mothershipView}, mothershipView, nil
+		return []monitoringSatellite{nexusView}, nexusView, nil
 	}
 
 	for _, satellite := range storedSatellites {
 		view := s.monitoringSatelliteFromStored(satellite)
-		if satellite.ID == mothershipStored.ID {
-			view = mothershipView
+		if satellite.ID == nexusStored.ID {
+			view = nexusView
 		}
 		monitoringSatellites = append(monitoringSatellites, view)
 	}
-	return monitoringSatellites, mothershipView, nil
+	return monitoringSatellites, nexusView, nil
 }
 
 func (s *Server) ensureBuiltinMonitoringSatellite(ctx context.Context, checks []preflightCheck, runs []storage.RunSummary) (storage.Satellite, error) {
-	mothership := s.buildMonitoringMothership(checks, runs)
+	nexus := s.buildMonitoringNexus(checks, runs)
 	return s.repo.UpsertSatellite(ctx, storage.SatelliteUpsertInput{
-		ID:                    mothership.ID,
-		Name:                  mothership.Name,
-		Kind:                  "mothership",
-		Role:                  mothership.Role,
-		Status:                mothership.Status,
-		Address:               mothership.Address,
-		Hostname:              mothership.Hostname,
-		Platform:              mothership.Platform,
-		Executor:              mothership.Executor,
+		ID:                    nexus.ID,
+		Name:                  nexus.Name,
+		Kind:                  "nexus",
+		Role:                  nexus.Role,
+		Status:                nexus.Status,
+		Address:               nexus.Address,
+		Hostname:              nexus.Hostname,
+		Platform:              nexus.Platform,
+		Executor:              nexus.Executor,
 		LastSeenAt:            time.Now().UTC(),
 		RegistrationTokenHint: "Built-in local node",
 		Capabilities:          monitoringCapabilities(checks),
@@ -2219,7 +2219,7 @@ func (s *Server) monitoringSatelliteFromStored(satellite storage.Satellite) moni
 func filterRegisteredSatellites(satellites []monitoringSatellite) []monitoringSatellite {
 	filtered := make([]monitoringSatellite, 0, len(satellites))
 	for _, satellite := range satellites {
-		if strings.EqualFold(strings.TrimSpace(satellite.ID), "mothership") {
+		if strings.EqualFold(strings.TrimSpace(satellite.ID), "nexus") {
 			continue
 		}
 		filtered = append(filtered, satellite)
@@ -2291,21 +2291,21 @@ func generateRegistrationToken() string {
 	return "STRC-REG-" + encoded[:4] + "-" + encoded[4:8] + "-" + encoded[8:12]
 }
 
-func (s *Server) buildMonitoringMothership(checks []preflightCheck, runs []storage.RunSummary) monitoringSatellite {
-	mothership := s.monitoringMothership()
+func (s *Server) buildMonitoringNexus(checks []preflightCheck, runs []storage.RunSummary) monitoringSatellite {
+	nexus := s.monitoringNexus()
 	switch preflightState(checks) {
 	case "ok":
-		mothership.Status = "Healthy"
-		mothership.StatusClass = "status-success"
-		mothership.LastSeen = "Heartbeat healthy"
+		nexus.Status = "Healthy"
+		nexus.StatusClass = "status-success"
+		nexus.LastSeen = "Heartbeat healthy"
 	case "warning":
-		mothership.Status = "Needs attention"
-		mothership.StatusClass = "status-warning"
-		mothership.LastSeen = "Heartbeat active"
+		nexus.Status = "Needs attention"
+		nexus.StatusClass = "status-warning"
+		nexus.LastSeen = "Heartbeat active"
 	default:
-		mothership.Status = "Degraded"
-		mothership.StatusClass = "status-danger"
-		mothership.LastSeen = "Heartbeat degraded"
+		nexus.Status = "Degraded"
+		nexus.StatusClass = "status-danger"
+		nexus.LastSeen = "Heartbeat degraded"
 	}
 
 	readyTools, totalTools := monitoringToolingCounts(checks)
@@ -2318,26 +2318,26 @@ func (s *Server) buildMonitoringMothership(checks []preflightCheck, runs []stora
 	}); lastSuccessful != nil {
 		summaryParts = append(summaryParts, "last successful run: "+firstNonEmptyWeb(strings.TrimSpace(lastSuccessful.TemplateName), "Radar run"))
 	}
-	mothership.Summary = strings.Join(summaryParts, " | ")
-	return mothership
+	nexus.Summary = strings.Join(summaryParts, " | ")
+	return nexus
 }
 
-func buildMonitoringSatelliteStats(mothership monitoringSatellite, satellites []monitoringSatellite, assets []storage.AssetSummary) []monitoringStat {
+func buildMonitoringSatelliteStats(nexus monitoringSatellite, satellites []monitoringSatellite, assets []storage.AssetSummary) []monitoringStat {
 	registeredSatellites := len(filterRegisteredSatellites(satellites))
-	mothershipStatus := "Online - Stable"
+	nexusStatus := "Online - Stable"
 	statusClass := "status-success"
-	switch mothership.StatusClass {
+	switch nexus.StatusClass {
 	case "status-warning":
-		mothershipStatus = "Online - Warning"
+		nexusStatus = "Online - Warning"
 		statusClass = "status-warning"
 	case "status-danger":
-		mothershipStatus = "Offline"
+		nexusStatus = "Offline"
 		statusClass = "status-danger"
 	}
 
 	return []monitoringStat{
 		{Label: "Registered Satelites", Value: fmt.Sprintf("%d", registeredSatellites)},
-		{Label: "Nexus Status", Value: mothershipStatus, StatusClass: statusClass},
+		{Label: "Nexus Status", Value: nexusStatus, StatusClass: statusClass},
 		{Label: "Inventory", Value: fmt.Sprintf("%d", len(assets))},
 		{Label: "Subnets", Value: fmt.Sprintf("%d", countUniqueSubnets(assets))},
 	}
@@ -2667,10 +2667,10 @@ func (s *Server) buildMonitoringJobs(ctx context.Context, currentProject *storag
 	return jobsOut
 }
 
-func (s *Server) monitoringMothership() monitoringSatellite {
+func (s *Server) monitoringNexus() monitoringSatellite {
 	address := detectNexusAddress()
 	return monitoringSatellite{
-		ID:          "mothership",
+		ID:          "nexus",
 		Name:        "Startrace - Nexus",
 		Role:        "Local Nexus",
 		Status:      "Online",
@@ -3312,7 +3312,7 @@ func buildRunExecutionFacts(run storage.RunDetails) []monitoringFact {
 		strings.TrimSpace(run.Scope.Labels["execution_satellite_name"]),
 		"Startrace Nexus - "+detectNexusAddress(),
 	)
-	satelliteID := firstNonEmptyWeb(strings.TrimSpace(run.Scope.Labels["execution_satellite_id"]), "mothership")
+	satelliteID := firstNonEmptyWeb(strings.TrimSpace(run.Scope.Labels["execution_satellite_id"]), "nexus")
 
 	completedSteps := 0
 	failedSteps := 0
@@ -4983,7 +4983,7 @@ func appSettingProjectLabel(projects []storage.ProjectSummary, selectedID string
 func appSettingSatelliteLabel(options []satelliteOption, selectedID string) string {
 	selectedID = strings.TrimSpace(selectedID)
 	if selectedID == "" {
-		selectedID = "mothership"
+		selectedID = "nexus"
 	}
 	for _, option := range options {
 		if option.ID == selectedID {

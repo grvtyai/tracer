@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
 )
 
 // MemoryStore is a small bootstrap implementation for early development and tests.

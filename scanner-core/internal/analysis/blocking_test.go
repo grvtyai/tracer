@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
 )
 
 func TestBuildBlockingAssessmentsReachablePortAndTarget(t *testing.T) {

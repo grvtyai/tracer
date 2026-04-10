@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/analysis"
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
-	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
+	"github.com/grvtyai/startrace/scanner-core/internal/analysis"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/ingest"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/options"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/storage"
 )
 
 func TestServerHealthAndProjectsAPI(t *testing.T) {

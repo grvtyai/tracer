@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
 )
 
 // BlockingAssessment represents the result of evidence correlation.

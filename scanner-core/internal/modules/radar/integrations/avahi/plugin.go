@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/engine"
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
+	"github.com/grvtyai/startrace/scanner-core/internal/engine"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/platform"
 )
 
 type Runner interface {
@@ -170,14 +170,14 @@ func buildRecord(service serviceRecord, job jobs.Job, observedAt time.Time) evid
 	target := firstNonEmpty(service.Address, service.Hostname)
 	summary := fmt.Sprintf("%s announced %s on port %d", firstNonEmpty(service.Name, target), service.Type, service.Port)
 	attributes := map[string]string{
-		"job_id":     job.ID,
-		"plugin":     "avahi",
-		"job_kind":   string(job.Kind),
-		"service":    service.Name,
+		"job_id":       job.ID,
+		"plugin":       "avahi",
+		"job_kind":     string(job.Kind),
+		"service":      service.Name,
 		"service_type": service.Type,
-		"domain":     service.Domain,
-		"hostname":   service.Hostname,
-		"interface":  service.Interface,
+		"domain":       service.Domain,
+		"hostname":     service.Hostname,
+		"interface":    service.Interface,
 	}
 	if service.TXT != "" {
 		attributes["txt"] = service.TXT

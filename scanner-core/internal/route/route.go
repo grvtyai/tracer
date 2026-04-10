@@ -2,8 +2,8 @@ package route
 
 // ProbePolicy limits route collection cost.
 type ProbePolicy struct {
-	PerHost         int `json:"per_host"`
-	PerServiceClass int `json:"per_service_class"`
+	PerHost          int `json:"per_host"`
+	PerServiceClass  int `json:"per_service_class"`
 	PerImportantPort int `json:"per_important_port"`
 }
 

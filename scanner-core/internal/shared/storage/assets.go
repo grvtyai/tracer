@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
 )
 
 type AssetSummary struct {

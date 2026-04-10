@@ -14,13 +14,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	radarruntime "github.com/grvtyai/tracer/scanner-core/internal/modules/radar/runtime"
-	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
-	"github.com/grvtyai/tracer/scanner-core/internal/templates"
+	"github.com/grvtyai/startrace/scanner-core/internal/ingest"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
+	radarruntime "github.com/grvtyai/startrace/scanner-core/internal/modules/radar/runtime"
+	"github.com/grvtyai/startrace/scanner-core/internal/options"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/platform"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/storage"
+	"github.com/grvtyai/startrace/scanner-core/internal/templates"
 )
 
 type preflightCheck struct {
@@ -409,13 +409,6 @@ func resolveSTRadarBinaryPath() (string, error) {
 		if _, err := os.Stat(sibling); err == nil {
 			return sibling, nil
 		}
-		legacySibling := filepath.Join(filepath.Dir(executable), "tracer")
-		if runtime.GOOS == "windows" {
-			legacySibling += ".exe"
-		}
-		if _, err := os.Stat(legacySibling); err == nil {
-			return legacySibling, nil
-		}
 	}
 
 	radarBinary, err := exec.LookPath("st-radar")
@@ -425,14 +418,6 @@ func resolveSTRadarBinaryPath() (string, error) {
 	radarBinary, err = platform.ResolveExecutable("st-radar")
 	if err == nil {
 		return radarBinary, nil
-	}
-	legacyBinary, legacyErr := exec.LookPath("tracer")
-	if legacyErr == nil {
-		return legacyBinary, nil
-	}
-	legacyBinary, legacyErr = platform.ResolveExecutable("tracer")
-	if legacyErr == nil {
-		return legacyBinary, nil
 	}
 	if err != nil {
 		return "", fmt.Errorf("locate st-radar worker binary: %w", err)

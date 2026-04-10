@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/engine"
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
-	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/templates"
+	"github.com/grvtyai/startrace/scanner-core/internal/engine"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/ingest"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/options"
+	"github.com/grvtyai/startrace/scanner-core/internal/templates"
 )
 
 func TestLoadTemplateAndBuildSeedPlan(t *testing.T) {

@@ -3,9 +3,9 @@ package sharphound
 import (
 	"context"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/engine"
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/engine"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
 )
 
 type Plugin struct{}

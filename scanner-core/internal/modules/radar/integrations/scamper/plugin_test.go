@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/evidence"
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
 )
 
 type fakeRunner struct {

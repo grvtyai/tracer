@@ -1,8 +1,8 @@
 package templates
 
 import (
-	"github.com/grvtyai/tracer/scanner-core/internal/ingest"
-	"github.com/grvtyai/tracer/scanner-core/internal/options"
+	"github.com/grvtyai/startrace/scanner-core/internal/ingest"
+	"github.com/grvtyai/startrace/scanner-core/internal/options"
 )
 
 // Template bundles a reusable scope and profile combination.

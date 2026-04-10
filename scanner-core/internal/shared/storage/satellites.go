@@ -59,7 +59,7 @@ func (r *SQLiteRepository) ListSatellites(ctx context.Context) ([]Satellite, err
 			updated_at
 		FROM satellites
 		ORDER BY
-			CASE WHEN LOWER(kind) = 'mothership' THEN 0 ELSE 1 END,
+			CASE WHEN LOWER(kind) = 'nexus' THEN 0 ELSE 1 END,
 			name ASC
 	`)
 	if err != nil {

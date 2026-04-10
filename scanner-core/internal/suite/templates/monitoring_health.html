@@ -1,7 +1,7 @@
 {{define "monitoring_health.html"}}{{template "base" .}}{{end}}
 
 {{define "page"}}
-{{if .MonitoringMothership}}
+{{if .MonitoringNexus}}
 <section class="hero-grid">
     <article class="stats-grid">
         {{range .MonitoringStats}}
@@ -16,7 +16,7 @@
     <article class="panel">
         <div class="panel-head">
             <h2>Nexus Runtime</h2>
-            <span class="pill {{.MonitoringMothership.StatusClass}}">{{.MonitoringMothership.Status}}</span>
+            <span class="pill {{.MonitoringNexus.StatusClass}}">{{.MonitoringNexus.Status}}</span>
         </div>
         <div class="kv-grid">
             {{range .MonitoringFacts}}

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/storage"
 )
 
 type discoveryTemplateCard struct {

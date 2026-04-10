@@ -8,12 +8,12 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	radarruntime "github.com/grvtyai/tracer/scanner-core/internal/modules/radar/runtime"
-	"github.com/grvtyai/tracer/scanner-core/internal/options"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/platform"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
-	"github.com/grvtyai/tracer/scanner-core/internal/templates"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
+	radarruntime "github.com/grvtyai/startrace/scanner-core/internal/modules/radar/runtime"
+	"github.com/grvtyai/startrace/scanner-core/internal/options"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/platform"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/storage"
+	"github.com/grvtyai/startrace/scanner-core/internal/templates"
 )
 
 func main() {

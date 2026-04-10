@@ -1,4 +1,4 @@
-module github.com/grvtyai/tracer/scanner-core
+module github.com/grvtyai/startrace/scanner-core
 
 go 1.25.0
 

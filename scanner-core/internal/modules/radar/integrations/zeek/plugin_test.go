@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
 )
 
 func TestPluginRunParsesConnAndHTTPLogs(t *testing.T) {

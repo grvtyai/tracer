@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/grvtyai/tracer/scanner-core/internal/jobs"
-	"github.com/grvtyai/tracer/scanner-core/internal/shared/storage"
+	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/storage"
 )
 
 // Engine dispatches jobs to matching plugins and stores normalized evidence.

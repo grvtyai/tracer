@@ -10,16 +10,16 @@ import (
 )
 
 type ScheduledScan struct {
-	ID           string    `json:"id"`
-	ProjectID    string    `json:"project_id"`
-	SourceRunID  string    `json:"source_run_id,omitempty"`
-	SourceAssetID string   `json:"source_asset_id,omitempty"`
-	Name         string    `json:"name"`
-	Kind         string    `json:"kind"`
-	ScopeInput   string    `json:"scope_input"`
-	ExecuteAt    time.Time `json:"execute_at"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID            string    `json:"id"`
+	ProjectID     string    `json:"project_id"`
+	SourceRunID   string    `json:"source_run_id,omitempty"`
+	SourceAssetID string    `json:"source_asset_id,omitempty"`
+	Name          string    `json:"name"`
+	Kind          string    `json:"kind"`
+	ScopeInput    string    `json:"scope_input"`
+	ExecuteAt     time.Time `json:"execute_at"`
+	Status        string    `json:"status"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 type ScheduledScanInput struct {
