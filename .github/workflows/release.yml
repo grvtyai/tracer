@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build & Release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: scanner-core/go.mod
+
+      - name: Build release artifacts
+        working-directory: scanner-core
+        run: make release VERSION=${{ github.ref_name }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            scanner-core/dist/startrace-linux-amd64
+            scanner-core/dist/startrace-linux-arm64
+            scanner-core/dist/startrace-windows-amd64.exe
+            scanner-core/dist/startrace-darwin-amd64
+            scanner-core/dist/startrace-darwin-arm64
+            scanner-core/dist/startrace-satellite-linux-amd64
+            scanner-core/dist/startrace-satellite-linux-arm64
+          generate_release_notes: true

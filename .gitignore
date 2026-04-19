@@ -5,3 +5,4 @@ scanner-core/*.test.exe
 .claude/
 CLAUDE.md
 bruno-st-collection/
+startrace.code-workspace
