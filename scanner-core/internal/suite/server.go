@@ -3,6 +3,8 @@ package suite
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/tls"
 	"embed"
 	"encoding/hex"
 	"encoding/json"
@@ -22,6 +24,7 @@ import (
 	"time"
 
 	"github.com/grvtyai/startrace/scanner-core/internal/classify"
+	"github.com/grvtyai/startrace/scanner-core/internal/controller/runnerclient"
 	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
 	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
 	"github.com/grvtyai/startrace/scanner-core/internal/options"
@@ -218,10 +221,6 @@ type satelliteRegisterFormData struct {
 	Address           string
 	Role              string
 	RegistrationToken string
-	CapabilityNaabu   bool
-	CapabilityNmap    bool
-	CapabilityHTTPX   bool
-	CapabilityZeek    bool
 }
 
 type dashboardStats struct {
@@ -459,6 +458,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("/discovery/compare", s.handleDiscoveryCompare)
 	s.mux.HandleFunc("/discovery", s.handleDiscovery)
 	s.mux.HandleFunc("/monitoring/satellites/register", s.handleMonitoringSatelliteRegister)
+	s.mux.HandleFunc("/monitoring/satellites/refresh", s.handleMonitoringSatelliteRefresh)
 	s.mux.HandleFunc("/monitoring/satellites", s.handleMonitoringSatellites)
 	s.mux.HandleFunc("/monitoring/health", s.handleMonitoringHealth)
 	s.mux.HandleFunc("/monitoring/jobs", s.handleMonitoringJobs)
@@ -1456,10 +1456,6 @@ func (s *Server) handleMonitoringSatelliteRegisterSave(w http.ResponseWriter, r 
 		Address:           strings.TrimSpace(r.FormValue("address")),
 		Role:              firstNonEmptyWeb(strings.TrimSpace(r.FormValue("role")), "Remote Satelite"),
 		RegistrationToken: strings.TrimSpace(r.FormValue("registration_token")),
-		CapabilityNaabu:   isChecked(r.FormValue("cap_naabu")),
-		CapabilityNmap:    isChecked(r.FormValue("cap_nmap")),
-		CapabilityHTTPX:   isChecked(r.FormValue("cap_httpx")),
-		CapabilityZeek:    isChecked(r.FormValue("cap_zeek")),
 	}
 
 	if strings.TrimSpace(form.Name) == "" || strings.TrimSpace(form.Address) == "" {
@@ -1476,8 +1472,9 @@ func (s *Server) handleMonitoringSatelliteRegisterSave(w http.ResponseWriter, r 
 		form.RegistrationToken = generateRegistrationToken()
 	}
 
-	_, err = s.repo.UpsertSatellite(ctx, storage.SatelliteUpsertInput{
-		ID:                    "satellite-" + slugifySatelliteName(form.Name) + "-" + time.Now().UTC().Format("20060102150405"),
+	satelliteID := "satellite-" + slugifySatelliteName(form.Name) + "-" + time.Now().UTC().Format("20060102150405")
+	stored, err := s.repo.UpsertSatellite(ctx, storage.SatelliteUpsertInput{
+		ID:                    satelliteID,
 		Name:                  form.Name,
 		Kind:                  "satellite",
 		Role:                  form.Role,
@@ -1488,11 +1485,31 @@ func (s *Server) handleMonitoringSatelliteRegisterSave(w http.ResponseWriter, r 
 		Executor:              "Remote runner",
 		LastSeenAt:            time.Time{},
 		RegistrationTokenHint: form.RegistrationToken,
-		Capabilities:          registerFormCapabilities(form),
+		Capabilities:          nil,
 	})
 	if err != nil {
 		s.renderMonitoringSatelliteRegister(w, r, form)
 		return
+	}
+
+	// Best-effort probe — updates status, capabilities and TLS fingerprint if
+	// the satellite is already running. Silently skipped when not yet reachable.
+	if probe := probeSatellite(ctx, form.Address, form.RegistrationToken); probe.Online {
+		_, _ = s.repo.UpsertSatellite(ctx, storage.SatelliteUpsertInput{
+			ID:                    stored.ID,
+			Name:                  stored.Name,
+			Kind:                  stored.Kind,
+			Role:                  stored.Role,
+			Status:                "Online",
+			Address:               stored.Address,
+			Hostname:              stored.Hostname,
+			Platform:              "Satellite " + probe.Version,
+			Executor:              stored.Executor,
+			LastSeenAt:            time.Now().UTC(),
+			RegistrationTokenHint: stored.RegistrationTokenHint,
+			TLSFingerprint:        probe.TLSFingerprint,
+			Capabilities:          probe.Capabilities,
+		})
 	}
 
 	redirectURL := buildProjectPath("/monitoring/satellites", currentProject)
@@ -1501,6 +1518,80 @@ func (s *Server) handleMonitoringSatelliteRegisterSave(w http.ResponseWriter, r 
 	} else {
 		redirectURL += "?notice=satellite-registered"
 	}
+	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+}
+
+func (s *Server) handleMonitoringSatelliteRefresh(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/monitoring/satellites/refresh" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ctx := r.Context()
+	satelliteID := strings.TrimSpace(r.URL.Query().Get("id"))
+	projectParam := strings.TrimSpace(r.URL.Query().Get("project"))
+
+	if satelliteID == "" {
+		http.Redirect(w, r, "/monitoring/satellites", http.StatusSeeOther)
+		return
+	}
+
+	satellites, err := s.repo.ListSatellites(ctx)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	var sat *storage.Satellite
+	for i := range satellites {
+		if satellites[i].ID == satelliteID {
+			sat = &satellites[i]
+			break
+		}
+	}
+	if sat == nil {
+		http.Redirect(w, r, "/monitoring/satellites", http.StatusSeeOther)
+		return
+	}
+
+	if probe := probeSatellite(ctx, sat.Address, sat.RegistrationTokenHint); probe.Online {
+		_, _ = s.repo.UpsertSatellite(ctx, storage.SatelliteUpsertInput{
+			ID:                    sat.ID,
+			Name:                  sat.Name,
+			Kind:                  sat.Kind,
+			Role:                  sat.Role,
+			Status:                "Online",
+			Address:               sat.Address,
+			Hostname:              sat.Hostname,
+			Platform:              "Satellite " + probe.Version,
+			Executor:              sat.Executor,
+			LastSeenAt:            time.Now().UTC(),
+			RegistrationTokenHint: sat.RegistrationTokenHint,
+			Capabilities:          probe.Capabilities,
+		})
+	} else {
+		_, _ = s.repo.UpsertSatellite(ctx, storage.SatelliteUpsertInput{
+			ID:                    sat.ID,
+			Name:                  sat.Name,
+			Kind:                  sat.Kind,
+			Role:                  sat.Role,
+			Status:                "Offline",
+			Address:               sat.Address,
+			Hostname:              sat.Hostname,
+			Platform:              sat.Platform,
+			Executor:              sat.Executor,
+			LastSeenAt:            sat.LastSeenAt,
+			RegistrationTokenHint: sat.RegistrationTokenHint,
+			Capabilities:          sat.Capabilities,
+		})
+	}
+
+	redirectURL := "/monitoring/satellites"
+	sep := "?"
+	if projectParam != "" {
+		redirectURL += sep + "project=" + projectParam
+		sep = "&"
+	}
+	redirectURL += sep + "notice=satellite-refreshed"
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
@@ -2232,31 +2323,10 @@ func filterRegisteredSatellites(satellites []monitoringSatellite) []monitoringSa
 func defaultSatelliteRegisterForm() satelliteRegisterFormData {
 	return satelliteRegisterFormData{
 		Name:              "Branch Office Satelite",
-		Address:           "10.20.30.40",
+		Address:           "10.20.30.40:8765",
 		Role:              "Remote Satelite",
 		RegistrationToken: generateRegistrationToken(),
-		CapabilityNaabu:   true,
-		CapabilityNmap:    true,
-		CapabilityHTTPX:   true,
-		CapabilityZeek:    false,
 	}
-}
-
-func registerFormCapabilities(form satelliteRegisterFormData) []string {
-	capabilities := make([]string, 0, 4)
-	if form.CapabilityNaabu {
-		capabilities = append(capabilities, "naabu")
-	}
-	if form.CapabilityNmap {
-		capabilities = append(capabilities, "nmap")
-	}
-	if form.CapabilityHTTPX {
-		capabilities = append(capabilities, "httpx")
-	}
-	if form.CapabilityZeek {
-		capabilities = append(capabilities, "zeekctl")
-	}
-	return capabilities
 }
 
 func slugifySatelliteName(name string) string {
@@ -2282,6 +2352,75 @@ func slugifySatelliteName(name string) string {
 		}
 	}
 	return strings.Trim(builder.String(), "-")
+}
+
+type satelliteProbeResult struct {
+	Online         bool
+	Version        string
+	Capabilities   []string
+	TLSFingerprint string
+}
+
+// probeSatellite contacts the satellite at address using token and returns live
+// status. address may be "host:port" or a full "https://host:port" URL.
+// For HTTPS (the default), the first contact is a TOFU probe: the cert is
+// accepted regardless of CA and the SHA-256 fingerprint is captured for
+// future pinning. Returns an empty result (Online=false) on any error.
+func probeSatellite(ctx context.Context, address, token string) satelliteProbeResult {
+	baseURL := address
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		baseURL = "https://" + baseURL
+	}
+
+	var capturedFingerprint string
+	httpClient := &http.Client{
+		Timeout: 5 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true, //nolint:gosec // TOFU: fingerprint captured and stored
+				VerifyConnection: func(cs tls.ConnectionState) error {
+					if len(cs.PeerCertificates) > 0 && capturedFingerprint == "" {
+						sum := sha256.Sum256(cs.PeerCertificates[0].Raw)
+						capturedFingerprint = hex.EncodeToString(sum[:])
+					}
+					return nil
+				},
+			},
+		},
+	}
+
+	client, err := runnerclient.New(runnerclient.Config{
+		BaseURL:    baseURL,
+		AuthToken:  token,
+		HTTPClient: httpClient,
+	})
+	if err != nil {
+		return satelliteProbeResult{}
+	}
+
+	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	health, err := client.Health(probeCtx)
+	if err != nil {
+		return satelliteProbeResult{}
+	}
+
+	caps, err := client.Capabilities(probeCtx)
+	if err != nil {
+		return satelliteProbeResult{Online: true, Version: health.Version, TLSFingerprint: capturedFingerprint}
+	}
+
+	pluginNames := make([]string, 0, len(caps.Plugins))
+	for _, p := range caps.Plugins {
+		pluginNames = append(pluginNames, p.Name)
+	}
+	return satelliteProbeResult{
+		Online:         true,
+		Version:        health.Version,
+		Capabilities:   pluginNames,
+		TLSFingerprint: capturedFingerprint,
+	}
 }
 
 func generateRegistrationToken() string {
@@ -5092,6 +5231,8 @@ func noticeMessage(code string) string {
 		return "Satelite registered successfully."
 	case "satellite-register-failed":
 		return "Satelite registration failed. Check the submitted values and try again."
+	case "satellite-refreshed":
+		return "Satelite status refreshed."
 	default:
 		return ""
 	}

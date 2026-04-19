@@ -25,12 +25,7 @@
             <span class="form-label">Role</span>
             <input class="input" type="text" name="role" value="{{.SatelliteRegisterForm.Role}}" />
         </label>
-        <div class="checkbox-grid">
-            <label class="check-row"><input type="checkbox" name="cap_naabu" {{if .SatelliteRegisterForm.CapabilityNaabu}}checked{{end}} /> <span>naabu<small class="check-hint">Fast port discovery on the remote node.</small></span></label>
-            <label class="check-row"><input type="checkbox" name="cap_nmap" {{if .SatelliteRegisterForm.CapabilityNmap}}checked{{end}} /> <span>nmap<small class="check-hint">Deeper service and OS fingerprinting.</small></span></label>
-            <label class="check-row"><input type="checkbox" name="cap_httpx" {{if .SatelliteRegisterForm.CapabilityHTTPX}}checked{{end}} /> <span>httpx<small class="check-hint">Web verification and service classification.</small></span></label>
-            <label class="check-row"><input type="checkbox" name="cap_zeek" {{if .SatelliteRegisterForm.CapabilityZeek}}checked{{end}} /> <span>zeekctl<small class="check-hint">Passive ingest on segments that support it.</small></span></label>
-        </div>
+        <p class="form-hint">Capabilities are fetched automatically from the Satellite on first contact. Use <strong>Refresh</strong> on the Satellites page after the Satellite is running.</p>
         <div class="hero-actions">
             {{if .PrimaryAction}}<a class="button {{.PrimaryAction.Variant}}" href="{{.PrimaryAction.URL}}">{{.PrimaryAction.Label}}</a>{{end}}
             <button class="button button-primary" type="submit">Save Satelite</button>

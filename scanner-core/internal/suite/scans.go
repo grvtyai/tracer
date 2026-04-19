@@ -14,6 +14,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grvtyai/startrace/scanner-core/internal/api"
+	"github.com/grvtyai/startrace/scanner-core/internal/controller/runnerclient"
+	"github.com/grvtyai/startrace/scanner-core/internal/evidence"
 	"github.com/grvtyai/startrace/scanner-core/internal/ingest"
 	"github.com/grvtyai/startrace/scanner-core/internal/jobs"
 	radarruntime "github.com/grvtyai/startrace/scanner-core/internal/modules/radar/runtime"
@@ -234,12 +237,16 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go s.executeScanAsync(project, runRecord, runStore, template, effectiveOptions)
+	go s.executeScanAsync(project, runRecord, runStore, template, effectiveOptions, form.SatelliteID)
 
 	http.Redirect(w, r, "/runs?project="+project.ID+"&notice=scan-started", http.StatusSeeOther)
 }
 
-func (s *Server) executeScanAsync(project storage.ProjectSummary, runRecord storage.RunRecord, runStore *storage.SQLiteRunStore, template templates.Template, effective options.EffectiveOptions) {
+func (s *Server) executeScanAsync(project storage.ProjectSummary, runRecord storage.RunRecord, runStore *storage.SQLiteRunStore, template templates.Template, effective options.EffectiveOptions, satelliteID string) {
+	if satelliteID != "" && satelliteID != "nexus" {
+		s.executeSatelliteRunAsync(project, runRecord, runStore, template, satelliteID)
+		return
+	}
 	ctx := context.Background()
 	templatePath, err := writeTemporaryTemplate(template)
 	if err != nil {
@@ -857,4 +864,139 @@ func firstNonEmptyWeb(values ...string) string {
 		}
 	}
 	return ""
+}
+
+// executeSatelliteRunAsync dispatches a scan to a registered remote Satellite
+// via the HTTP API (runnerclient), streams the result events, and writes
+// evidence + job outcomes back into the Nexus database.
+func (s *Server) executeSatelliteRunAsync(
+	project storage.ProjectSummary,
+	runRecord storage.RunRecord,
+	runStore *storage.SQLiteRunStore,
+	template templates.Template,
+	satelliteID string,
+) {
+	ctx := context.Background()
+
+	sat, err := s.repo.GetSatellite(ctx, satelliteID)
+	if err != nil {
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("resolve satellite %q: %w", satelliteID, err))
+		return
+	}
+
+	client, err := runnerclient.New(runnerclient.Config{
+		BaseURL:        sat.Address,
+		AuthToken:      sat.RegistrationTokenHint,
+		TLSFingerprint: sat.TLSFingerprint,
+	})
+	if err != nil {
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("build satellite client: %w", err))
+		return
+	}
+
+	templateJSON, err := json.Marshal(template)
+	if err != nil {
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("marshal template: %w", err))
+		return
+	}
+
+	startResp, err := client.StartRun(ctx, api.StartRunRequest{
+		ProjectID: project.ID,
+		Template:  json.RawMessage(templateJSON),
+	})
+	if err != nil {
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("start satellite run: %w", err))
+		return
+	}
+	satelliteRunID := startResp.RunID
+
+	sub, err := client.SubscribeEvents(ctx, satelliteRunID)
+	if err != nil {
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("subscribe satellite events: %w", err))
+		return
+	}
+
+	finalState := api.RunStateFailed
+	for ev := range sub.Events {
+		if ev.Type == api.EventTypeRunState {
+			var p api.RunStatePayload
+			if json.Unmarshal(ev.Payload, &p) == nil {
+				finalState = p.State
+			}
+		}
+	}
+	if streamErr := sub.Err(); streamErr != nil {
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("satellite event stream: %w", streamErr))
+		return
+	}
+
+	// Fetch final job details and write as Nexus job results.
+	var plan []jobs.Job
+	if jobsResp, err := client.RunJobs(ctx, satelliteRunID); err == nil {
+		results, jobPlan := satelliteJobResults(jobsResp.Jobs)
+		_ = runStore.WriteJobResults(ctx, results)
+		plan = jobPlan
+	}
+
+	// Fetch evidence records and rewrite RunID to the Nexus run ID.
+	if evResp, err := client.RunEvidence(ctx, satelliteRunID); err == nil && evResp.Count > 0 {
+		var records []evidence.Record
+		if json.Unmarshal(evResp.Records, &records) == nil {
+			for i := range records {
+				records[i].RunID = runRecord.ID
+			}
+			_ = runStore.WriteEvidence(ctx, records)
+		}
+	}
+
+	nexusStatus := "completed"
+	if finalState == api.RunStateFailed || finalState == api.RunStateCancelled {
+		nexusStatus = "failed"
+	}
+	_ = s.repo.CompleteRun(ctx, runRecord.ID, storage.RunCompletion{
+		Status: nexusStatus,
+		Plan:   plan,
+	})
+}
+
+// satelliteJobResults converts the satellite's JobDetail slice into the
+// ExecutionResult and Job slices the Nexus database expects.
+func satelliteJobResults(details []api.JobDetail) ([]jobs.ExecutionResult, []jobs.Job) {
+	results := make([]jobs.ExecutionResult, 0, len(details))
+	plan := make([]jobs.Job, 0, len(details))
+	for _, d := range details {
+		plan = append(plan, jobs.Job{
+			ID:        d.JobID,
+			Kind:      jobs.Kind(d.Kind),
+			Plugin:    d.Plugin,
+			DependsOn: d.DependsOn,
+			Targets:   d.Targets,
+			Ports:     d.Ports,
+			Metadata:  d.Metadata,
+		})
+		status := jobs.StatusSucceeded
+		switch d.State {
+		case api.JobStateFailed, api.JobStatePending, api.JobStateRunning:
+			status = jobs.StatusFailed
+		case api.JobStateSkipped:
+			status = jobs.StatusSkipped
+		}
+		r := jobs.ExecutionResult{
+			JobID:   d.JobID,
+			Kind:    jobs.Kind(d.Kind),
+			Plugin:  d.Plugin,
+			Targets: d.Targets,
+			Ports:   d.Ports,
+			Status:  status,
+			Error:   d.Error,
+		}
+		if d.StartedAt != nil {
+			r.StartedAt = *d.StartedAt
+		}
+		if d.FinishedAt != nil {
+			r.FinishedAt = *d.FinishedAt
+		}
+		results = append(results, r)
+	}
+	return results, plan
 }

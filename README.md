@@ -25,21 +25,40 @@ The current UI modules are:
 - `Dashboard`
 - `Inventory`
 - `Radar`
+- `Monitoring`
 - `Security`
 - `Workbench`
 - `Automation`
 - `Help`
 - `Settings`
 
-Only `Radar` and `Inventory` are meaningfully developed today. The other module areas already exist so new capabilities can be added inside the real product structure instead of being bolted on later.
+`Radar` and `Inventory` are meaningfully developed today. `Monitoring` has a working foundation (satellite registration, capability display). The other module areas already exist so new capabilities can be added inside the real product structure instead of being bolted on later.
 
 ## 🧱 Architecture
 
-`Startrace` is built as a modular system:
+Startrace follows a **Nexus + Satellite** model:
 
-- `suite`: owns the browser UI, routing, layout, templates, components and styling
-- `shared`: owns canonical data, persistence and shared runtime/platform helpers
-- `modules`: own capabilities, workflows, integrations and data preparation
+- **Nexus** (`startrace`) — the controller. Runs the browser UI, project management, and operator-facing workflows. Communicates with one or more Satellites over HTTP.
+- **Satellite** (`startrace-satellite`) — the runner. Executes scans, hosts scanner tool integrations, streams results back to Nexus via a typed REST + SSE API.
+
+```
+Nexus (startrace)  ──── HTTP API (JSON + SSE) ──── Satellite (startrace-satellite)
+       └── SQLite (Nexus DB)                              └── SQLite (local to Satellite)
+```
+
+**Platform split:**
+
+| Component | Supported Platforms |
+|---|---|
+| **Nexus** | Linux, Windows, macOS (pure Go web app) |
+| **Satellite** | Linux only (scanner tools require Linux) |
+
+**Deployment scenarios:**
+1. **Standalone** — Nexus and Satellite on the same Linux host, talking over localhost.
+2. **Distributed (Linux operator)** — Nexus on Linux workstation, Satellite on a separate Linux host.
+3. **Distributed (Windows operator)** — Nexus on Windows, Satellite on a Linux VM (Hyper-V / WSL2 / remote).
+
+The suite is **mid-migration** from a legacy subprocess model (`st-radar`) to the full daemon model. Both paths currently coexist.
 
 ## 📡 Current State
 
@@ -72,6 +91,15 @@ The suite already keeps a shared inventory above individual runs:
 
 This shared inventory model is important because later modules should work on the same assets instead of creating separate silos.
 
+### Monitoring
+
+Monitoring has a working foundation:
+
+- satellites table in the Nexus database
+- satellite registration UI with token exchange
+- capability display (which scanner plugins are available on a given Satellite)
+- Satellite API contract: `/health`, `/capabilities`, `/runs`, `/runs/{id}/status`, `/runs/{id}/events`, `/runs/{id}/evidence`
+
 ### Other Module Areas
 
 These areas already exist in the UI as product spaces, but are still early:
@@ -100,7 +128,7 @@ These integrations are currently planned because they can add useful visibility 
 
 The main supported runtime target is Ubuntu.
 
-On Linux, `startrace` and `st-radar` should be started with `sudo` / as `root`. Several scanners and sensors require elevated privileges, and the suite no longer tries to escalate discovery runs in the background.
+Nexus and Satellite should be started with `sudo` / as `root` on Linux. Several scanners and sensors require elevated privileges.
 
 ### 1. Clone the repository
 
@@ -143,9 +171,9 @@ What the installer sets up:
 
 For more detail see [docs/INSTALL-UBUNTU.md](docs/INSTALL-UBUNTU.md).
 
-### 3. Start Startrace the simple way
+### 3. Start Startrace (legacy standalone mode)
 
-For normal day-to-day testing on Ubuntu, use the helper script:
+For day-to-day testing on a single Linux host, use the helper script:
 
 ```bash
 bash scripts/run-startrace.sh
@@ -153,8 +181,8 @@ bash scripts/run-startrace.sh
 
 What it does:
 
-- builds `st-radar`
-- builds `startrace`
+- builds `st-radar` (legacy runner)
+- builds `startrace` (Nexus)
 - starts `startrace` with `sudo`
 - keeps the common tool paths available under `sudo`
 - listens on `0.0.0.0:8080` by default
@@ -166,7 +194,24 @@ STARTRACE_LISTEN=127.0.0.1:9090 bash scripts/run-startrace.sh
 STARTRACE_DB_PATH=/home/$USER/.local/share/startrace/startrace.db bash scripts/run-startrace.sh
 ```
 
-### 4. Manual build and start
+### 4. Start the Satellite daemon (new model)
+
+Build the Satellite binary on a Linux host:
+
+```bash
+cd scanner-core
+go build -o ./bin/startrace-satellite ./cmd/startrace-satellite
+```
+
+Start it with a pre-shared token:
+
+```bash
+STARTRACE_SATELLITE_TOKEN=<your-token> sudo ./bin/startrace-satellite -listen 127.0.0.1:8765
+```
+
+Then register the Satellite from the Nexus **Monitoring** UI (Settings → Monitoring).
+
+### 5. Manual build and start
 
 If you want the manual commands instead:
 
@@ -176,7 +221,7 @@ go build -o ./bin/st-radar ./cmd/st-radar
 go build -o ./bin/startrace ./cmd/startrace
 ```
 
-Start the suite with:
+Start Nexus with:
 
 ```bash
 sudo env "PATH=/usr/local/go/bin:$HOME/go/bin:$HOME/.local/bin:/opt/zeek/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" ./bin/startrace --db-path /home/$USER/.local/share/startrace/startrace.db --listen 0.0.0.0:8080
@@ -188,7 +233,7 @@ Then open:
 http://<ubuntu-ip>:8080
 ```
 
-### 5. Typical first run
+### 6. Typical first run
 
 1. Open the browser UI
 2. Create or select a project
@@ -200,7 +245,7 @@ http://<ubuntu-ip>:8080
 
 ## 🖥️ CLI Usage
 
-The CLI writes to the same persistence model and should also be run with `sudo` on Linux.
+The legacy CLI writes to the same persistence model and should also be run with `sudo` on Linux.
 
 Examples:
 
@@ -214,27 +259,55 @@ sudo ./bin/st-radar -mode diff --baseline-run <run-a> --candidate-run <run-b>
 
 ## 🗂️ Repository Layout
 
-- `scanner-core/cmd/startrace`: web server entrypoint
-- `scanner-core/cmd/st-radar`: Radar worker / CLI entrypoint
-- `scanner-core/internal/suite`: browser UI layer
-- `scanner-core/internal/shared/storage`: shared SQLite persistence and queries
-- `scanner-core/internal/shared/platform`: shared runtime/platform helpers
-- `scanner-core/internal/modules/radar/runtime`: Radar planning and execution logic
-- `scanner-core/internal/modules/radar/integrations`: Radar-owned scanner integrations
-- `docs`: supporting documentation
-- `scripts`: install and verification helpers
+```
+scanner-core/
+  cmd/
+    startrace/           Nexus — web UI, controller
+    startrace-satellite/ Satellite daemon (new)
+    st-radar/            Legacy Radar CLI runner (being deprecated)
+  internal/
+    api/                 Wire contract types shared by Nexus and Satellite
+    controller/
+      runnerclient/      Nexus-side HTTP client for the Satellite API
+    runner/
+      service/           Satellite service interface + sentinel errors
+      apiserver/         Satellite HTTP server, handlers, SSE streaming
+    suite/               Browser UI layer (routing, templates, handlers)
+    shared/
+      storage/           Shared SQLite persistence (projects, runs, assets, satellites, …)
+      platform/          Runtime/platform helpers (Linux-specific)
+    modules/
+      radar/
+        runtime/         Radar planning and execution logic
+        integrations/    13 scanner plugins (nmap, naabu, httpx, zgrab2, zeek, …)
+docs/                    Supporting documentation
+scripts/                 Install and verification helpers
+```
 
 ## 🌠 Near-Term Plan
 
-The near-term goal is not to add disconnected features. The priority is to make the suite structure hold.
+The current focus is completing the Nexus ↔ Satellite integration so that Radar runs flow through the Satellite daemon instead of the legacy subprocess.
 
-Current focus:
+| Step | State |
+|---|---|
+| Define wire contract (`internal/api`) | Done |
+| Satellite daemon + stub service | Done |
+| Nexus-side HTTP client (`runnerclient`) | Done |
+| Real Radar Service implementation (wraps existing runtime) | Done |
+| Satellite registration UI in Nexus | Done |
+| Wire Nexus web handlers to use `runnerclient` | **Next** |
+| TLS + cert pinning for distributed mode | Pending |
+| Cross-platform release build | Pending |
+| Decompose `internal/suite/server.go` by module | Pending |
+| Deprecate / remove `cmd/st-radar` | Pending |
 
-1. keep improving `Radar` as the first major module in the suite
-2. strengthen the shared suite shell and shared data model
-3. turn scheduling into a more general automation runner
-4. improve inventory quality, classification and topology views
-5. continue building out `Security`, `Workbench` and `Automation`
+After the runner split is complete, the next priorities are:
+
+- Scheduled scans and change alerting (schedules table already exists)
+- Asset baseline locking and deviation detection
+- Export / reporting (JSON, CSV, PDF)
+- Vulnerability correlation (NVD/OSV API lookup)
+- Webhook / notification hooks (Slack, email, generic)
 
 ## 📚 More Documentation
 

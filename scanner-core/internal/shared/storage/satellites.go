@@ -20,6 +20,7 @@ type Satellite struct {
 	Executor              string    `json:"executor,omitempty"`
 	LastSeenAt            time.Time `json:"last_seen_at,omitempty"`
 	RegistrationTokenHint string    `json:"registration_token_hint,omitempty"`
+	TLSFingerprint        string    `json:"tls_fingerprint,omitempty"`
 	Capabilities          []string  `json:"capabilities,omitempty"`
 	CreatedAt             time.Time `json:"created_at"`
 	UpdatedAt             time.Time `json:"updated_at"`
@@ -37,6 +38,7 @@ type SatelliteUpsertInput struct {
 	Executor              string
 	LastSeenAt            time.Time
 	RegistrationTokenHint string
+	TLSFingerprint        string
 	Capabilities          []string
 }
 
@@ -54,6 +56,7 @@ func (r *SQLiteRepository) ListSatellites(ctx context.Context) ([]Satellite, err
 			executor,
 			last_seen_at,
 			registration_token_hint,
+			tls_fingerprint,
 			capabilities_json,
 			created_at,
 			updated_at
@@ -86,6 +89,7 @@ func (r *SQLiteRepository) ListSatellites(ctx context.Context) ([]Satellite, err
 			&satellite.Executor,
 			&lastSeenAt,
 			&satellite.RegistrationTokenHint,
+			&satellite.TLSFingerprint,
 			&capabilitiesJSON,
 			&createdAt,
 			&updatedAt,
@@ -105,6 +109,39 @@ func (r *SQLiteRepository) ListSatellites(ctx context.Context) ([]Satellite, err
 		return nil, fmt.Errorf("iterate satellites: %w", err)
 	}
 	return satellites, nil
+}
+
+func (r *SQLiteRepository) GetSatellite(ctx context.Context, id string) (Satellite, error) {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT
+			id, name, kind, role, status,
+			address, hostname, platform, executor,
+			last_seen_at, registration_token_hint,
+			tls_fingerprint, capabilities_json, created_at, updated_at
+		FROM satellites
+		WHERE id = ?
+	`, strings.TrimSpace(id))
+
+	var satellite Satellite
+	var lastSeenAt, capabilitiesJSON, createdAt, updatedAt string
+	if err := row.Scan(
+		&satellite.ID, &satellite.Name, &satellite.Kind, &satellite.Role, &satellite.Status,
+		&satellite.Address, &satellite.Hostname, &satellite.Platform, &satellite.Executor,
+		&lastSeenAt, &satellite.RegistrationTokenHint,
+		&satellite.TLSFingerprint, &capabilitiesJSON, &createdAt, &updatedAt,
+	); err != nil {
+		if err == sql.ErrNoRows {
+			return Satellite{}, fmt.Errorf("satellite %q not found", id)
+		}
+		return Satellite{}, fmt.Errorf("get satellite: %w", err)
+	}
+	satellite.LastSeenAt = mustParseTime(lastSeenAt)
+	satellite.CreatedAt = mustParseTime(createdAt)
+	satellite.UpdatedAt = mustParseTime(updatedAt)
+	if err := unmarshalJSON(capabilitiesJSON, &satellite.Capabilities); err != nil {
+		return Satellite{}, err
+	}
+	return satellite, nil
 }
 
 func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteUpsertInput) (Satellite, error) {
@@ -136,10 +173,11 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 			executor,
 			last_seen_at,
 			registration_token_hint,
+			tls_fingerprint,
 			capabilities_json,
 			created_at,
 			updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id) DO UPDATE SET
 			name = excluded.name,
 			kind = excluded.kind,
@@ -151,6 +189,7 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 			executor = excluded.executor,
 			last_seen_at = excluded.last_seen_at,
 			registration_token_hint = excluded.registration_token_hint,
+			tls_fingerprint = excluded.tls_fingerprint,
 			capabilities_json = excluded.capabilities_json,
 			updated_at = excluded.updated_at
 	`,
@@ -165,6 +204,7 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 		strings.TrimSpace(input.Executor),
 		lastSeenAt,
 		strings.TrimSpace(input.RegistrationTokenHint),
+		strings.TrimSpace(input.TLSFingerprint),
 		capabilitiesJSON,
 		now.Format(time.RFC3339Nano),
 		now.Format(time.RFC3339Nano),
@@ -186,6 +226,7 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 			executor,
 			last_seen_at,
 			registration_token_hint,
+			tls_fingerprint,
 			capabilities_json,
 			created_at,
 			updated_at
@@ -196,6 +237,7 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 	var satellite Satellite
 	var lastSeen string
 	var registrationTokenHint string
+	var tlsFingerprint string
 	var capabilitiesStored string
 	var createdAt string
 	var updatedAt string
@@ -211,6 +253,7 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 		&satellite.Executor,
 		&lastSeen,
 		&registrationTokenHint,
+		&tlsFingerprint,
 		&capabilitiesStored,
 		&createdAt,
 		&updatedAt,
@@ -222,6 +265,7 @@ func (r *SQLiteRepository) UpsertSatellite(ctx context.Context, input SatelliteU
 	}
 	satellite.LastSeenAt = mustParseTime(lastSeen)
 	satellite.RegistrationTokenHint = strings.TrimSpace(registrationTokenHint)
+	satellite.TLSFingerprint = strings.TrimSpace(tlsFingerprint)
 	satellite.CreatedAt = mustParseTime(createdAt)
 	satellite.UpdatedAt = mustParseTime(updatedAt)
 	if err := unmarshalJSON(capabilitiesStored, &satellite.Capabilities); err != nil {

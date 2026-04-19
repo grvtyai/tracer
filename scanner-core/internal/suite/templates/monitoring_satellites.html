@@ -52,7 +52,9 @@
                 <th>Status</th>
                 <th>Address</th>
                 <th>Platform</th>
+                <th>Capabilities</th>
                 <th>Heartbeat</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -63,7 +65,9 @@
                 <td><span class="status-label {{.StatusClass}}">{{.Status}}</span></td>
                 <td class="mono">{{.Address}}</td>
                 <td class="mono">{{.Platform}}</td>
+                <td class="mono">{{if .Summary}}{{.Summary}}{{else}}–{{end}}</td>
                 <td>{{.LastSeen}}</td>
+                <td><a class="button button-secondary button-sm" href="/monitoring/satellites/refresh?id={{.ID}}{{if $.CurrentProject}}&amp;project={{$.CurrentProject.ID}}{{end}}">Refresh</a></td>
             </tr>
             {{end}}
         </tbody>

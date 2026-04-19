@@ -2,3 +2,6 @@ BackUps/
 .gocache/
 scanner-core/*.exe
 scanner-core/*.test.exe
+.claude/
+CLAUDE.md
+bruno-st-collection/

@@ -974,6 +974,9 @@ func (r *SQLiteRepository) migrate(ctx context.Context) error {
 	if err := ensureColumnExists(ctx, r.db, "assets", "manual_reevaluate", "ALTER TABLE assets ADD COLUMN manual_reevaluate INTEGER NOT NULL DEFAULT 0"); err != nil {
 		return err
 	}
+	if err := ensureColumnExists(ctx, r.db, "satellites", "tls_fingerprint", "ALTER TABLE satellites ADD COLUMN tls_fingerprint TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
 
 	return nil
 }
