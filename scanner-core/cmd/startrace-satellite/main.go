@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/grvtyai/startrace/scanner-core/internal/runner/apiserver"
 	"github.com/grvtyai/startrace/scanner-core/internal/runner/service/radar"
+	"github.com/grvtyai/startrace/scanner-core/internal/shared/platform"
 )
 
 const version = "0.1.0-dev"
@@ -26,6 +27,11 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+
+	if err := platform.RequireRootOnLinux("startrace-satellite"); err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 
 	token := os.Getenv(*tokenEnv)
 	if token == "" {

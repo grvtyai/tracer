@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -242,40 +241,13 @@ func (s *Server) handleScanStart(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/runs?project="+project.ID+"&notice=scan-started", http.StatusSeeOther)
 }
 
-func (s *Server) executeScanAsync(project storage.ProjectSummary, runRecord storage.RunRecord, runStore *storage.SQLiteRunStore, template templates.Template, effective options.EffectiveOptions, satelliteID string) {
-	if satelliteID != "" && satelliteID != "nexus" {
-		s.executeSatelliteRunAsync(project, runRecord, runStore, template, satelliteID)
+func (s *Server) executeScanAsync(project storage.ProjectSummary, runRecord storage.RunRecord, runStore *storage.SQLiteRunStore, template templates.Template, _ options.EffectiveOptions, satelliteID string) {
+	if satelliteID == "" || satelliteID == "nexus" {
+		ctx := context.Background()
+		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("a registered satellite is required to run scans — register one under Monitoring > Satellites"))
 		return
 	}
-	ctx := context.Background()
-	templatePath, err := writeTemporaryTemplate(template)
-	if err != nil {
-		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("prepare scan template: %w", err))
-		return
-	}
-	defer os.Remove(templatePath)
-
-	cmd, err := buildScanWorkerCommand(runRecord.ID, project.Name, templatePath, effective)
-	if err != nil {
-		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, err)
-		return
-	}
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		if runStillRunning, stateErr := s.runStillRunning(ctx, runRecord.ID); stateErr == nil && runStillRunning {
-			message := strings.TrimSpace(string(output))
-			if message == "" {
-				message = err.Error()
-			}
-			s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("launch root worker: %s", message))
-		}
-		return
-	}
-
-	if runStillRunning, err := s.runStillRunning(ctx, runRecord.ID); err == nil && runStillRunning {
-		s.markRunLaunchFailed(ctx, runRecord.ID, runStore, template, fmt.Errorf("scan worker exited without finalizing the run"))
-	}
+	s.executeSatelliteRunAsync(project, runRecord, runStore, template, satelliteID)
 }
 
 func (s *Server) handlePreflightAPI(w http.ResponseWriter, r *http.Request) {
@@ -353,101 +325,6 @@ func commandCheck(name string, required bool) preflightCheck {
 	}
 }
 
-func writeTemporaryTemplate(template templates.Template) (string, error) {
-	file, err := os.CreateTemp("", "startrace-run-*.json")
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(template); err != nil {
-		return "", err
-	}
-	return file.Name(), nil
-}
-
-func buildScanWorkerCommand(runID string, projectName string, templatePath string, effective options.EffectiveOptions) (*exec.Cmd, error) {
-	radarBinary, err := resolveSTRadarBinaryPath()
-	if err != nil {
-		return nil, err
-	}
-
-	args := []string{
-		radarBinary,
-		"-mode", "execute-run",
-		"-run-id", runID,
-		"-template", templatePath,
-		"-project", projectName,
-		"-db-path", effective.DBPath,
-		"-data-dir", effective.DataDir,
-		"-continue-on-error", fmt.Sprintf("%t", effective.ContinueOnError),
-		"-retain-partial-results", fmt.Sprintf("%t", effective.RetainPartialResults),
-		"-reevaluate-ambiguous", fmt.Sprintf("%t", effective.ReevaluateAmbiguous),
-		"-auto-start-zeek", fmt.Sprintf("%t", effective.AutoStartZeek),
-	}
-	if trimmed := strings.TrimSpace(effective.ActiveInterface); trimmed != "" {
-		args = append(args, "-active-interface", trimmed)
-	}
-	if trimmed := strings.TrimSpace(effective.PassiveInterface); trimmed != "" {
-		args = append(args, "-passive-interface", trimmed)
-	}
-	if trimmed := strings.TrimSpace(effective.PortTemplate); trimmed != "" {
-		args = append(args, "-port-template", trimmed)
-	}
-	if trimmed := strings.TrimSpace(effective.PassiveMode); trimmed != "" {
-		args = append(args, "-passive-mode", trimmed)
-	}
-	if trimmed := strings.TrimSpace(effective.ZeekLogDir); trimmed != "" {
-		args = append(args, "-zeek-log-dir", trimmed)
-	}
-	if trimmed := strings.TrimSpace(effective.ReevaluateAfter); trimmed != "" {
-		args = append(args, "-reevaluate-after", trimmed)
-	}
-
-	var cmd *exec.Cmd
-	if runtime.GOOS == "linux" && !platform.RunsAsRoot() {
-		return nil, fmt.Errorf("startrace must already be running as sudo/root on Linux before Discovery runs can be launched")
-	}
-	cmd = exec.Command(args[0], args[1:]...)
-	cmd.Env = os.Environ()
-	return cmd, nil
-}
-
-func resolveSTRadarBinaryPath() (string, error) {
-	if executable, err := os.Executable(); err == nil {
-		sibling := filepath.Join(filepath.Dir(executable), "st-radar")
-		if runtime.GOOS == "windows" {
-			sibling += ".exe"
-		}
-		if _, err := os.Stat(sibling); err == nil {
-			return sibling, nil
-		}
-	}
-
-	radarBinary, err := exec.LookPath("st-radar")
-	if err == nil {
-		return radarBinary, nil
-	}
-	radarBinary, err = platform.ResolveExecutable("st-radar")
-	if err == nil {
-		return radarBinary, nil
-	}
-	if err != nil {
-		return "", fmt.Errorf("locate st-radar worker binary: %w", err)
-	}
-	return "", fmt.Errorf("locate st-radar worker binary")
-}
-
-func (s *Server) runStillRunning(ctx context.Context, runID string) (bool, error) {
-	run, err := s.repo.GetRun(ctx, runID)
-	if err != nil {
-		return false, err
-	}
-	return strings.EqualFold(strings.TrimSpace(run.Run.Status), "running"), nil
-}
-
 func (s *Server) markRunLaunchFailed(ctx context.Context, runID string, runStore *storage.SQLiteRunStore, template templates.Template, err error) {
 	now := time.Now().UTC()
 	_ = runStore.WriteJobResults(ctx, []jobs.ExecutionResult{
@@ -506,6 +383,10 @@ func preflightState(checks []preflightCheck) string {
 }
 
 func buildPreflightGroups(checks []preflightCheck) []preflightGroup {
+	return buildPreflightGroupsForMode(checks, "standalone", false)
+}
+
+func buildPreflightGroupsForMode(checks []preflightCheck, deploymentMode string, hasSatellites bool) []preflightGroup {
 	groups := []preflightGroup{
 		{Name: "Nexus Core"},
 		{Name: "Radar Module"},
@@ -517,6 +398,37 @@ func buildPreflightGroups(checks []preflightCheck) []preflightGroup {
 		}
 		groups[1].Checks = append(groups[1].Checks, check)
 	}
+
+	if deploymentMode == "distributed" {
+		if hasSatellites {
+			groups[1] = preflightGroup{
+				Name:   "Radar Module",
+				Status: "ok",
+				Checks: []preflightCheck{{
+					Name:   "scanner tools",
+					Status: "ok",
+					Detail: "delegated to connected Satellite",
+				}},
+			}
+		} else {
+			groups[1] = preflightGroup{
+				Name:   "Radar Module",
+				Status: "warning",
+				Checks: []preflightCheck{{
+					Name:   "scanner tools",
+					Status: "warning",
+					Detail: "no Satellite registered — add one in Monitoring",
+				}},
+			}
+		}
+		groups[1].StatusLabel = preflightGroupStatusLabel(groups[1].Status)
+		groups[1].StatusClass = preflightGroupStatusClass(groups[1].Status)
+		groups[0].Status = preflightState(groups[0].Checks)
+		groups[0].StatusLabel = preflightGroupStatusLabel(groups[0].Status)
+		groups[0].StatusClass = preflightGroupStatusClass(groups[0].Status)
+		return groups
+	}
+
 	for idx := range groups {
 		groups[idx].Status = preflightState(groups[idx].Checks)
 		groups[idx].StatusLabel = preflightGroupStatusLabel(groups[idx].Status)

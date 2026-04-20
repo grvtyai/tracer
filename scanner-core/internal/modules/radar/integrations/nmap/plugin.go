@@ -74,7 +74,17 @@ func (p *Plugin) Run(ctx context.Context, job jobs.Job) ([]evidence.Record, erro
 		binary = resolvedBinary
 	}
 
-	output, err := runner.Run(ctx, binary, BuildArgs(job))
+	args := BuildArgs(job)
+	if !platform.RunsAsRoot() {
+		filtered := args[:0]
+		for _, arg := range args {
+			if arg != "-O" {
+				filtered = append(filtered, arg)
+			}
+		}
+		args = filtered
+	}
+	output, err := runner.Run(ctx, binary, args)
 	if err != nil {
 		if len(output) == 0 {
 			return nil, fmt.Errorf("run nmap: %w", err)
@@ -361,7 +371,6 @@ func includeOSDetection(job jobs.Job) bool {
 	if !ok {
 		return false
 	}
-
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case "1", "true", "yes", "on":
 		return true

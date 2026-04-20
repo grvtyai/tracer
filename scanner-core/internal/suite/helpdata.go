@@ -35,14 +35,14 @@ func helpTopicDefinitions() []helpTopicPage {
 			Slug:     "installation",
 			Title:    "Installation",
 			Category: "Getting Started",
-			Summary:  "Linux-first setup, privileges, binaries and the current runtime assumptions for Startrace and st-radar.",
+			Summary:  "Linux-first setup, privileges, binaries and the current runtime assumptions for Startrace.",
 			Sections: []helpSection{
 				{Title: "Current Direction", Content: []string{
 					"Startrace is intended to run on Linux and currently expects elevated privileges for scanner and sensor workflows.",
 					"Docker or a dedicated small server remains a good long-term packaging path, but the current baseline is a direct Linux runtime.",
 				}},
 				{Title: "Setup Areas", Content: []string{
-					"Binary build and placement for startrace and st-radar.",
+					"Binary build and placement for startrace and startrace-satellite.",
 					"SQLite database path and data directory planning.",
 					"External tool availability such as naabu, nmap, httpx, zgrab2, scamper, avahi-browse, testssl.sh, snmpwalk and zeekctl.",
 				}},

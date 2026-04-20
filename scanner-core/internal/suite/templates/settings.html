@@ -29,6 +29,22 @@
     <section class="panel-grid settings-panel-grid">
         <article class="panel">
             <div class="panel-head">
+                <h2>Deployment Mode</h2>
+            </div>
+            <div class="asset-form">
+                <label class="form-row">
+                    <span class="form-label">Mode</span>
+                    <select class="input" name="deployment_mode">
+                        <option value="standalone" {{if eq .Settings.DeploymentMode "standalone"}}selected{{end}}>Standalone — Nexus and Satellite on the same host</option>
+                        <option value="distributed" {{if eq .Settings.DeploymentMode "distributed"}}selected{{end}}>Distributed — Nexus on this machine, Satellite on a separate Linux host</option>
+                    </select>
+                </label>
+                <p class="list-meta">In distributed mode the System Check in the top bar delegates scanner-tool health to the connected Satellite. Register Satellites in Monitoring.</p>
+            </div>
+        </article>
+
+        <article class="panel">
+            <div class="panel-head">
                 <h2>Startup Defaults</h2>
             </div>
             <div class="asset-form">

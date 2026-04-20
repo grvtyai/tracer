@@ -86,6 +86,12 @@ func (p Plugin) Run(ctx context.Context, job jobs.Job) ([]evidence.Record, error
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
+			if errors.Is(err, os.ErrPermission) {
+				if mode != "always" {
+					continue
+				}
+				return nil, fmt.Errorf("stat zeek log %s: permission denied — run the satellite as root or add the user to the zeek group: %w", file.path, err)
+			}
 			return nil, fmt.Errorf("stat zeek log %s: %w", file.path, err)
 		}
 

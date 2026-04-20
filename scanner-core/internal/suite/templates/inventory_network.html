@@ -56,6 +56,10 @@
             <span class="inventory-legend-symbol legend-dc"></span>
             <span class="list-meta">Domain Controller</span>
         </div>
+        <div class="inventory-legend-item">
+            <span class="inventory-legend-symbol legend-satellite-runner"></span>
+            <span class="list-meta">Satellite Runner</span>
+        </div>
     </div>
 </section>
 
@@ -334,6 +338,7 @@
         };
         const groups = [];
         const edges = [];
+        const satellites = [];
         let cursorX = 140;
         const groupY = 250;
         const transitY = 385;
@@ -390,7 +395,14 @@
         const hostRows = groups.map((group) => Math.max(1, Math.ceil(group.regularHosts.length / maxHostColumns)));
         const maxRows = hostRows.length ? Math.max(...hostRows) : 1;
         const height = Math.max(760, hostStartY + maxRows * hostRowHeight + 140);
-        return { root, groups, edges, width, height };
+
+        (data.satellites || []).forEach((sat, index) => {
+            const satX = width / 2 + (index - (data.satellites.length - 1) / 2) * 160;
+            satellites.push({ ...sat, x: satX, y: -80, kind: "satellite" });
+            edges.push({ id: `edge_sat_${sat.id}`, from: "suite-root", to: `sat_${sat.id}`, dashed: true });
+        });
+
+        return { root, groups, edges, satellites, width, height };
     }
 
     function renderGraph() {
@@ -398,7 +410,8 @@
         canvas.innerHTML = "";
 
         const networks = Array.isArray(networkData?.networks) ? networkData.networks : [];
-        if (networks.length === 0) {
+        const hasSatellites = Array.isArray(networkData?.satellites) && networkData.satellites.length > 0;
+        if (networks.length === 0 && !hasSatellites) {
             canvas.innerHTML = '<div class="empty-note">No inventory assets are available for the network view.</div>';
             return;
         }
@@ -407,6 +420,7 @@
         const nodeById = { "suite-root": layout.root };
         hostMap = {};
         networkByHost = {};
+        (layout.satellites || []).forEach((sat) => { nodeById[`sat_${sat.id}`] = { ...sat, id: `sat_${sat.id}` }; });
 
         layout.groups.forEach((group) => {
             nodeById[group.node.id] = group.node;
@@ -417,8 +431,10 @@
             });
         });
 
+        const hasSatNodes = (layout.satellites || []).length > 0;
+        const topPad = hasSatNodes ? 160 : 0;
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
+        svg.setAttribute("viewBox", `0 ${-topPad} ${layout.width} ${layout.height + topPad}`);
         svg.setAttribute("class", "inventory-network-svg");
 
         const viewport = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -433,8 +449,8 @@
             line.setAttribute("x1", `${from.x}`);
             line.setAttribute("y1", `${from.y + (from.kind === "group" ? 28 : 0)}`);
             line.setAttribute("x2", `${to.x}`);
-            line.setAttribute("y2", `${to.y - 12}`);
-            line.setAttribute("class", "network-svg-edge");
+            line.setAttribute("y2", `${to.y + (to.kind === "satellite" ? 28 : -12)}`);
+            line.setAttribute("class", `network-svg-edge${edge.dashed ? " network-svg-edge-dashed" : ""}`);
             line.setAttribute("data-edge-id", edge.id);
             viewport.appendChild(line);
         });
@@ -506,6 +522,13 @@
                 wrapper.appendChild(rect);
                 appendText(wrapper, node.target || node.label, "network-svg-label", 0, -2);
                 appendText(wrapper, node.graph_role_label || visual.roleLabel || "", "network-svg-sublabel", 0, 18);
+            } else if (type === "satellite-node") {
+                const star = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                star.setAttribute("d", "M 0,-28 L 7,-10 L 27,-9 L 11,4 L 16,23 L 0,12 L -16,23 L -11,4 L -27,-9 L -7,-10 Z");
+                star.setAttribute("class", "network-satellite-star");
+                wrapper.appendChild(star);
+                appendText(wrapper, node.name || node.label, "network-svg-label", 0, 46);
+                appendText(wrapper, node.address || node.status || "satellite", "network-svg-sublabel", 0, 62);
             } else {
                 const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
                 ellipse.setAttribute("cx", "0");
@@ -534,6 +557,9 @@
             }
             group.infraHosts.forEach((host) => renderNode(host, "infra"));
             group.regularHosts.forEach((host) => renderNode(host, "host"));
+        });
+        (layout.satellites || []).forEach((sat) => {
+            renderNode({ ...sat, id: `sat_${sat.id}` }, "satellite-node");
         });
 
         canvas.appendChild(svg);

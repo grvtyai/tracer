@@ -4,7 +4,6 @@ LDFLAGS := -ldflags "-X main.version=$(VERSION) -s -w"
 
 NEXUS_CMD     := ./cmd/startrace
 SATELLITE_CMD := ./cmd/startrace-satellite
-RADAR_CMD     := ./cmd/st-radar
 
 BIN_DIR  := ./bin
 DIST_DIR := ./dist
@@ -16,7 +15,6 @@ build:
 	@mkdir -p $(BIN_DIR)
 	go build $(LDFLAGS) -o $(BIN_DIR)/startrace           $(NEXUS_CMD)
 	go build $(LDFLAGS) -o $(BIN_DIR)/startrace-satellite $(SATELLITE_CMD)
-	go build $(LDFLAGS) -o $(BIN_DIR)/st-radar            $(RADAR_CMD)
 
 # ---------- release (cross-compile) ----------
 

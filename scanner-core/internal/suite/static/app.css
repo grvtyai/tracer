@@ -1508,6 +1508,25 @@ h2 { font-size: 20px; letter-spacing: 0.02em; }
     transition: stroke 0.18s ease, stroke-width 0.18s ease, opacity 0.18s ease;
 }
 
+.network-svg-edge.network-svg-edge-dashed {
+    stroke: rgba(255,107,107,0.35);
+    stroke-dasharray: 6 4;
+}
+
+.network-satellite-star {
+    fill: rgba(255,107,107,0.18);
+    stroke: #ff6b6b;
+    stroke-width: 2;
+    stroke-linejoin: round;
+}
+
+.inventory-legend-symbol.legend-satellite-runner {
+    width: 22px;
+    height: 22px;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    background: #ff6b6b;
+}
+
 .network-svg-edge.active {
     stroke: #37e3ff;
     stroke-width: 4;

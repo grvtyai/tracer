@@ -42,6 +42,7 @@ type AppSettings struct {
 	DefaultZeekAutoStart       bool   `json:"default_zeek_auto_start"`
 	DefaultContinueOnError     bool   `json:"default_continue_on_error"`
 	DefaultRetainPartialResult bool   `json:"default_retain_partial_results"`
+	DeploymentMode             string `json:"deployment_mode,omitempty"`
 }
 
 func (r *SQLiteRepository) CreateProject(ctx context.Context, input ProjectCreateInput) (Project, error) {
@@ -222,6 +223,8 @@ func (r *SQLiteRepository) GetAppSettings(ctx context.Context) (AppSettings, err
 			settings.DefaultContinueOnError = parseAppSettingBool(value, settings.DefaultContinueOnError)
 		case "default_retain_partial_results":
 			settings.DefaultRetainPartialResult = parseAppSettingBool(value, settings.DefaultRetainPartialResult)
+		case "deployment_mode":
+			settings.DeploymentMode = normalizeDeploymentMode(value)
 		}
 	}
 	if err := rows.Err(); err != nil {
@@ -273,6 +276,7 @@ func (r *SQLiteRepository) SaveAppSettings(ctx context.Context, settings AppSett
 		"default_zeek_auto_start":        formatAppSettingBool(settings.DefaultZeekAutoStart),
 		"default_continue_on_error":      formatAppSettingBool(settings.DefaultContinueOnError),
 		"default_retain_partial_results": formatAppSettingBool(settings.DefaultRetainPartialResult),
+		"deployment_mode":                normalizeDeploymentMode(settings.DeploymentMode),
 	}
 
 	for key, value := range pairs {
@@ -305,6 +309,7 @@ func defaultAppSettings() AppSettings {
 		DefaultZeekAutoStart:       true,
 		DefaultContinueOnError:     true,
 		DefaultRetainPartialResult: true,
+		DeploymentMode:             "standalone",
 	}
 }
 
@@ -314,6 +319,15 @@ func normalizeScanTag(value string) string {
 		return "external"
 	default:
 		return "internal"
+	}
+}
+
+func normalizeDeploymentMode(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "distributed":
+		return "distributed"
+	default:
+		return "standalone"
 	}
 }
 
